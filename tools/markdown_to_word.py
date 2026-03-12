@@ -8,7 +8,7 @@ import sys
 import re
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Inches, Pt
+from docx.shared import Inches
 
 
 def markdown_to_word(input_file, output_file=None, base_folder=None, template=None):
@@ -56,18 +56,21 @@ def markdown_to_word(input_file, output_file=None, base_folder=None, template=No
         for paragraph in doc.paragraphs:
             original_text = paragraph.text
             if original_text:
+                new_text = original_text
+                replaced = False
                 for key, value in metadata.items():
                     if value:
                         placeholder = '{{' + key + '}}'
-                        if placeholder in original_text:
-                            new_text = original_text.replace(placeholder, value)
-                            for run in paragraph.runs:
-                                run.text = ''
-                            if paragraph.runs:
-                                paragraph.runs[0].text = new_text
-                            else:
-                                paragraph.add_run(new_text)
-                            break
+                        if placeholder in new_text:
+                            new_text = new_text.replace(placeholder, value)
+                            replaced = True
+                if replaced:
+                    for run in paragraph.runs:
+                        run.text = ''
+                    if paragraph.runs:
+                        paragraph.runs[0].text = new_text
+                    else:
+                        paragraph.add_run(new_text)
         
         # Reemplazar en tablas
         for table in doc.tables:
@@ -76,18 +79,21 @@ def markdown_to_word(input_file, output_file=None, base_folder=None, template=No
                     for paragraph in cell.paragraphs:
                         original_text = paragraph.text
                         if original_text:
+                            new_text = original_text
+                            replaced = False
                             for key, value in metadata.items():
                                 if value:
                                     placeholder = '{{' + key + '}}'
-                                    if placeholder in original_text:
-                                        new_text = original_text.replace(placeholder, value)
-                                        for run in paragraph.runs:
-                                            run.text = ''
-                                        if paragraph.runs:
-                                            paragraph.runs[0].text = new_text
-                                        else:
-                                            paragraph.add_run(new_text)
-                                        break
+                                    if placeholder in new_text:
+                                        new_text = new_text.replace(placeholder, value)
+                                        replaced = True
+                            if replaced:
+                                for run in paragraph.runs:
+                                    run.text = ''
+                                if paragraph.runs:
+                                    paragraph.runs[0].text = new_text
+                                else:
+                                    paragraph.add_run(new_text)
         
         # Agregar salto de página después de la portada
         doc.add_page_break()
@@ -96,15 +102,20 @@ def markdown_to_word(input_file, output_file=None, base_folder=None, template=No
         lines = content.split('\n')
         content_started = False
         
-        for line in lines:
+        # Cambiar a bucle while para poder procesar tablas (que requieren múltiples líneas)
+        i = 0
+        while i < len(lines):
+            line = lines[i]
             line_stripped = line.strip()
             
             # Saltar líneas vacías al inicio
             if not line_stripped:
                 if not content_started:
+                    i += 1
                     continue
                 else:
                     doc.add_paragraph()
+                    i += 1
                     continue
             
             # Detectar cuando empieza el contenido real (después de la portada)
@@ -112,6 +123,7 @@ def markdown_to_word(input_file, output_file=None, base_folder=None, template=No
                 if line_stripped.startswith('# '):
                     content_started = True
                 else:
+                    i += 1
                     continue
             
             if content_started:
@@ -119,31 +131,66 @@ def markdown_to_word(input_file, output_file=None, base_folder=None, template=No
                 if line_stripped.startswith('# '):
                     title = doc.add_heading(line_stripped[2:], level=0)
                     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    i += 1
                     continue
                 
                 # Encabezados nivel 1
                 if line_stripped.startswith('# '):
                     doc.add_heading(line_stripped[2:], level=1)
+                    i += 1
                     continue
                 
                 # Encabezados nivel 2
                 if line_stripped.startswith('## '):
                     doc.add_heading(line_stripped[3:], level=2)
+                    i += 1
                     continue
                 
                 # Encabezados nivel 3
                 if line_stripped.startswith('### '):
                     doc.add_heading(line_stripped[4:], level=3)
+                    i += 1
                     continue
                 
                 # Encabezados nivel 4
                 if line_stripped.startswith('#### '):
                     doc.add_heading(line_stripped[5:], level=4)
+                    i += 1
                     continue
                 
-                # Tablas
+                # Tablas - recolectar todas las filas de la tabla
                 if line_stripped.startswith('|') and '|' in line_stripped:
-                    continue  # Saltar tablas
+                    table_lines = []
+                    while i < len(lines) and '|' in lines[i]:
+                        table_lines.append(lines[i].strip())
+                        i += 1
+                    
+                    # Procesar la tabla
+                    if len(table_lines) >= 2:
+                        # Obtener encabezados de la primera fila
+                        headers = [cell.strip() for cell in table_lines[0].split('|') if cell.strip()]
+                        
+                        # Crear la tabla
+                        table = doc.add_table(rows=1, cols=len(headers))
+                        table.style = 'Table Grid'
+                        
+                        # Agregar encabezados
+                        hdr_cells = table.rows[0].cells
+                        for j, header in enumerate(headers):
+                            hdr_cells[j].text = header
+                            # Negrita para encabezados
+                            for paragraph in hdr_cells[j].paragraphs:
+                                for run in paragraph.runs:
+                                    run.font.bold = True
+                        
+                        # Agregar filas de datos (saltando la fila de separadores)
+                        for row_line in table_lines[2:]:
+                            cells = [cell.strip() for cell in row_line.split('|') if cell.strip()]
+                            if len(cells) == len(headers):
+                                row_cells = table.add_row().cells
+                                for j, cell in enumerate(cells):
+                                    row_cells[j].text = cell
+                    continue
                 
                 # Listas con viñetas
                 if line_stripped.startswith('- ') or line_stripped.startswith('* '):
@@ -154,6 +201,7 @@ def markdown_to_word(input_file, output_file=None, base_folder=None, template=No
                     except KeyError:
                         pass
                     add_formatted_text(para, bullet_text)
+                    i += 1
                     continue
                 
                 # Listas numeradas
@@ -167,7 +215,8 @@ def markdown_to_word(input_file, output_file=None, base_folder=None, template=No
                         except KeyError:
                             pass
                         add_formatted_text(para, bullet_text)
-                        continue
+                    i += 1
+                    continue
                 
                 # Imágenes
                 img_match = re.match(r'^!\[([^\]]*)\]\(([^)]+)\)$', line_stripped)
@@ -182,11 +231,13 @@ def markdown_to_word(input_file, output_file=None, base_folder=None, template=No
                             para.alignment = WD_ALIGN_PARAGRAPH.CENTER
                         except Exception as e:
                             print(f"  Advertencia: No se pudo agregar la imagen {image_path}: {e}")
+                    i += 1
                     continue
                 
                 # Texto normal
                 para = doc.add_paragraph()
                 add_formatted_text(para, line_stripped)
+                i += 1
         
         doc.save(output_file)
         print(f"Documento convertido exitosamente con portada: {output_file}")

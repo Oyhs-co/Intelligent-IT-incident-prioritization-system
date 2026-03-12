@@ -89,7 +89,7 @@ El sistema interactúa con cuatro actores principales que ejecutan las siguiente
 
 **Entidades Principales y Relaciones:**
 
-![Diagrama de Clases — Sistema Inteligente de Priorización de Incidentes IT](<Diagrama de Clases — Sistema Inteligente de Priorización de Incidentes IT.png>)
+![Diagrama de Clases — Sistema Inteligente de Priorización de Incidentes IT](/IMG/DiagramClass.png)
 
 ### 5.3 Diagrama de Actividad
 
