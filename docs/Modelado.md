@@ -1,10 +1,10 @@
 # Modelado del Sistema Inteligente de Priorización de Incidentes IT
 
-**Asignatura:** Ingeniería de Software  
-**Docente:** Aisner Marrugo  
-**Período Académico:** 2026-1P  
+**curso:** Ingeniería de Software  
+**profesor:** Aisner Marrugo  
+**periodo:** 2026-1P  
 **Fecha de Entrega:** 11 de marzo de 2026
-
+**escuela** Escuela de Transformacion digital
 **Estudiantes:**
 
 - Omar Yesid Hernandez Sotelo
@@ -95,97 +95,7 @@ El sistema interactúa con cuatro actores principales que ejecutan las siguiente
 
 Flujo principal desde la entrada del incidente hasta la asignación de prioridad:
 
-```
-Inicio
-  │
-  ▼
-┌─────────────────────────────────────┐
-│ 1. Reportador envía incidente       │
-│    (título, descripción, tipo)      │
-└────────────┬────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────┐
-│ 2. Sistema recibe incidente         │
-│    Validar campos obligatorios      │
-└────────────┬────────────────────────┘
-             │
-             ▼ (¿Válido?)
-        ┌────┴────┐
-        │         │
-      Sí│         │No
-        │      Rechazar
-        │      incidente
-        │
-        ▼
-┌─────────────────────────────────────┐
-│ 3. MÓDULO DE IA:                    │
-│    Procesar con NLP                 │
-│    - Limpiar y tokenizar texto      │
-│    - Extraer entidades clave        │
-└────────────┬────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────┐
-│ 4. MÓDULO DE IA:                    │
-│    Generar embedding semántico      │
-│    - Convertir a vector numérico    │
-└────────────┬────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────┐
-│ 5. Búsqueda de incidentes similares │
-│    Consultar base de datos histórica│
-│    (Top 5 más similares)            │
-└────────────┬────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────┐
-│ 6. MÓDULO DE IA:                    │
-│    Clasificación automática         │
-│    - Categoría del incidente        │
-│    - Prioridad preliminar           │
-└────────────┬────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────┐
-│ 7. Aplicar reglas de negocio        │
-│    - Ajuste por SLA                 │
-│    - Ajuste por impacto             │
-│    - Ajuste por criticidad sistema  │
-└────────────┬────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────┐
-│ 8. Generar justificación            │
-│    - Explicar decisión de IA        │
-│    - Mostrar incidentes similares   │
-│    - Indicar confianza (%)          │
-└────────────┬────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────┐
-│ 9. Asignar técnico idóneo           │
-│    - Según especialidad             │
-│    - Disponibilidad actual          │
-│    - Carga de trabajo               │
-└────────────┬────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────┐
-│ 10. Guardar prioridad y asignación  │
-│     Generar notificación            │
-└────────────┬────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────┐
-│ 11. Mostrar incidente priorizado al │
-│     técnico y reportador            │
-└────────────┬────────────────────────┘
-             │
-             ▼
-          Fin
-```
+![Diagrama de actividad](/IMG/DiagramActivity.jpg)
 
 ---
 
@@ -211,19 +121,3 @@ Inicio
 - **Sesgo en el modelo de IA:** Si el modelo no se reentren, podría producir prioridades incorrectas en nuevos tipos de incidentes
 - **Sobrecarga del sistema:** Sin escalado horizontal, el procesamiento de IA podría convertirse en cuello de botella
 - **Consistencia de datos:** Garantizar que todas las fuentes de incidentes tengan formato consistente es un desafío en crecimiento
-
----
-
-## 7. Conclusiones
-
-El modelado del Sistema Inteligente de Priorización de Incidentes IT ha permitido identificar una solución completa e integrada que automatiza procesos operativos críticos mediante inteligencia artificial.
-
-**Aprendizajes clave:**
-
-1. **Importancia del modelado previo:** Los diagramas UML clarificaron la arquitectura y evitaron conflictos de diseño durante la implementación
-2. **Integración de IA en sistemas transaccionales:** La IA no es un departamento aislado; debe integrarse estratégicamente en la lógica de negocio
-3. **Transparencia en decisiones automáticas:** Los usuarios confiaron más cuando el sistema explicaba sus decisiones
-4. **Necesidad de feedback:** Los sistemas de IA requieren retroalimentación continua para mejorar en el tiempo
-5. **Escalabilidad desde el inicio:** Es crítico diseñar para crecimiento desde el principio, especialmente en sistemas de IA
-
-Este modelado proporciona la base sólida para la implementación exitosa del sistema y demuestra la capacidad del equipo de desarrollar soluciones tecnológicas completas y bien fundamentadas.

@@ -1,0 +1,19 @@
+[project]
+name = "intelligent-it-incident-prioritization-system"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Jesus-MMM",email = "jesusmanuelmercadomachado@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "docx (>=0.2.4,<0.3.0)",
+    "python-docx (>=1.2.0,<2.0.0)",
+    "markdown (>=3.10.2,<4.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
