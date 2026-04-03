@@ -205,5 +205,5 @@ Revisar logs en la salida de `train.py` y `predict.py` para debugging.
 ---
 
 **Versión:** 1.0.0  
-**Última actualización:** 2024  
+**Última actualización:** 2026
 **Estado:** ✅ Producción
