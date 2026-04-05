@@ -49,7 +49,7 @@ class IncidentRepository(IIncidentRepository):
         incident._resolution_code = model.resolution_code
         incident._source = IncidentSource(model.source)
         incident._tags = model.tags or []
-        incident._metadata = model.metadata or {}
+        incident._metadata = model.custom_metadata or {}
         incident._reporter_id = UUID(model.reporter_id) if model.reporter_id else None
         incident._assigned_to = UUID(model.assigned_to) if model.assigned_to else None
         incident._resolved_by = UUID(model.resolved_by) if model.resolved_by else None
@@ -81,7 +81,7 @@ class IncidentRepository(IIncidentRepository):
             resolution_code=entity.resolution_code,
             source=entity.source.value,
             tags=entity.tags,
-            metadata=entity.metadata,
+            custom_metadata=entity.metadata,
             reporter_id=str(entity.reporter_id) if entity.reporter_id else None,
             assigned_to=str(entity.assigned_to) if entity.assigned_to else None,
             resolved_by=str(entity.resolved_by) if entity.resolved_by else None,

@@ -25,7 +25,7 @@ class IncidentEventModel(Base):
     old_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     new_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     user_id: Mapped[str | None] = mapped_column(UUID, ForeignKey("users.id"), nullable=True)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    custom_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     incident: Mapped["IncidentModel"] = relationship(

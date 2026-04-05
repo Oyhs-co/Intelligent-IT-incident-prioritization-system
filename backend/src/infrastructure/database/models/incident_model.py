@@ -44,7 +44,7 @@ class IncidentModel(Base):
     resolution_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
     source: Mapped[str] = mapped_column(String(20), default="web")
     tags: Mapped[dict] = mapped_column(JSON, default=list)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    custom_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     reporter_id: Mapped[str | None] = mapped_column(
         UUID, ForeignKey("users.id"), nullable=True
     )

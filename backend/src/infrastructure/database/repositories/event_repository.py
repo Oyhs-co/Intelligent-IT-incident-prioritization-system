@@ -32,7 +32,7 @@ class EventRepository(IIncidentEventRepository):
         event._old_value = model.old_value
         event._new_value = model.new_value
         event._user_id = UUID(model.user_id) if model.user_id else None
-        event._metadata = model.metadata or {}
+        event._metadata = model.custom_metadata or {}
         event._created_at = model.created_at
         return event
 
@@ -45,7 +45,7 @@ class EventRepository(IIncidentEventRepository):
             old_value=entity.old_value,
             new_value=entity.new_value,
             user_id=str(entity.user_id) if entity.user_id else None,
-            metadata=entity.metadata,
+            custom_metadata=entity.metadata,
             created_at=entity.created_at,
         )
 
