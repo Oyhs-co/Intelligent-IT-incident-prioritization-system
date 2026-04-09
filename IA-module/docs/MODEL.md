@@ -2,7 +2,7 @@
 
 Documentación del modelo de machine learning y su arquitectura.
 
-## 📋 Descripción
+## Descripcion
 
 Módulo que implementa un sistema inteligente de priorización automática de incidentes IT usando:
 - **Modelo**: Logistic Regression (RFC-06, RF-05)
@@ -10,7 +10,7 @@ Módulo que implementa un sistema inteligente de priorización automática de in
 - **Explicabilidad**: Análisis de palabras clave (RF-23)
 - **Framework**: scikit-learn
 
-## 🏗️ Estructura del Proyecto
+## Estructura del Proyecto
 
 ```
 IA-module/
@@ -45,7 +45,7 @@ IA-module/
 
 ```
 
-## 🚀 Cómo Usar
+## Como Usar
 
 ### 1. Entrenamiento del Modelo
 
@@ -92,7 +92,7 @@ python -m pytest test/test_model.py -v
 python test/test_model.py
 ```
 
-## 📊 Módulos Principales
+## Modulos Principales
 
 ### `utils.py` - Configuración y Utilidades
 - `Config`: Clase para parámetros centrales
@@ -120,11 +120,11 @@ X = processor.vectorize_texts(texts, fit=True)
 ```
 
 **Características:**
-- ✓ Limpieza de valores inválidos (NS, NA)
-- ✓ Generación de textos desde metadatos  
-- ✓ Validación de prioridades (1-4)
-- ✓ División train/validation/test automática
-- ✓ TF-IDF con parámetros optimizados
+- Limpieza de valores inválidos (NS, NA)
+- Generación de textos desde metadatos  
+- Validación de prioridades (1-4)
+- División train/validation/test automática
+- TF-IDF con parámetros optimizados
 
 ### `model_trainer.py` - Entrenamiento
 
@@ -177,7 +177,7 @@ explanation = predictor.explain_prediction(text, top_k=5)
 - Top 5 palabras clave contribuyentes
 - Razonamiento textual
 
-## ⚙️ Configuración
+## Configuracion
 
 Todos los parámetros centralizados en `src/utils.py - Config`:
 
@@ -196,7 +196,7 @@ MIN_ACCURACY = 0.70              # RNF-08: Precisión mínima 70%
 RESPONSE_TIME_SECONDS = 2        # RNF-01: < 2 segundos
 ```
 
-## 📈 Flujo de Datos
+## Flujo de Datos
 
 ```
 ITSM_data.csv
@@ -227,25 +227,25 @@ ITSM_data.csv
 API / Frontend
 ```
 
-## 🎯 Requisitos Implementados
+## Requisitos Implementados
 
 ### Requisitos Funcionales (RF)
-- ✅ **RF-05**: Análisis automático del incidente (TextProcessing + TF-IDF)
-- ✅ **RF-06**: Generación de prioridad sugerida (Predicción 1-4)
-- ✅ **RF-07**: Servicio de predicción (PriorityPredictor.predict())
-- ✅ **RF-08**: Uso de datos históricos (ITSM_data.csv)
-- ✅ **RF-09**: Reentrenamiento controlado (train.py)
-- ✅ **RF-23**: Explicación de predicción (explain_prediction())
+- **RF-05**: Analisis automatico del incidente (TextProcessing + TF-IDF)
+- **RF-06**: Generacion de prioridad sugerida (Prediccion 1-4)
+- **RF-07**: Servicio de prediccion (PriorityPredictor.predict())
+- **RF-08**: Uso de datos historicos (ITSM_data.csv)
+- **RF-09**: Reentrenamiento controlado (train.py)
+- **RF-23**: Explicacion de prediccion (explain_prediction())
 
 ### Requisitos No Funcionales (RNF)
-- ✅ **RNF-08**: Precisión mínima 70% (validación en trainer.validate())
-- ✅ **RNF-09**: Manejo de datos incompletos (limpieza y fillna)
-- ✅ **RNF-10**: Capacidad de generalización (train/val/test split)
-- ✅ **RNF-11**: Evaluación controlada (no hay automática en prodención)
-- ✅ **RNF-12**: Supervisión humana (predicción es "sugerida", no final)
-- ✅ **RNF-13**: Transparencia (explicabilidad integrada)
+- **RNF-08**: Precision minima 70% (validacion en trainer.validate())
+- **RNF-09**: Manejo de datos incompletos (limpieza y fillna)
+- **RNF-10**: Capacidad de generalizacion (train/val/test split)
+- **RNF-11**: Evaluacion controlada (no hay automatica en prodencion)
+- **RNF-12**: Supervision humana (prediccion es "sugerida", no final)
+- **RNF-13**: Transparencia (explicabilidad integrada)
 
-## 🧪 Ejemplos de Uso
+## Ejemplos de Uso
 
 ### Entrenamiento Básico
 
@@ -301,7 +301,7 @@ predictions = predictor.batch_predict(texts)
 results = predictor.batch_predict_with_confidence(texts)
 ```
 
-## 📝 Notas y Limitaciones
+## Notas y Limitaciones
 
 1. **Datos Sintéticos**: Como ITSM_data.csv no contiene descripción textual, se generan textos a partir de metadatos. Esto es una limitación temporal.
 
@@ -318,7 +318,7 @@ results = predictor.batch_predict_with_confidence(texts)
    - Predicción individual: ~10-50ms
    - Batch prediction: depende del tamaño
 
-## 🔍 Debugging
+## Debugging
 
 ### Logs detallados
 
@@ -334,13 +334,13 @@ python test/test_model.py
 python -m pytest test/test_model.py::TestDataProcessor::test_clean_data -v
 ```
 
-## 📚 Referencias
+## Referencias
 
 - Scikit-learn: https://scikit-learn.org/
 - TF-IDF: https://en.wikipedia.org/wiki/Tf%E2%80%93idf
 - Logistic Regression: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
 
-## ✍️ Autor
+## Autor
 
 Equipo IA - Sistema de Priorización de Incidentes IT
 

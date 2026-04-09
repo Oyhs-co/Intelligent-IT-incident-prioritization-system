@@ -1,30 +1,30 @@
-# 🤖 Módulo IA - Sistema de Priorización de Incidentes IT
+# Modulo IA - Sistema de Priorizacion de Incidentes IT
 
 **Modelo de Machine Learning para Priorización Automática de Incidentes IT**
 
-## 📌 Descripción Rápida
+## Descripcion Rapida
 
-Este módulo implementa un modelo de **clasificación de prioridades** (P1-P4) para incidentes IT usando:
-- 📊 **Modelo**: Logistic Regression
-- 🔤 **Features**: TF-IDF Vectorization  
-- 🎯 **Precisión Objetivo**: ≥ 70% (RNF-08)
-- ⏱️ **Tiempo Respuesta**: < 2 segundos (RNF-01)
-- 💡 **Explicabilidad**: Palabras clave contribuyentes (RF-23)
+Este modulo implementa un modelo de **clasificación de prioridades** (P1-P4) para incidentes IT usando:
+- **Modelo**: Logistic Regression
+- **Features**: TF-IDF Vectorization  
+- **Precision Objetivo**: >= 70% (RNF-01)
+- **Tiempo Respuesta**: < 2 segundos (RNF-01)
+- **Explicabilidad**: Palabras clave contribuyentes (RF-23)
 
-## 🚀 Inicio Rápido
+## Inicio Rapido
 
-### 1️⃣ Entrenar el modelo (primera vez)
+### 1. Entrenar el modelo (primera vez)
 
 ```bash
 cd IA-module
 python train.py
 ```
 
-✅ Genera:
+Genera:
 - `models/priority_classifier_v1.pkl` (modelo)
 - `models/priority_classifier_v1_vectorizer.pkl` (vectorizador TF-IDF)
 
-### 2️⃣ Predecir prioridades
+### 2. Predecir prioridades
 
 ```bash
 # Demo interactivo
@@ -34,7 +34,7 @@ python predict.py
 python predict.py "Critical hardware failure affecting all users"
 ```
 
-### 3️⃣ Ejemplos completos
+### 3. Ejemplos completos
 
 ```bash
 python examples.py
@@ -42,13 +42,13 @@ python examples.py
 
 Ejecuta 4 demostraciones (entrenamiento, predicción simple, con explicación, en lotes)
 
-### 4️⃣ Tests
+### 4. Tests
 
 ```bash
 python test/test_model.py
 ```
 
-## 📂 Estructura
+## Estructura
 
 ```
 src/                          # Módulos principales
@@ -66,7 +66,7 @@ predict.py                    # Predicción
 examples.py                   # Ejemplos
 ```
 
-## 💻 API Básica
+## API Basica
 
 ### Entrenar
 
@@ -112,7 +112,7 @@ explanation = predictor.explain_prediction(text, top_k=5)
 # }
 ```
 
-## 📊 Parámetros Configurables
+## Parametros Configurables
 
 En `src/utils.py - Config`:
 
@@ -122,21 +122,21 @@ TEST_SIZE = 0.2                # % para test
 MIN_ACCURACY = 0.70            # Requisito mínimo
 ```
 
-## ✅ Requisitos Implementados
+## Requisitos Implementados
 
-| Requisito | Implementación |
+| Requerimiento | Implementacion |
 |-----------|---|
-| **RF-05** | Análisis automático → TF-IDF |
-| **RF-06** | Generación P1-P4 → classifer.predict() |
-| **RF-07** | Servicio predicción → PriorityPredictor |
-| **RF-23** | Explicación textos → explain_prediction() |
-| **RNF-08** | Precisión ≥70% → trainer.validate() |
-| **RNF-09** | Datos incompletos → data cleaning |
-| **RNF-10** | Generalización → test set |
-| **RNF-11** | Evaluación controlada → no automática |
-| **RNF-13** | Transparencia → explicabilidad |
+| **RF-05** | Analisis automatico -> TF-IDF |
+| **RF-06** | Generacion P1-P4 -> classifer.predict() |
+| **RF-07** | Servicio prediccion -> PriorityPredictor |
+| **RF-23** | Explicacion textos -> explain_prediction() |
+| **RNF-08** | Precision >=70% -> trainer.validate() |
+| **RNF-09** | Datos incompletos -> data cleaning |
+| **RNF-10** | Generalizacion -> test set |
+| **RNF-11** | Evaluacion controlada -> no automatica |
+| **RNF-13** | Transparencia -> explicabilidad |
 
-## 🧪 Pruebas
+## Pruebas
 
 ```bash
 # Todos los tests
@@ -147,14 +147,14 @@ python test/verify_data.py
 ```
 
 Cubre:
-- ✓ Carga y limpieza de datos
-- ✓ Vectorización TF-IDF
-- ✓ Entrenamiento y validación
-- ✓ Predicción
-- ✓ Explicabilidad
-- ✓ Pipeline completo
+- Carga y limpieza de datos
+- Vectorizacion TF-IDF
+- Entrenamiento y validacion
+- Prediccion
+- Explicabilidad
+- Pipeline completo
 
-## 📚 Documentación Detallada
+## Documentacion Detallada
 
 Ver [MODEL.md](MODEL.md) para:
 - Arquitectura completa
@@ -162,7 +162,7 @@ Ver [MODEL.md](MODEL.md) para:
 - Guía de debugging
 - Notas técnicas
 
-## 🎯 Flujo Típico
+## Flujo Tipico
 
 ```
 1. Datos (ITSM_data.csv)
@@ -184,7 +184,7 @@ Ver [MODEL.md](MODEL.md) para:
    API / Frontend
 ```
 
-## 🤔 Preguntas Frecuentes
+## Preguntas Frecuentes
 
 **P: ¿Dónde están los datos?**
 - A: En `data/ITSM_data.csv`
@@ -198,7 +198,7 @@ Ver [MODEL.md](MODEL.md) para:
 **P: ¿Cómo escalo a producción?**
 - A: Usa la clase PriorityPredictor en tu API (Flask, FastAPI, etc.)
 
-## 📞 Soporte
+## Soporte
 
 Revisar logs en la salida de `train.py` y `predict.py` para debugging.
 
@@ -206,4 +206,4 @@ Revisar logs en la salida de `train.py` y `predict.py` para debugging.
 
 **Versión:** 1.0.0  
 **Última actualización:** 2026
-**Estado:** ✅ Producción
+**Estado:** Produccion

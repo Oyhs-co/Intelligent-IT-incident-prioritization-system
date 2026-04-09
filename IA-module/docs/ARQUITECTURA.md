@@ -1,8 +1,8 @@
-# 🏗️ Arquitectura del Módulo IA
+# Arquitectura del Módulo IA
 
 Documentación de la arquitectura del sistema de priorización de incidentes.
 
-## 📐 Diseño de Capas
+## Diseño de Capas
 
 El módulo sigue una **arquitectura modular en capas** (Clean Architecture) para máxima escalabilidad:
 
@@ -37,7 +37,7 @@ El módulo sigue una **arquitectura modular en capas** (Clean Architecture) para
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## 🔄 Flujo de Datos
+## Flujo de Datos
 
 ```
 ENTRADA (CSV)
@@ -79,7 +79,7 @@ ENTRADA (CSV)
     └─→ SALIDA (Predicciones)
 ```
 
-## 📦 Módulos Principales
+## Modulos Principales
 
 ### 1. `utils.py` - Configuración y Utilidades
 
@@ -127,7 +127,7 @@ DataProcessor
     └─→ Ejecuta todo el proceso end-to-end
 ```
 
-**Patrón**: Pipeline (encadenamiento de operaciones)  
+**Patron**: Pipeline (encadenamiento de operaciones)  
 **Ventaja**: Reutilizable, testeable, modular
 
 **Configuración en DataProcessor:**
@@ -162,10 +162,10 @@ ModelTrainer
 ```
 
 **Modelo Usado**: Logistic Regression
-- ✅ Interpretable (coeficientes)
-- ✅ Rápido (< 2ms predicción)
--✅ Explainable (contribución de features)
-- ✅ Escalable a más datos
+- Interpretable (coeficientes)
+- Rapido (< 2ms prediccion)
+- Explainable (contribucion de features)
+- Escalable a mas datos
 
 **Parámetros**:
 ```python
@@ -177,8 +177,8 @@ LogisticRegression(
 )
 ```
 
-**Patrón**: Strategy (encapsular modelo)  
-**Ventaja**: Fácil cambiar modelo a Random Forest, XGBoost, etc.
+**Patron**: Strategy (encapsular modelo)  
+**Ventaja**: Facil cambiar modelo a Random Forest, XGBoost, etc.
 
 ### 4. `predictor.py` - Predicción y Explicabilidad
 
@@ -224,10 +224,10 @@ explanation = {
 }
 ```
 
-**Patrón**: Composite (múltiples datos de explicación)  
+**Patron**: Composite (multiples datos de explicacion)  
 **Ventaja**: Interpretabilidad total del modelo
 
-## 🔗 Dependencias Entre Módulos
+## Dependencias Entre Modulos
 
 ```
 train.py
@@ -251,7 +251,7 @@ examples.py
 
 **Nota**: Dependencias unidireccionales → Bajo acoplamiento
 
-## 📊 Patrones de Diseño
+## Patrones de Diseno
 
 | Patrón | Módulo | Beneficio |
 |--------|--------|-----------|
@@ -261,26 +261,26 @@ examples.py
 | **Factory** | save_vectorizer | Creación de artefactos |
 | **Composite** | explain_prediction() | Múltiples datos explicación |
 
-## 🔐 Principios SOLID
+## Principios SOLID
 
-✅ **S (Single Responsibility)**
+**S (Single Responsibility)**
 - DataProcessor: Procesamiento
 - ModelTrainer: Entrenamiento
-- PriorityPredictor: Predicción
+- PriorityPredictor: Prediccion
 
-✅ **O (Open/Closed)**
-- Fácil agregar nuevos modelos
+**O (Open/Closed)**
+- Facil agregar nuevos modelos
 
-✅ **L (Liskov Substitution)**
-- Métodos reemplazo directo
+**L (Liskov Substitution)**
+- Metodos reemplazo directo
 
-✅ **I (Interface Segregation)**
-- API mínima y clara
+**I (Interface Segregation)**
+- API minima y clara
 
-✅ **D (Dependency Inversion)**
+**D (Dependency Inversion)**
 - Config centralizada via Utils
 
-## 🚀 Escalabilidad
+## Escalabilidad
 
 ### Presente (MVP)
 ```
@@ -318,7 +318,7 @@ Arquitectura Microservicios:
 
 **Sin cambios necesarios en `src/`** - Completamente agnóstico a infraestructura.
 
-## 🧪 Testabilidad
+## Testabilidad
 
 Estructura permite tests a múltiples niveles:
 
@@ -338,7 +338,7 @@ Load Tests
 └─→ Predicción batch rendimiento
 ```
 
-## 📈 Métricas de Código
+## Metricas de Codigo
 
 | Métrica | Target |
 |---------|--------|
@@ -348,7 +348,7 @@ Load Tests
 | Modules | 4 core + scripts |
 | Dependencies | scikit-learn, pandas, numpy |
 
-## 🔄 Ciclo de Vida del Modelo
+## Ciclo de Vida del Modelo
 
 ```
 1. Entrenamiento (train.py)
@@ -367,7 +367,7 @@ Load Tests
    └─→ Update: *.pkl
 ```
 
-## 🎯 Requerimientos Soportados
+## Requerimientos Soportados
 
 | Tipo | Requisito | Implementación |
 |------|-----------|---|
@@ -379,7 +379,7 @@ Load Tests
 | **RNF** | RNF-11 | no automático |
 | **RNF** | RNF-13 | explicabilidad |
 
-## 📝 Ejercicios de Extensión
+## Ejercicios de Extension
 
 Si necesitas extender el sistema:
 
