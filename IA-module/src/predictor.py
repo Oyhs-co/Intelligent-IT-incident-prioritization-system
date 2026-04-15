@@ -19,7 +19,7 @@ from .utils import logger, Config
 class PriorityPredictor:
     """Realiza predicciones y proporciona explicabilidad."""
     
-    PRIORITY_LABELS = {1: "P1 (Low)", 2: "P2 (Medium)", 3: "P3 (High)", 4: "P4 (Critical)"}
+    PRIORITY_LABELS = {1: "P1 (Critical)", 2: "P2 (Medium)", 3: "P3 (Low)"}
     
     def __init__(
         self,
@@ -68,13 +68,13 @@ class PriorityPredictor:
         """
         Predice la prioridad para un texto de incidente.
         
-        Requisito RF-06: Generar prioridad sugerida (P1, P2, P3, P4)
+        Requisito RF-06: Generar prioridad sugerida (P1=Critical, P2=Medium, P3=Low)
         
         Args:
             text: Descripción del incidente
             
         Returns:
-            Prioridad predicha (1-4)
+            Prioridad predicha (1-3)
         """
         X = self.vectorizer.transform([text])
         prediction = self.model.predict(X)[0]
@@ -123,7 +123,7 @@ class PriorityPredictor:
         
         # Obtener coeficientes del modelo para la clase predicha
         # En LogisticRegression, los coeficientes indican la importancia de each feature
-        class_index = int(prediction) - 1  # Índice en array (0-3)
+        class_index = int(prediction) - 1  # Índice en array (0-2)
         coefficients = self.model.coef_[class_index]
         
         # Convertir features a dense para análisis

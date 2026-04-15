@@ -10,6 +10,14 @@ Módulo que implementa un sistema inteligente de priorización automática de in
 - **Explicabilidad**: Análisis de palabras clave (RF-23)
 - **Framework**: scikit-learn
 
+## Sistema de Prioridades
+
+| Prioridad | Etiqueta | Descripción |
+|-----------|----------|--------------|
+| P1 | Critical | Incidentes de máxima urgencia |
+| P2 | Medium | Incidentes de prioridad media |
+| P3 | Low | Incidentes de baja prioridad |
+
 ## Estructura del Proyecto
 
 ```
@@ -22,26 +30,24 @@ IA-module/
 │   └── predictor.py         # Predicción y explicabilidad
 │
 ├── data/                     # Datos
-│   ├── ITSM_data.csv        # Dataset principal
-│   ├── incident_event_log.csv
-│   ├── ITSM_data_cleaned.csv
-│   └── all_tickets_processed_improved_v3.csv
+│   ├── it_tickets_merged.csv    # Dataset principal (45,988 tickets)
+│   ├── aa_dataset-tickets-multi-lang-5-2-50-version.csv
+│   └── IT Support Ticket Data.csv
 │
 ├── models/                   # Modelos entrenados (generado)
 │   ├── priority_classifier_v1.pkl
 │   └── priority_classifier_v1_vectorizer.pkl
 │
 ├── test/                     # Tests
-│   ├── verify_data.py       # Verificación de datos
-│   └── test_model.py        # Tests unitarios
+│   ├── test_model.py        # Tests unitarios
+│   └── examples.py          # Ejemplos de uso
 │
 ├── docs/                     # Documentación
 │   └── seleccion_dataset.md # Análisis de datasets
 │
 ├── train.py                 # Script de entrenamiento
 ├── predict.py               # Script de predicción
-├── MODEL.md                 # Este archivo
-└── requirements.txt         # Dependencias
+└── pyproject.toml           # Dependencias (Poetry)
 
 ```
 
@@ -51,13 +57,13 @@ IA-module/
 
 ```bash
 cd IA-module
-python train.py
+poetry run python train.py
 ```
 
 **Qué hace:**
-- Carga ITSM_data.csv
+- Carga `it_tickets_merged.csv`
 - Limpia y valida datos
-- Genera textos de incidentes desde metadatos
+- Extrae textos de la columna `text`
 - Vectoriza con TF-IDF (1000 features)
 - Entrena Logistic Regression
 - Valida y evalúa el modelo
@@ -73,13 +79,13 @@ python train.py
 #### Desde línea de comandos:
 
 ```bash
-python predict.py "Category: Hardware. Impact: Critical. Urgency: High"
+poetry run python predict.py "Critical server failure affecting all users"
 ```
 
 #### Ejecutar demo:
 
 ```bash
-python predict.py
+poetry run python predict.py
 ```
 
 Mostrará ejemplos de predicción con explicaciones.
@@ -87,9 +93,7 @@ Mostrará ejemplos de predicción con explicaciones.
 ### 3. Tests
 
 ```bash
-python -m pytest test/test_model.py -v
-# o
-python test/test_model.py
+poetry run python test/test_model.py
 ```
 
 ## Modulos Principales
@@ -97,7 +101,7 @@ python test/test_model.py
 ### `utils.py` - Configuración y Utilidades
 - `Config`: Clase para parámetros centrales
 - `setup_logger()`: Logging estandarizado
-- `validate_priority()`: Validación de prioridades
+- `validate_priority()`: Validación de prioridades (1-3)
 - Rutas y configuraciones centralizadas
 
 ### `data_processor.py` - Procesamiento de Datos
@@ -109,7 +113,7 @@ processor = DataProcessor()
 
 # Pipeline completo
 X_train, X_val, X_test, y_train, y_val, y_test = processor.preprocess_pipeline(
-    Path("data/ITSM_data.csv")
+    Path("data/it_tickets_merged.csv")
 )
 
 # Pasos individuales
@@ -121,8 +125,8 @@ X = processor.vectorize_texts(texts, fit=True)
 
 **Características:**
 - Limpieza de valores inválidos (NS, NA)
-- Generación de textos desde metadatos  
-- Validación de prioridades (1-4)
+- Filtrado de textos vacíos
+- Validación de prioridades (1-3)
 - División train/validation/test automática
 - TF-IDF con parámetros optimizados
 
@@ -161,7 +165,7 @@ trainer.save_model()
 predictor = PriorityPredictor()
 
 # Predicción simple
-priority = predictor.predict(text)  # Retorna 1-4
+priority = predictor.predict(text)  # Retorna 1-3
 
 # Con confianza
 priority, confidence = predictor.predict_with_confidence(text)
@@ -171,7 +175,7 @@ explanation = predictor.explain_prediction(text, top_k=5)
 ```
 
 **Explicación Incluye:**
-- Prioridad predicha (P1-P4)
+- Prioridad predicha (P1-P3)
 - Nivel de confianza (0-100%)
 - Probabilidades por clase
 - Top 5 palabras clave contribuyentes
@@ -199,12 +203,11 @@ RESPONSE_TIME_SECONDS = 2        # RNF-01: < 2 segundos
 ## Flujo de Datos
 
 ```
-ITSM_data.csv
+it_tickets_merged.csv
     ↓
 [DataProcessor]
     ├─ load_data()
     ├─ clean_data()
-    ├─ generate_incident_text()
     ├─ prepare_texts_and_labels()
     └─ vectorize_texts()  → TF-IDF Features
     ↓
@@ -220,7 +223,7 @@ ITSM_data.csv
     priority_classifier_v1.pkl
     ↓
 [PriorityPredictor]
-    ├─ predict()              → Prioridad (1-4)
+    ├─ predict()              → Prioridad (1-3)
     ├─ predict_with_confidence() → (Prioridad, Confianza)
     └─ explain_prediction()   → Explicación con palabras clave
     ↓
@@ -231,9 +234,9 @@ API / Frontend
 
 ### Requisitos Funcionales (RF)
 - **RF-05**: Analisis automatico del incidente (TextProcessing + TF-IDF)
-- **RF-06**: Generacion de prioridad sugerida (Prediccion 1-4)
+- **RF-06**: Generacion de prioridad sugerida (Prediccion 1-3)
 - **RF-07**: Servicio de prediccion (PriorityPredictor.predict())
-- **RF-08**: Uso de datos historicos (ITSM_data.csv)
+- **RF-08**: Uso de datos historicos (it_tickets_merged.csv)
 - **RF-09**: Reentrenamiento controlado (train.py)
 - **RF-23**: Explicacion de prediccion (explain_prediction())
 
@@ -257,7 +260,7 @@ from pathlib import Path
 # Preprocesar
 processor = DataProcessor()
 X_train, X_val, X_test, y_train, y_val, y_test = processor.preprocess_pipeline(
-    Path("data/ITSM_data.csv")
+    Path("data/it_tickets_merged.csv")
 )
 
 # Entrenar
@@ -303,12 +306,12 @@ results = predictor.batch_predict_with_confidence(texts)
 
 ## Notas y Limitaciones
 
-1. **Datos Sintéticos**: Como ITSM_data.csv no contiene descripción textual, se generan textos a partir de metadatos. Esto es una limitación temporal.
+1. **Accuracy actual**: El modelo Logístico actual alcanza ~48% accuracy. Se requiere optimización (hiperparámetros, mejor modelo, feature engineering).
 
-2. **Escalabilidad**: El modelo es Un monolito modular, pero la arquitectura permite migración futura a microservicios sin cambios significativos en el código.
+2. **Escalabilidad**: El modelo es un monolito modular, pero la arquitectura permite migración futura a microservicios sin cambios significativos en el código.
 
 3. **Mejoras Futuras**:
-   - Integrar descripciones textuales reales
+   - Ajuste de hiperparámetros
    - Usar embeddings (Word2Vec, BERT)
    - Ensemble de modelos
    - Feature engineering más sofisticado
@@ -328,10 +331,7 @@ Los logs incluyen información de cada fase. Ver `setup_logger()` en utils.py
 
 ```bash
 # Ejecutar todos los tests
-python test/test_model.py
-
-# Específicos
-python -m pytest test/test_model.py::TestDataProcessor::test_clean_data -v
+poetry run python test/test_model.py
 ```
 
 ## Referencias
@@ -344,4 +344,4 @@ python -m pytest test/test_model.py::TestDataProcessor::test_clean_data -v
 
 Equipo IA - Sistema de Priorización de Incidentes IT
 
-Versión: 1.0.0
+Versión: 1.1.0

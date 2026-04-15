@@ -29,7 +29,7 @@ class TestDataProcessor(unittest.TestCase):
     
     def setUp(self):
         self.processor = DataProcessor()
-        self.data_file = Config.get_data_path("ITSM_data.csv")
+        self.data_file = Config.get_data_path("it_tickets_merged.csv")
     
     def test_load_data(self):
         """Test: Cargar datos correctamente."""
@@ -37,7 +37,7 @@ class TestDataProcessor(unittest.TestCase):
             df = self.processor.load_data(self.data_file)
             self.assertIsNotNone(df)
             self.assertGreater(len(df), 0)
-            self.assertIn("Priority", df.columns)
+            self.assertIn("priority", df.columns)
     
     def test_clean_data(self):
         """Test: Limpieza de datos."""
@@ -45,32 +45,32 @@ class TestDataProcessor(unittest.TestCase):
             df = self.processor.load_data(self.data_file)
             df_clean = self.processor.clean_data(df)
             
-            # Verificar que Priority no tiene NaN
-            self.assertEqual(df_clean["Priority"].isnull().sum(), 0)
+            self.assertEqual(df_clean["priority"].isnull().sum(), 0)
             
-            # Verificar que todas las prioridades son válidas
-            for priority in df_clean["Priority"]:
-                self.assertIn(priority, [1, 2, 3, 4])
+            for priority in df_clean["priority"]:
+                self.assertIn(priority, [1, 2, 3])
     
-    def test_generate_incident_text(self):
-        """Test: Generación de texto de incidente."""
+    def test_prepare_texts_and_labels(self):
+        """Test: Preparación de textos y etiquetas."""
         if self.data_file.exists():
             df = self.processor.load_data(self.data_file)
             df_clean = self.processor.clean_data(df)
             
-            row = df_clean.iloc[0]
-            text = self.processor.generate_incident_text(row)
+            texts, labels = self.processor.prepare_texts_and_labels(df_clean)
             
-            self.assertIsNotNone(text)
-            self.assertIsInstance(text, str)
-            self.assertGreater(len(text), 0)
+            self.assertIsNotNone(texts)
+            self.assertIsNotNone(labels)
+            self.assertEqual(len(texts), len(labels))
+            self.assertEqual(len(texts), len(df_clean))
     
     def test_vectorize_texts(self):
         """Test: Vectorización TF-IDF."""
         texts = [
-            "Hardware failure critical impact",
-            "Software bug low impact",
-            "Network issue high impact"
+            "Hardware failure critical impact server down",
+            "Software bug low impact application error",
+            "Network issue high impact connectivity problems",
+            "Security incident critical data breach",
+            "Password reset medium priority user request"
         ]
         
         vectors = self.processor.vectorize_texts(texts, fit=True)
@@ -83,7 +83,7 @@ class TestDataProcessor(unittest.TestCase):
         self.assertTrue(validate_priority(1))
         self.assertTrue(validate_priority(2))
         self.assertTrue(validate_priority(3))
-        self.assertTrue(validate_priority(4))
+        self.assertFalse(validate_priority(4))
         self.assertFalse(validate_priority(5))
         self.assertFalse(validate_priority(0))
         self.assertFalse(validate_priority("invalid"))
@@ -98,7 +98,7 @@ class TestModelTrainer(unittest.TestCase):
         # Datos de prueba
         np.random.seed(Config.RANDOM_STATE)
         self.X_test = np.random.rand(100, 50)
-        self.y_test = np.random.randint(1, 5, 100)
+        self.y_test = np.random.randint(1, 4, 100)
     
     def test_create_model(self):
         """Test: Creación del modelo."""
@@ -121,7 +121,7 @@ class TestModelTrainer(unittest.TestCase):
         
         self.assertEqual(len(predictions), 10)
         for pred in predictions:
-            self.assertIn(pred, [1, 2, 3, 4])
+            self.assertIn(pred, [1, 2, 3])
     
     def test_predict_proba(self):
         """Test: Predicción con probabilidades."""
@@ -131,7 +131,7 @@ class TestModelTrainer(unittest.TestCase):
         proba = self.trainer.predict_proba(self.X_test[:10])
         
         self.assertEqual(proba.shape[0], 10)
-        self.assertEqual(proba.shape[1], 4)
+        self.assertEqual(proba.shape[1], 3)
         
         # Verificar que las probabilidades suman 1
         for prob_row in proba:
@@ -155,9 +155,9 @@ class TestPredictor(unittest.TestCase):
         """Test: Etiquetas de prioridad."""
         labels = PriorityPredictor.PRIORITY_LABELS
         
-        self.assertEqual(len(labels), 4)
+        self.assertEqual(len(labels), 3)
         self.assertIn(1, labels)
-        self.assertIn(4, labels)
+        self.assertIn(3, labels)
 
 
 class TestIntegration(unittest.TestCase):
@@ -165,12 +165,12 @@ class TestIntegration(unittest.TestCase):
     
     def setUp(self):
         Config.ensure_dirs()
-        self.data_file = Config.get_data_path("ITSM_data.csv")
+        self.data_file = Config.get_data_path("it_tickets_merged.csv")
     
     def test_full_pipeline(self):
         """Test: Pipeline completo (si hay dataset disponible)."""
         if not self.data_file.exists():
-            self.skipTest("Dataset ITSM_data.csv no disponible")
+            self.skipTest("Dataset it_tickets_merged.csv no disponible")
         
         # Preprocesamiento
         processor = DataProcessor()

@@ -63,73 +63,27 @@ class DataProcessor:
         logger.info("Iniciando limpieza de datos")
         df_clean = df.copy()
         
-        # Reemplazar valores no estándar
         df_clean.replace({"NS": np.nan, "NA": np.nan}, inplace=True)
         
-        # Convertir Priority, Impact, Urgency a numéricos
-        numeric_cols = ["Priority", "Impact", "Urgency"]
-        for col in numeric_cols:
-            if col in df_clean.columns:
-                df_clean[col] = pd.to_numeric(df_clean[col], errors="coerce")
+        if "priority" in df_clean.columns:
+            df_clean["priority"] = pd.to_numeric(df_clean["priority"], errors="coerce")
         
-        # Eliminar filas sin Priority (target variable)
-        if "Priority" in df_clean.columns:
+        if "priority" in df_clean.columns:
             initial_rows = len(df_clean)
-            df_clean = df_clean.dropna(subset=["Priority"])
+            df_clean = df_clean.dropna(subset=["priority"])
             removed = initial_rows - len(df_clean)
-            logger.info(f"Se eliminaron {removed} filas sin Priority")
+            logger.info(f"Se eliminaron {removed} filas sin priority")
         
-        # Filtrar prioridades válidas (1-4)
-        if "Priority" in df_clean.columns:
-            df_clean = df_clean[df_clean["Priority"].isin([1, 2, 3, 4])]
+        if "priority" in df_clean.columns:
+            df_clean = df_clean[df_clean["priority"].isin([1, 2, 3])]
             logger.info(f"Después de filtrar: {len(df_clean)} filas válidas")
+        
+        if "text" in df_clean.columns:
+            df_clean = df_clean[df_clean["text"].notna() & (df_clean["text"].str.strip() != "")]
+            logger.info(f"Después de filtrar textos vacíos: {len(df_clean)} filas")
         
         logger.info(f"Limpieza completada: {len(df_clean)} filas")
         return df_clean
-    
-    def generate_incident_text(self, row: pd.Series) -> str:
-        """
-        Genera texto de descripción de incidente a partir de metadatos.
-        
-        Esto es necesario porque ITSM_data.csv no tiene descripción textual.
-        Combina campos estructurados para crear un texto más realista.
-        
-        Args:
-            row: Fila del DataFrame
-            
-        Returns:
-            Texto del incidente
-        """
-        parts = []
-        
-        # Categoría
-        if pd.notna(row.get("Category")):
-            parts.append(f"Category: {row['Category']}")
-        
-        # Subcategoría
-        if pd.notna(row.get("CI_Subcat")):
-            parts.append(f"Type: {row['CI_Subcat']}")
-        
-        # Impacto
-        if pd.notna(row.get("Impact")):
-            impact_map = {1: "Low", 2: "Medium", 3: "High", 4: "Critical"}
-            parts.append(f"Impact Level: {impact_map.get(row['Impact'], 'Unknown')}")
-        
-        # Urgencia
-        if pd.notna(row.get("Urgency")):
-            urgency_map = {1: "Low", 2: "Medium", 3: "High", 4: "Critical"}
-            parts.append(f"Urgency: {urgency_map.get(row['Urgency'], 'Unknown')}")
-        
-        # Estado
-        if pd.notna(row.get("Status")):
-            parts.append(f"Status: {row['Status']}")
-        
-        # Código de cierre
-        if pd.notna(row.get("Closure_Code")):
-            parts.append(f"Resolution: {row['Closure_Code']}")
-        
-        text = ". ".join(parts)
-        return text if text else "Incident with no details"
     
     def prepare_texts_and_labels(self, df: pd.DataFrame) -> Tuple[List[str], np.ndarray]:
         """
@@ -141,15 +95,13 @@ class DataProcessor:
         Returns:
             Tupla (lista de textos, array de etiquetas)
         """
-        logger.info("Generando textos de incidentes desde metadatos")
+        logger.info("Preparando textos y etiquetas")
         
-        # Generar textos a partir de los datos disponibles
-        texts = df.apply(self.generate_incident_text, axis=1).tolist()
+        texts = df["text"].tolist()
         
-        # Etiquetas de prioridad
-        labels = df["Priority"].astype(int).values
+        labels = df["priority"].astype(int).values
         
-        logger.info(f"Textos generados: {len(texts)}")
+        logger.info(f"Textos preparados: {len(texts)}")
         logger.info(f"Distribución de prioridades:\n{pd.Series(labels).value_counts().sort_index()}")
         
         return texts, labels

@@ -13,7 +13,7 @@ El módulo sigue una **arquitectura modular en capas** (Clean Architecture) para
 │  - Orquestación del flujo                                   │
 │  - Interfaz con usuario/API                                 │
 └─────────────────────────────────────────────────────────────┘
-                           ↓
+                            ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                CAPA DE APLICACIÓN (SERVICIOS)               │
 │  - ModelTrainer (modelo_trainer.py)                         │
@@ -21,13 +21,13 @@ El módulo sigue una **arquitectura modular en capas** (Clean Architecture) para
 │  - DataProcessor (data_processor.py)                        │
 │  Responsabilidades: Lógica de negocio, Orquestación         │
 └─────────────────────────────────────────────────────────────┘
-                           ↓
+                            ↓
 ┌─────────────────────────────────────────────────────────────┐
 │            CAPA DE UTILIDADES & CONFIGURACIÓN               │
 │  - Utils (utils.py): Config, Logger, Validación             │
 │  Responsabilidades: Configuración centralizada, Logging     │
 └─────────────────────────────────────────────────────────────┘
-                           ↓
+                            ↓
 ┌─────────────────────────────────────────────────────────────┐
 │              CAPA DE PERSISTENCIA                           │
 │  - scikit-learn (pickle files)                              │
@@ -40,20 +40,20 @@ El módulo sigue una **arquitectura modular en capas** (Clean Architecture) para
 ## Flujo de Datos
 
 ```
-ENTRADA (CSV)
+it_tickets_merged.csv (45,988 tickets)
     │
     ├─→ DataProcessor.load_data()
-    │   ├─→ Lectura CSV con pandas
-    │   └─→ Validación estructura básica
+    │   └─→ Lectura CSV con pandas
     │
     ├─→ DataProcessor.clean_data()
     │   ├─→ Reemplazo NS/NA → NaN
-    │   ├─→ Conversión tipos
-    │   └─→ Eliminación rows inválidas
+    │   ├─→ Conversión priority a numérico
+    │   ├─→ Filtrado prioridades (1-3)
+    │   └─→ Filtrado textos vacíos
     │
     ├─→ DataProcessor.prepare_texts_and_labels()
-    │   ├─→ Generación textos desde metadatos
-    │   └─→ Extracción etiquetas (Priority)
+    │   ├─→ Extracción de columna 'text'
+    │   └─→ Extracción de etiquetas (priority)
     │
     ├─→ DataProcessor.vectorize_texts()
     │   ├─→ TfidfVectorizer.fit_transform()
@@ -79,6 +79,14 @@ ENTRADA (CSV)
     └─→ SALIDA (Predicciones)
 ```
 
+## Sistema de Prioridades
+
+| Valor | Etiqueta | Descripción |
+|-------|----------|-------------|
+| 1 | P1 (Critical) | Máxima prioridad |
+| 2 | P2 (Medium) | Prioridad media |
+| 3 | P3 (Low) | Baja prioridad |
+
 ## Modulos Principales
 
 ### 1. `utils.py` - Configuración y Utilidades
@@ -94,8 +102,7 @@ Config                    # Clase con parámetros centralizados
 └── RESPONSE_TIME_SECONDS # 2 (RNF-01)
 
 setup_logger()           # Logger formateado
-load_config()           # Cargar JSON config
-validate_priority()     # Validación (1-4)
+validate_priority()      # Validación (1-3)
 ```
 
 **Patrón**: Singleton + Factory (Config)  
@@ -112,12 +119,10 @@ DataProcessor
 ├── clean_data()
 │   ├─→ Reemplazo valores inválidos
 │   ├─→ Conversión tipos
-│   └─→ Filtrado prioridades válidas
-├── generate_incident_text()
-│   └─→ Combina metadatos en texto
+│   └─→ Filtrado prioridades válidas (1-3) y textos vacíos
 ├── prepare_texts_and_labels()
-│   ├─→ Generar textos de incidentes
-│   └─→ Extraer etiquetas de prioridad
+│   ├─→ Extracción de columna 'text'
+│   └─→ Extracción de etiquetas de prioridad
 ├── vectorize_texts(fit=True/False)
 │   ├─→ TfidfVectorizer (fit_transform)
 │   └─→ Matriz sparse (n_samples, n_features)
@@ -128,7 +133,7 @@ DataProcessor
 ```
 
 **Patron**: Pipeline (encadenamiento de operaciones)  
-**Ventaja**: Reutilizable, testeable, modular
+**Ventaja**: Reusable, testeable, modular
 
 **Configuración en DataProcessor:**
 ```python
@@ -172,8 +177,7 @@ ModelTrainer
 LogisticRegression(
     max_iter=1000,
     solver='lbfgs',
-    multi_class='multinomial',
-    class_weight='balanced'  # Para clases desbalanceadas
+    class_weight='balanced'
 )
 ```
 
@@ -187,7 +191,7 @@ LogisticRegression(
 ```
 PriorityPredictor
 ├── predict(text)
-│   └─→ Priority (1-4)
+│   └─→ Priority (1-3)
 ├── predict_with_confidence(text)
 │   └─→ (Priority, Confidence 0-1)
 ├── explain_prediction(text, top_k=5)
@@ -199,28 +203,26 @@ PriorityPredictor
 │   └─→ {Dict con explicación completa}
 ├── batch_predict(texts)
 │   └─→ Array predicciones
-└── batch_predict_with_confidence(texts)
+└─→ batch_predict_with_confidence(texts)
     └─→ [(Priority, Confidence), ...]
 ```
 
 **Explicabilidad (RF-23)**:
 ```python
 explanation = {
-    'predicted_priority': 4,
-    'priority_label': 'P4 (Critical)',
+    'predicted_priority': 1,
+    'priority_label': 'P1 (Critical)',
     'confidence': 0.87,
     'all_probabilities': {
-        'P1 (Low)': 0.02,
-        'P2 (Medium)': 0.05,
-        'P3 (High)': 0.06,
-        'P4 (Critical)': 0.87
+        'P1 (Critical)': 0.87,
+        'P2 (Medium)': 0.10,
+        'P3 (Low)': 0.03
     },
     'contributing_features': [
         {'feature': 'critical', 'score': 0.45, 'importance': 'positive'},
-        {'feature': 'hardware failure', 'score': 0.38, 'importance': 'positive'},
-        ...
+        {'feature': 'server failure', 'score': 0.38, 'importance': 'positive'}
     ],
-    'reasoning': "El sistema sugiere P4 (Critical) con 87% de confianza..."
+    'reasoning': "El sistema sugiere P1 (Critical) con 87% de confianza..."
 }
 ```
 
@@ -242,7 +244,7 @@ predict.py
 │   └─→ Utils (utils.py)
 └─→ [Carga modelos guardados]
 
-examples.py
+test/test_model.py
 ├─→ DataProcessor
 ├─→ ModelTrainer
 ├─→ PriorityPredictor
@@ -338,16 +340,6 @@ Load Tests
 └─→ Predicción batch rendimiento
 ```
 
-## Metricas de Codigo
-
-| Métrica | Target |
-|---------|--------|
-| Code Coverage | > 80% |
-| Cyclomatic Complexity | < 10 |
-| Lines per Function | < 30 |
-| Modules | 4 core + scripts |
-| Dependencies | scikit-learn, pandas, numpy |
-
 ## Ciclo de Vida del Modelo
 
 ```
@@ -379,47 +371,9 @@ Load Tests
 | **RNF** | RNF-11 | no automático |
 | **RNF** | RNF-13 | explicabilidad |
 
-## Ejercicios de Extension
-
-Si necesitas extender el sistema:
-
-### 1. Agregar nuevo modelo
-
-```python
-# En model_trainer.py
-from sklearn.ensemble import RandomForestClassifier
-
-def create_model(model_type='logistic'):
-    if model_type == 'logistic':
-        return LogisticRegression(...)
-    elif model_type == 'random_forest':
-        return RandomForestClassifier(...)
-```
-
-### 2. Integrar BERT embeddings
-
-```python
-# En data_processor.py
-def vectorize_texts_bert(texts):
-    from transformers import BertTokenizer, BertModel
-    ...
-```
-
-### 3. API Flask
-
-```python
-# api.py
-from flask import Flask
-from predictor import PriorityPredictor
-
-@app.route('/predict', methods=['POST'])
-def predict_api():
-    predictor = PriorityPredictor()
-    return predictor.explain_prediction(request.json['text'])
-```
-
 ---
 
-**Versión**: 1.0.0  
+**Versión**: 1.1.0  
 **Estado**: Production-Ready  
 **Escalabilidad**: Alta
+**Última actualización**: Abril 2026

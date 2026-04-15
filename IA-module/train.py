@@ -31,7 +31,7 @@ def main():
     Config.ensure_dirs()
     
     # Ruta del dataset
-    data_file = Config.get_data_path("ITSM_data.csv")
+    data_file = Config.get_data_path("it_tickets_merged.csv")
     
     # Verificar que el dataset existe
     if not data_file.exists():

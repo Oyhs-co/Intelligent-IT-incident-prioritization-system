@@ -89,7 +89,7 @@ def validate_priority(priority: Any) -> bool:
     """
     try:
         p = int(priority)
-        return p in [1, 2, 3, 4]
+        return p in [1, 2, 3]
     except (ValueError, TypeError):
         return False
 
