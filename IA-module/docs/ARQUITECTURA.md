@@ -30,7 +30,7 @@ El módulo sigue una **arquitectura modular en capas** (Clean Architecture) para
                             ↓
 ┌─────────────────────────────────────────────────────────────┐
 │              CAPA DE PERSISTENCIA                           │
-│  - scikit-learn (pickle files)                              │
+│  - LightGBM & MiniLM (pickle files & encoder directory)     │
 │  - CSV (pandas)                                             │
 │  - File System                                              │
 │  Responsabilidades: Almacenamiento de datos y modelos       │
@@ -56,8 +56,8 @@ it_tickets_merged.csv (45,988 tickets)
     │   └─→ Extracción de etiquetas (priority)
     │
     ├─→ DataProcessor.vectorize_texts()
-    │   ├─→ TfidfVectorizer.fit_transform()
-    │   └─→ Matriz sparse (n_samples, n_features)
+    │   ├─→ MiniLM-L6-v2.encode() o TF-IDF.fit_transform()
+    │   └─→ Matriz densa (n_samples, 384) o sparse (n_samples, n_features)
     │
     ├─→ DataProcessor.split_data()
     │   ├─→ Train: 70%
@@ -65,8 +65,8 @@ it_tickets_merged.csv (45,988 tickets)
     │   └─→ Test: 20%
     │
     ├─→ ModelTrainer.train()
-    │   ├─→ LogisticRegression.fit(X_train, y_train)
-    │   └─→ Aprendizaje de coeficientes
+    │   ├─→ LightGBM.fit(X_train, y_train) o LogisticRegression.fit()
+    │   └─→ Aprendizaje de pesos/coeficientes
     │
     ├─→ ModelTrainer.validate/test()
     │   ├─→ Evaluación con métricas
@@ -74,7 +74,7 @@ it_tickets_merged.csv (45,988 tickets)
     │   └─→ Classification report
     │
     ├─→ ModelTrainer.save_model()
-    │   └─→ Pickle → models/*.pkl
+    │   └─→ Pickle → models/priority_classifier_v1.pkl y encoder/
     │
     └─→ SALIDA (Predicciones)
 ```

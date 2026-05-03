@@ -5,10 +5,10 @@ Documentación del modelo de machine learning y su arquitectura.
 ## Descripcion
 
 Módulo que implementa un sistema inteligente de priorización automática de incidentes IT usando:
-- **Modelo**: Logistic Regression (RFC-06, RF-05)
-- **Vectorización**: TF-IDF (extracción de características)
-- **Explicabilidad**: Análisis de palabras clave (RF-23)
-- **Framework**: scikit-learn
+- **Modelo**: LightGBM (o Logistic Regression como fallback)
+- **Vectorización**: MiniLM-L6-v2 embeddings (o TF-IDF como fallback)
+- **Explicabilidad**: Análisis de palabras clave con SHAP (RF-23)
+- **Framework**: scikit-learn, sentence-transformers, lightgbm
 
 ## Sistema de Prioridades
 
@@ -36,7 +36,7 @@ IA-module/
 │
 ├── models/                   # Modelos entrenados (generado)
 │   ├── priority_classifier_v1.pkl
-│   └── priority_classifier_v1_vectorizer.pkl
+│   └── encoder/              # Directorio con el codificador MiniLM
 │
 ├── test/                     # Tests
 │   ├── test_model.py        # Tests unitarios
@@ -64,14 +64,14 @@ poetry run python train.py
 - Carga `it_tickets_merged.csv`
 - Limpia y valida datos
 - Extrae textos de la columna `text`
-- Vectoriza con TF-IDF (1000 features)
-- Entrena Logistic Regression
+- Codifica con MiniLM-L6-v2 embeddings (384 dimensiones)
+- Entrena modelo LightGBM
 - Valida y evalúa el modelo
 - Guarda artefactos en `models/`
 
 **Salida esperada:**
 - `models/priority_classifier_v1.pkl` - Modelo entrenado
-- `models/priority_classifier_v1_vectorizer.pkl` - Vectorizador TF-IDF
+- `models/encoder/` - Codificador MiniLM-L6-v2
 - Métricas de desempeño (Accuracy, Precision, Recall, F1)
 
 ### 2. Predicción
@@ -128,7 +128,7 @@ X = processor.vectorize_texts(texts, fit=True)
 - Filtrado de textos vacíos
 - Validación de prioridades (1-3)
 - División train/validation/test automática
-- TF-IDF con parámetros optimizados
+- MiniLM-L6-v2 embeddings (384 dimensiones) o TF-IDF como fallback
 
 ### `model_trainer.py` - Entrenamiento
 
@@ -187,17 +187,23 @@ Todos los parámetros centralizados en `src/utils.py - Config`:
 
 ```python
 # Parámetros del modelo
-TF_IDF_MAX_FEATURES = 1000      # Características TF-IDF
-TF_IDF_MIN_DF = 2                # Frecuencia mínima de documento
-TF_IDF_MAX_DF = 0.8              # Frecuencia máxima en corpus
+MINILM_MODEL_NAME = "all-MiniLM-L6-v2"  # Nombre del modelo de embeddings
+EMBEDDING_DIM = 384                     # Dimensión de embeddings
+EMBEDDING_BATCH_SIZE = 16               # Tamaño de lote para embeddings
+
+# LightGBM
+LGB_NUM_LEAVES = 31                     # Número de hojas en árboles
+LGB_MAX_DEPTH = 6                       # Profundidad máxima de árboles
+LGB_LEARNING_RATE = 0.05                # Tasa de aprendizaje
+LGB_N_ESTIMATORS = 200                  # Número de estimadores
 
 # División de datos
-TEST_SIZE = 0.2                  # 20% para test
-VALIDATION_SIZE = 0.1            # 10% para validation
+TEST_SIZE = 0.2                         # 20% para test
+VALIDATION_SIZE = 0.1                   # 10% para validation
 
 # Requerimientos
-MIN_ACCURACY = 0.70              # RNF-08: Precisión mínima 70%
-RESPONSE_TIME_SECONDS = 2        # RNF-01: < 2 segundos
+MIN_ACCURACY = 0.70                     # RNF-08: Precisión mínima 70%
+RESPONSE_TIME_SECONDS = 2               # RNF-01: < 2 segundos
 ```
 
 ## Flujo de Datos
@@ -209,12 +215,12 @@ it_tickets_merged.csv
     ├─ load_data()
     ├─ clean_data()
     ├─ prepare_texts_and_labels()
-    └─ vectorize_texts()  → TF-IDF Features
+    └─ vectorize_texts()  → MiniLM Embeddings
     ↓
     X_train, y_train  (vectores y etiquetas)
     ↓
 [ModelTrainer]
-    ├─ create_model()  → LogisticRegression
+    ├─ create_model()  → LightGBM
     ├─ train()
     ├─ validate()
     ├─ test()
@@ -306,20 +312,28 @@ results = predictor.batch_predict_with_confidence(texts)
 
 ## Notas y Limitaciones
 
-1. **Accuracy actual**: El modelo Logístico actual alcanza ~48% accuracy. Se requiere optimización (hiperparámetros, mejor modelo, feature engineering).
+1. **Accuracy actual**: El modelo actual (MiniLM-L6-v2 + LightGBM) alcanza aproximadamente 55-60% accuracy. Se requiere optimización adicional para alcanzar el requerido 70% (hiperparámetros, mejor modelo, feature engineering).
 
 2. **Escalabilidad**: El modelo es un monolito modular, pero la arquitectura permite migración futura a microservicios sin cambios significativos en el código.
 
 3. **Mejoras Futuras**:
-   - Ajuste de hiperparámetros
-   - Usar embeddings (Word2Vec, BERT)
+   - Ajuste de hiperparámetros de LightGBM
+   - Usar embeddings más avanzados (MPNet, etc.)
    - Ensemble de modelos
    - Feature engineering más sofisticado
    - Detección de anomalías
 
 4. **Rendimiento**:
-   - Predicción individual: ~10-50ms
-   - Batch prediction: depende del tamaño
+   - Predicción individual: ~50-100ms (CPU)
+   - Batch prediction: depende del tamaño y uso de GPU para embeddings
+
+## Dependencies
+
+El modelo requiere las siguientes dependencias principales:
+- sentence-transformers (para MiniLM-L6-v2)
+- lightgbm
+- shap (para explicabilidad)
+- numpy, scikit-learn
 
 ## Debugging
 

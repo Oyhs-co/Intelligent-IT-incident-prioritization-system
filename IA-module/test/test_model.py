@@ -1,11 +1,13 @@
 """
-Tests unitarios para el sistema de priorización.
+Tests unitarios para el sistema de priorización (v2.0).
 
 Cubre:
 - Carga y limpieza de datos
-- Vectorización
-- Entrenamiento del modelo
+- Codificación (TF-IDF / MiniLM)
+- Entrenamiento del modelo (LightGBM)
 - Predicción y explicabilidad
+
+Soporta backend TF-IDF + LR o MiniLM + LightGBM.
 """
 
 import unittest
@@ -19,8 +21,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.data_processor import DataProcessor
-from src.model_trainer import ModelTrainer
-from src.predictor import PriorityPredictor, save_vectorizer
+from src.model_trainer import ModelTrainer, ModelFactory
+from src.predictor import PriorityPredictor
 from src.utils import Config, logger, validate_priority
 
 
@@ -62,9 +64,13 @@ class TestDataProcessor(unittest.TestCase):
             self.assertIsNotNone(labels)
             self.assertEqual(len(texts), len(labels))
             self.assertEqual(len(texts), len(df_clean))
+            
+            # Labels deben estar en 0,1,2 (no 1,2,3)
+            for label in labels:
+                self.assertIn(label, [0, 1, 2])
     
-    def test_vectorize_texts(self):
-        """Test: Vectorización TF-IDF."""
+    def test_encode_texts_tfidf(self):
+        """Test: Codificación TF-IDF."""
         texts = [
             "Hardware failure critical impact server down",
             "Software bug low impact application error",
@@ -73,10 +79,29 @@ class TestDataProcessor(unittest.TestCase):
             "Password reset medium priority user request"
         ]
         
-        vectors = self.processor.vectorize_texts(texts, fit=True)
+        from src.encoders import TFIDFEncoder
+        encoder = TFIDFEncoder(max_features=100)
+        
+        vectors = encoder.encode(texts)  # fit manejado internamente
         
         self.assertEqual(vectors.shape[0], len(texts))
         self.assertGreater(vectors.shape[1], 0)
+        self.assertEqual(encoder.get_dimension(), vectors.shape[1])
+    
+    def test_encode_texts_save_load(self):
+        """Test: Guardar y cargar encoder TF-IDF."""
+        texts = ["test one", "test two"]
+        
+        from src.encoders import TFIDFEncoder
+        encoder = TFIDFEncoder(max_features=10)
+        encoder.encode(texts)  # fit manejado internamente
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            encoder.save(tmppath / "encoder")
+            
+            loaded = TFIDFEncoder.load(tmppath / "encoder")
+            self.assertEqual(loaded.get_dimension(), encoder.get_dimension())
     
     def test_validate_priority(self):
         """Test: Validación de prioridad."""
@@ -84,80 +109,167 @@ class TestDataProcessor(unittest.TestCase):
         self.assertTrue(validate_priority(2))
         self.assertTrue(validate_priority(3))
         self.assertFalse(validate_priority(4))
-        self.assertFalse(validate_priority(5))
         self.assertFalse(validate_priority(0))
         self.assertFalse(validate_priority("invalid"))
+
+
+class TestEncoders(unittest.TestCase):
+    """Tests para codificadores."""
+    
+    def test_tfidf_basic(self):
+        """Test: TF-IDF básico."""
+        from src.encoders import TFIDFEncoder
+        
+        texts = ["hello world", "world test", "hello test data"]
+        encoder = TFIDFEncoder(max_features=50)
+        
+        X = encoder.encode(texts)  # fit manejado internamente
+        
+        self.assertEqual(X.shape[0], 3)
+        self.assertGreater(X.shape[1], 0)
+    
+    def test_tfidf_transform(self):
+        """Test: TF-IDF transform (sin fit)."""
+        from src.encoders import TFIDFEncoder
+        
+        train_texts = ["hello world", "test data"]
+        test_texts = ["hello test"]
+        
+        encoder = TFIDFEncoder(max_features=50)
+        encoder.encode(train_texts)  # fit manejado internamente
+        
+        X_test = encoder.encode(test_texts)  # fit=False no necesario
+        self.assertEqual(X_test.shape[0], 1)
+
+
+class TestClassifiers(unittest.TestCase):
+    """Tests para clasificadores."""
+    
+    def setUp(self):
+        np.random.seed(42)
+        self.X = np.random.rand(100, 50).astype(np.float32)
+        self.y = np.random.randint(0, 3, 100).astype(np.int32)
+    
+    def test_lightgbm_create(self):
+        """Test: Creación LightGBM."""
+        from src.classifiers import LightGBMClassifier
+        
+        clf = LightGBMClassifier(n_classes=3)
+        self.assertIsNotNone(clf)
+    
+    def test_lightgbm_train_predict(self):
+        """Test: Entrenamiento y predicción LightGBM."""
+        from src.classifiers import LightGBMClassifier
+        
+        clf = LightGBMClassifier(n_classes=3, n_estimators=20)
+        clf.fit(self.X, self.y)
+        
+        preds = clf.predict(self.X[:10])
+        self.assertEqual(len(preds), 10)
+        
+        proba = clf.predict_proba(self.X[:10])
+        self.assertEqual(proba.shape, (10, 3))
+    
+    def test_lightgbm_save_load(self):
+        """Test: Guardar y cargar LightGBM."""
+        from src.classifiers import LightGBMClassifier
+        import tempfile
+        
+        clf = LightGBMClassifier(n_classes=3, n_estimators=20)
+        clf.fit(self.X, self.y)
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir) / "model.txt"
+            clf.save(tmppath)
+            
+            loaded = LightGBMClassifier(n_classes=3)
+            loaded.load(tmppath)
+            
+            preds1 = clf.predict(self.X[:5])
+            preds2 = loaded.predict(self.X[:5])
+            
+            np.testing.assert_array_equal(preds1, preds2)
+    
+    def test_ensemble(self):
+        """Test: Ensamble LightGBM + LR."""
+        from src.classifiers import FallbackEnsembleClassifier
+        
+        clf = FallbackEnsembleClassifier(lgb_weight=0.6)
+        clf.fit(self.X, self.y)
+        
+        preds = clf.predict(self.X[:10])
+        self.assertEqual(len(preds), 10)
 
 
 class TestModelTrainer(unittest.TestCase):
     """Tests para ModelTrainer."""
     
     def setUp(self):
-        self.trainer = ModelTrainer()
-        
-        # Datos de prueba
-        np.random.seed(Config.RANDOM_STATE)
-        self.X_test = np.random.rand(100, 50)
-        self.y_test = np.random.randint(1, 4, 100)
+        np.random.seed(42)
+        self.X_train = np.random.rand(80, 30).astype(np.float32)
+        self.y_train = np.random.randint(0, 3, 80).astype(np.int32)
+        self.X_val = np.random.rand(20, 30).astype(np.float32)
+        self.y_val = np.random.randint(0, 3, 20).astype(np.int32)
     
-    def test_create_model(self):
-        """Test: Creación del modelo."""
-        model = self.trainer.create_model()
-        self.assertIsNotNone(model)
+    def test_trainer_create(self):
+        """Test: Creación de ModelTrainer."""
+        trainer = ModelTrainer()
+        self.assertIsNotNone(trainer)
     
-    def test_train_model(self):
-        """Test: Entrenamiento del modelo."""
-        self.trainer.create_model()
-        self.trainer.train(self.X_test, self.y_test)
+    def test_trainer_with_lightgbm(self):
+        """Test: ModelTrainer con LightGBM."""
+        classifier = ModelFactory.create_lightgbm(n_classes=3)
+        trainer = ModelTrainer(
+            classifier=classifier,
+            random_state=42
+        )
         
-        self.assertIsNotNone(self.trainer.model)
+        trainer.train(self.X_train, self.y_train)
+        
+        metrics = trainer.evaluate(self.X_val, self.y_val, "Test")
+        
+        self.assertIn("accuracy", metrics)
+        self.assertIn("f1", metrics)
+        self.assertGreaterEqual(metrics["accuracy"], 0)
+        self.assertLessEqual(metrics["accuracy"], 1)
     
-    def test_predict(self):
-        """Test: Predicción."""
-        self.trainer.create_model()
-        self.trainer.train(self.X_test, self.y_test)
+    def test_trainer_predict_proba(self):
+        """Test: Probabilidades."""
+        classifier = ModelFactory.create_lightgbm(n_classes=3)
+        trainer = ModelTrainer(
+            classifier=classifier,
+            random_state=42
+        )
         
-        predictions = self.trainer.predict(self.X_test[:10])
+        trainer.train(self.X_train, self.y_train)
         
-        self.assertEqual(len(predictions), 10)
-        for pred in predictions:
-            self.assertIn(pred, [1, 2, 3])
-    
-    def test_predict_proba(self):
-        """Test: Predicción con probabilidades."""
-        self.trainer.create_model()
-        self.trainer.train(self.X_test, self.y_test)
+        proba = trainer.predict_proba(self.X_val[:5])
+        self.assertEqual(proba.shape, (5, 3))
         
-        proba = self.trainer.predict_proba(self.X_test[:10])
-        
-        self.assertEqual(proba.shape[0], 10)
-        self.assertEqual(proba.shape[1], 3)
-        
-        # Verificar que las probabilidades suman 1
-        for prob_row in proba:
-            self.assertAlmostEqual(prob_row.sum(), 1.0, places=5)
+        for row in proba:
+            self.assertAlmostEqual(row.sum(), 1.0, places=5)
 
 
 class TestPredictor(unittest.TestCase):
     """Tests para PriorityPredictor."""
     
     def setUp(self):
-        # Crear modelo temporal para tests
         Config.ensure_dirs()
         self.temp_dir = tempfile.mkdtemp()
     
     def tearDown(self):
-        """Limpia archivos temporales."""
         if Path(self.temp_dir).exists():
             shutil.rmtree(self.temp_dir)
     
     def test_priority_labels(self):
         """Test: Etiquetas de prioridad."""
-        labels = PriorityPredictor.PRIORITY_LABELS
-        
-        self.assertEqual(len(labels), 3)
-        self.assertIn(1, labels)
-        self.assertIn(3, labels)
+        self.assertEqual(len(PriorityPredictor.PRIORITY_LABELS), 3)
+        self.assertIn(0, PriorityPredictor.PRIORITY_LABELS)
+        self.assertIn(2, PriorityPredictor.PRIORITY_LABELS)
+    
+    def test_priority_descriptions(self):
+        """Test: Descripciones de prioridad."""
+        self.assertEqual(len(PriorityPredictor.PRIORITY_DESCRIPTIONS), 3)
 
 
 class TestIntegration(unittest.TestCase):
@@ -167,55 +279,63 @@ class TestIntegration(unittest.TestCase):
         Config.ensure_dirs()
         self.data_file = Config.get_data_path("it_tickets_merged.csv")
     
-    def test_full_pipeline(self):
-        """Test: Pipeline completo (si hay dataset disponible)."""
+    def test_full_pipeline_tfidf(self):
+        """Test: Pipeline completo con TF-IDF."""
         if not self.data_file.exists():
             self.skipTest("Dataset it_tickets_merged.csv no disponible")
         
-        # Preprocesamiento
         processor = DataProcessor()
-        X_train, X_val, X_test, y_train, y_val, y_test = processor.preprocess_pipeline(
-            self.data_file
+        result = processor.preprocess_pipeline(
+            input_file=self.data_file,
+            encoder=None,
+            use_embeddings=False  # TF-IDF
         )
+        X_train, X_val, X_test, y_train, y_val, y_test, encoder = result
         
-        self.assertGreater(X_train.shape[0], 0)
-        self.assertGreater(X_val.shape[0], 0)
-        self.assertGreater(X_test.shape[0], 0)
+        # Entrenar con LogisticRegression
+        from sklearn.linear_model import LogisticRegression
+        classifier = LogisticRegression(max_iter=1000, random_state=42)
         
-        # Entrenamiento
-        trainer = ModelTrainer()
-        trainer.create_model()
+        trainer = ModelTrainer(
+            classifier=classifier,
+            encoder=encoder
+        )
         trainer.train(X_train, y_train)
         
-        # Validación y test
-        val_metrics = trainer.validate(X_val, y_val)
-        test_metrics = trainer.test(X_test, y_test)
+        metrics = trainer.test(X_test, y_test)
         
-        # Verificaciones
-        self.assertIn("accuracy", val_metrics)
-        self.assertIn("accuracy", test_metrics)
+        self.assertIn("accuracy", metrics)
+        self.assertGreaterEqual(metrics["accuracy"], 0)
+    
+    def test_predictor_explain(self):
+        """Test: Explicación con predictor (fallback)."""
+        # Si no hay modelo guardado, test básico
+        if not Config.MODEL_FILE.exists():
+            self.skipTest("Modelo no entrenado, saltando test")
         
-        # Verificar que accuracy está en rango válido
-        self.assertGreaterEqual(test_metrics["accuracy"], 0)
-        self.assertLessEqual(test_metrics["accuracy"], 1)
+        predictor = PriorityPredictor()
         
-        logger.info(f"✓ Test accuracy alcanzado: {test_metrics['accuracy']:.4f}")
+        text = "Critical system failure urgent"
+        explanation = predictor.explain_prediction(text, top_k=3)
+        
+        self.assertIn("predicted_priority", explanation)
+        self.assertIn("confidence", explanation)
+        self.assertIn("priority_label", explanation)
+        self.assertIn("contributing_features", explanation)
 
 
 def run_tests():
     """Ejecuta todos los tests."""
-    
-    # Crear suite de tests
     loader = unittest.TestLoader()
     suite = unittest.TestSuite()
     
-    # Agregar tests
     suite.addTests(loader.loadTestsFromTestCase(TestDataProcessor))
+    suite.addTests(loader.loadTestsFromTestCase(TestEncoders))
+    suite.addTests(loader.loadTestsFromTestCase(TestClassifiers))
     suite.addTests(loader.loadTestsFromTestCase(TestModelTrainer))
     suite.addTests(loader.loadTestsFromTestCase(TestPredictor))
     suite.addTests(loader.loadTestsFromTestCase(TestIntegration))
     
-    # Ejecutar
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)
     

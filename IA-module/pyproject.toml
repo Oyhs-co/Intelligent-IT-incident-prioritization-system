@@ -1,15 +1,21 @@
 [project]
-name = "intelligent-it-incident-prioritization-system"
+name = "ia-module"
 version = "0.1.0"
-description = ""
+description = "Modulo de IA para el backend de la aplicacion"
 authors = [
     {name = "Jesus-MMM",email = "jesusmanuelmercadomachado@gmail.com"}
 ]
-readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.11, <3.14"
 dependencies = [
-    "scikit-learn (>=1.8.0,<2.0.0)",
-    "pandas (>=3.0.2,<4.0.0)"
+    "sentence-transformers (>=5.4.1,<6.0.0)",
+    "lightgbm (>=4.6.0,<5.0.0)",
+    "shap (>=0.51.0,<0.52.0)",
+    "matplotlib (>=3.10.9,<4.0.0)",
+    "joblib (>=1.5.3,<2.0.0)",
+    "onnxruntime (>=1.25.1,<2.0.0)",
+    "optuna (>=4.8.0,<5.0.0)",
+    "pytest (>=9.0.3,<10.0.0)",
+    "tqdm (>=4.67.1,<5.0.0)"
 ]
 
 [tool.poetry]

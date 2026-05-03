@@ -1,0 +1,3 @@
+*.safetensors
+.pytest_cache
+/logs/
