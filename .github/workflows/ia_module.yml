@@ -1,0 +1,49 @@
+name: IA Module CI (Poetry)
+
+on:
+  push:
+    branches: [ "OmarH-Backend" ]
+    paths:
+      - "IA-module/**"
+  pull_request:
+    branches: [ "backend" ]
+    paths:
+      - "IA-module/**"
+
+jobs:
+  ia-tests:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ia_module
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11.9"
+
+      - name: Instalar Poetry
+        run: |
+          pip install poetry
+
+      - name: Configurar entorno
+        run: |
+          poetry config virtualenvs.create true
+          poetry install --no-interaction --no-root
+
+      - name: Lint (opcional)
+        run: |
+          poetry run flake8 . || true
+
+      - name: Formato (opcional)
+        run: |
+          poetry run black --check .
+
+      - name: Tests
+        run: |
+          poetry run pytest
