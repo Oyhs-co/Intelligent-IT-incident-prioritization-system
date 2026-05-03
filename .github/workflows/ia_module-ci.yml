@@ -4,11 +4,11 @@ on:
   push:
     branches: [ "OmarH-Backend" ]
     paths:
-      - "ia_module/**"
+      - "IA-module/**"
   pull_request:
     branches: [ "OmarH-Backend" ]
     paths:
-      - "ia_module/**"
+      - "IA-module/**"
 
 jobs:
   ia-tests:
@@ -16,7 +16,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: ia_module
+        working-directory: IA-module
 
     steps:
       - name: Checkout
