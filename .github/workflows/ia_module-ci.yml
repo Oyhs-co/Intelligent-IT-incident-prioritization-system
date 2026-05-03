@@ -4,11 +4,11 @@ on:
   push:
     branches: [ "OmarH-Backend" ]
     paths:
-      - "IA-module/**"
+      - "ia_module/**"
   pull_request:
-    branches: [ "backend" ]
+    branches: [ "OmarH-Backend" ]
     paths:
-      - "IA-module/**"
+      - "ia_module/**"
 
 jobs:
   ia-tests:
@@ -25,7 +25,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11.9"
+          python-version: "3.11"
 
       - name: Instalar Poetry
         run: |
@@ -38,7 +38,8 @@ jobs:
 
       - name: Lint (opcional)
         run: |
-          poetry run flake8 . || true
+          poetry run flake8 .
+
 
       - name: Formato (opcional)
         run: |
