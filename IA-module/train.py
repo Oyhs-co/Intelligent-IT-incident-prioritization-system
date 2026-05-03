@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer, ModelFactory
-from src.utils import logger, Config, setup_training_logger, save_training_report
+from src.utils import logger, Config, setup_training_logger, save_training_report, save_config
 
 
 def main():
@@ -178,6 +178,12 @@ def main():
             "random_state": Config.RANDOM_STATE,
             "training_time": training_time
         }
+        
+        # Guardar configuración como JSON
+        config_json_path = Config.REPORTS_DIR / "training_config.json"
+        save_config(report_config, config_json_path)
+        logger.info(f"Configuración guardada en {config_json_path}")
+        training_logger.info(f"Configuración guardada en {config_json_path}")
         
         # Generar reporte
         try:

@@ -345,4 +345,22 @@ class Config:
         cls.REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-logger = setup_logger(__name__)
+logger = setup_logger(__name__, str(Config.LOGS_DIR / "app.log"))
+
+# Cargar configuración desde archivo JSON si existe
+_config_file = Path(__file__).parent.parent / "config" / "default.json"
+if _config_file.exists():
+    try:
+        _json_config = load_config(_config_file)
+        # Actualizar atributos de clase Config con valores del JSON
+        for key, value in _json_config.items():
+            attr_name = key.upper()
+            if hasattr(Config, attr_name):
+                setattr(Config, attr_name, value)
+                logger.info(f"Configuración cargada desde JSON: {attr_name} = {value}")
+        # Recalcular atributos derivados que dependen de MODEL_NAME
+        Config.MODEL_FILE = Config.MODELS_DIR / f"{Config.MODEL_NAME}.pkl"
+        Config.VECTORIZER_FILE = Config.MODELS_DIR / f"{Config.MODEL_NAME}_vectorizer.pkl"
+        logger.info(f"Atributos derivados actualizados: MODEL_FILE = {Config.MODEL_FILE}")
+    except Exception as e:
+        logger.warning(f"No se pudo cargar configuración desde {_config_file}: {e}")
