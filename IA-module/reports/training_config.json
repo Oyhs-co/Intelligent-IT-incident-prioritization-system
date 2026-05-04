@@ -1,0 +1,8 @@
+{
+    "use_minilm": true,
+    "use_ensemble": false,
+    "encoder_type": "MiniLMEncoder",
+    "classifier_type": "LightGBMClassifier",
+    "random_state": 42,
+    "training_time": 973.9144575595856
+}

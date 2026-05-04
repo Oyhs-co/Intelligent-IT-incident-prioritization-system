@@ -10,6 +10,7 @@ Incluye:
 
 import logging
 import json
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -43,6 +44,11 @@ def setup_logger(name: str, log_file: Optional[str] = None) -> logging.Logger:
     
     # Handler en archivo si se especifica
     if log_file:
+        os.makedirs(Path(log_file).parent, exist_ok=True)
+        with open(log_file, "w", encoding="utf-8") as f:
+            f.write("[LOG INICIALIZADO] " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
+
+
         file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
@@ -247,19 +253,19 @@ def save_training_report(
     
     # RNF-08
     if test_metrics.get("accuracy", 0) >= 0.70:
-        content.append("- ✅ **RNF-08**: Precisión mínima del 70% - CUMPLIDO")
+        content.append("-**RNF-08**: Precisión mínima del 70% - CUMPLIDO")
     else:
-        content.append("- ❌ **RNF-08**: Precisión mínima del 70% - NO CUMPLIDO")
+        content.append("- **RNF-08**: Precisión mínima del 70% - NO CUMPLIDO")
     
-    content.append("- ✅ **RNF-09**: Manejo de datos incompletos - IMPLEMENTADO")
-    content.append("- ✅ **RNF-10**: Capacidad de generalización - VALIDADO")
-    content.append("- ✅ **RF-05 a RF-09**: Pipeline de análisis y predicción - COMPLETADO")
-    content.append("- ✅ **RF-23**: Explicabilidad con SHAP/coeficientes - IMPLEMENTADA")
+    content.append("- **RNF-09**: Manejo de datos incompletos - IMPLEMENTADO")
+    content.append("- **RNF-10**: Capacidad de generalización - VALIDADO")
+    content.append("- **RF-05 a RF-09**: Pipeline de análisis y predicción - COMPLETADO")
+    content.append("- **RF-23**: Explicabilidad con SHAP/coeficientes - IMPLEMENTADA")
     
     # Meta aspiracional
     if test_metrics.get("accuracy", 0) >= 0.85:
         content.append("")
-        content.append("## 🎯 Meta Aspiracional")
+        content.append("## Meta Aspiracional")
         content.append("")
         content.append("**META ALCANZADA**: Precisión ≥ 85%")
     
