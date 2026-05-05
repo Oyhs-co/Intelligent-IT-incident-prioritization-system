@@ -56,6 +56,7 @@ def main():
         logger.info("\n[CONFIGURACIÓN]")
         USE_MINILM = True  # True para MiniLM-L6-v2, False para TF-IDF
         USE_ENSEMBLE = False  # True para ensamble LightGBM+LR (más robusto)
+        BALANCE_CLASSES = Config.BALANCE_CLASSES  # Usa valor de config/default.json
         
         if USE_MINILM:
             logger.info("  Encoder: MiniLM-L6-v2 (embeddings 384-dim)")
@@ -67,10 +68,16 @@ def main():
         if USE_ENSEMBLE:
             logger.info("  Modo: Ensamble LightGBM + LogisticRegression")
         
+        if BALANCE_CLASSES:
+            logger.info("  Balanceo: UNDERSAMPLING (igualar a clase minoritaria)")
+        else:
+            logger.info("  Balanceo: DESACTIVADO (usar datos originales)")
+        
         # Registrar configuración en logger de entrenamiento
         training_logger.info(f"Configuración - Encoder: {'MiniLM-L6-v2' if USE_MINILM else 'TF-IDF'}")
         training_logger.info(f"Configuración - Modelo: {'LightGBM' if USE_MINILM else 'Logistic Regression'}")
         training_logger.info(f"Configuración - Ensamble: {'Sí' if USE_ENSEMBLE else 'No'}")
+        training_logger.info(f"Configuración - Balanceo: {'Undersampling' if BALANCE_CLASSES else 'Desactivado'}")
         
         # ===== FASE 1: PREPROCESAMIENTO =====
         logger.info("\n[1/3] PREPROCESAMIENTO DE DATOS")
@@ -83,7 +90,8 @@ def main():
         result = processor.preprocess_pipeline(
             input_file=data_file,
             encoder=None,  # Se creará automáticamente
-            use_embeddings=USE_MINILM
+            use_embeddings=USE_MINILM,
+            balance_classes=BALANCE_CLASSES
         )
         
         X_train, X_val, X_test, y_train, y_val, y_test, encoder = result
@@ -146,6 +154,7 @@ def main():
             metadata={
                 "use_minilm": USE_MINILM,
                 "use_ensemble": USE_ENSEMBLE,
+                "balance_classes": BALANCE_CLASSES,
                 "encoder_type": type(encoder).__name__,
                 "classifier_type": type(classifier).__name__,
                 "random_state": Config.RANDOM_STATE
@@ -170,6 +179,7 @@ def main():
         report_config = {
             "use_minilm": USE_MINILM,
             "use_ensemble": USE_ENSEMBLE,
+            "balance_classes": BALANCE_CLASSES,
             "encoder_type": type(encoder).__name__,
             "classifier_type": type(classifier).__name__,
             "random_state": Config.RANDOM_STATE,
