@@ -166,10 +166,12 @@ def save_training_report(
     
     encoder_type = config.get("encoder_type", "Desconocido")
     classifier_type = config.get("classifier_type", "Desconocido")
+    balance_classes = config.get("balance_classes", False)
     
     content.append(f"- **Encoder:** {encoder_type}")
     content.append(f"- **Clasificador:** {classifier_type}")
     content.append(f"- **Random State:** {config.get('random_state', 'N/A')}")
+    content.append(f"- **Balanceo de clases:** {'Undersampling (igualar a clase minoritaria)' if balance_classes else 'Desactivado'}")
     content.append("")
     
     # Métricas detalladas de Validación
@@ -332,6 +334,7 @@ class Config:
     RANDOM_STATE = 42
     TEST_SIZE = 0.15
     VALIDATION_SIZE = 0.15
+    BALANCE_CLASSES = False  # Si True, aplica undersampling para igualar clases
     
     # Requerimientos
     MIN_ACCURACY = 0.70  # RNF-08: Precisión mínima 70%

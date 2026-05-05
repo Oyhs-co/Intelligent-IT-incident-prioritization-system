@@ -438,7 +438,7 @@ class ModelFactory:
             max_depth=max_depth,
             learning_rate=learning_rate,
             n_estimators=Config.LGB_N_ESTIMATORS,
-            min_child_samples=Config.LGB_MIN_CHILD_SAMPLES,
+            min_child_samples=20,
             reg_alpha=0.0,
             reg_lambda=0.0,
             random_state=Config.RANDOM_STATE,

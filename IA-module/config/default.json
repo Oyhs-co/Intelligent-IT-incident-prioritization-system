@@ -12,6 +12,7 @@
   "random_state": 42,
   "test_size": 0.15,
   "validation_size": 0.15,
+  "balance_classes": true,
   "min_accuracy": 0.70,
   "response_time_seconds": 2,
   "model_name": "priority_classifier_v1"

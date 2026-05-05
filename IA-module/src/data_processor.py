@@ -155,6 +155,96 @@ class DataProcessor:
         if self.encoder is None:
             self.encoder = TFIDFEncoder(max_features=Config.TF_IDF_MAX_FEATURES)
     
+    def balance_classes(
+        self,
+        texts: List[str],
+        labels: np.ndarray,
+        random_state: Optional[int] = None
+    ) -> Tuple[List[str], np.ndarray]:
+        """
+        Realiza undersampling para igualar todas las clases a la que tiene menos datos.
+        
+        Si la clase minoritaria tiene N muestras, todas las demás clases se reducen
+        aleatoriamente a N muestras.
+        
+        Args:
+            texts: Lista de textos
+            labels: Array de etiquetas (0-index: 0=P1, 1=P2, 2=P3)
+            random_state: Semilla para reproducibilidad
+            
+        Returns:
+            Tupla (textos_balanceados, etiquetas_balanceadas)
+        """
+        if random_state is None:
+            random_state = self.random_state
+            
+        rng = np.random.RandomState(random_state)
+        
+        logger.info("=" * 50)
+        logger.info("BALANCEO DE CLASES (UNDERSAMPLING)")
+        logger.info("=" * 50)
+        
+        label_counts = pd.Series(labels).value_counts().sort_index()
+        logger.info(f"Distribución original de clases:\n{label_counts}")
+        
+        min_count = label_counts.min()
+        logger.info(f"Clase minoritaria tiene {min_count} muestras")
+        logger.info(f"Se reducirán todas las clases a {min_count} muestras")
+        
+        balanced_texts = []
+        balanced_labels = []
+        
+        for label in sorted(np.unique(labels)):
+            mask = labels == label
+            texts_for_label = [texts[i] for i in range(len(labels)) if mask[i]]
+            
+            if len(texts_for_label) > min_count:
+                indices = rng.choice(len(texts_for_label), size=min_count, replace=False)
+                sampled_texts = [texts_for_label[i] for i in indices]
+                logger.info(f"  Clase {label}: {len(texts_for_label)} -> {min_count} muestras")
+            else:
+                sampled_texts = texts_for_label
+                logger.info(f"  Clase {label}: {len(texts_for_label)} muestras (sin cambio)")
+            
+            balanced_texts.extend(sampled_texts)
+            balanced_labels.extend([label] * len(sampled_texts))
+        
+        balanced_texts, balanced_labels = self._shuffle_data(
+            balanced_texts, np.array(balanced_labels), rng
+        )
+        
+        logger.info(f"Distribución después del balanceo:")
+        logger.info(f"{pd.Series(balanced_labels).value_counts().sort_index()}")
+        logger.info(f"Total de muestras: {len(balanced_texts)}")
+        logger.info("=" * 50)
+        
+        return balanced_texts, balanced_labels
+    
+    def _shuffle_data(
+        self,
+        texts: List[str],
+        labels: np.ndarray,
+        rng: np.random.RandomState
+    ) -> Tuple[List[str], np.ndarray]:
+        """
+        Mezcla los datos de forma aleatoria manteniendo la correspondencia texto-label.
+        
+        Args:
+            texts: Lista de textos
+            labels: Array de etiquetas
+            rng: Generador de números aleatorios
+            
+        Returns:
+            Tupla (textos_mezclados, etiquetas_mezcladas)
+        """
+        indices = np.arange(len(texts))
+        rng.shuffle(indices)
+        
+        shuffled_texts = [texts[i] for i in indices]
+        shuffled_labels = labels[indices]
+        
+        return shuffled_texts, shuffled_labels
+    
     def split_data(
         self,
         X: np.ndarray,
@@ -201,7 +291,8 @@ class DataProcessor:
         self,
         input_file: Path,
         encoder: Optional[IEncoder] = None,
-        use_embeddings: bool = True
+        use_embeddings: bool = True,
+        balance_classes: bool = False
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, IEncoder]:
         """
         Pipeline completo de preprocesamiento.
@@ -210,6 +301,7 @@ class DataProcessor:
             input_file: Ruta al archivo CSV de entrada
             encoder: Encoder a usar. Si None, usa MiniLM si use_embeddings=True
             use_embeddings: Si True usa MiniLM, si False usa TF-IDF
+            balance_classes: Si True, aplica undersampling para igualar clases
             
         Returns:
             Datos divididos train/val/test + encoder usado
@@ -233,13 +325,17 @@ class DataProcessor:
         # 3. Generar textos y etiquetas
         texts, labels = self.prepare_texts_and_labels(df_clean)
         
-        # 4. Codificar (con batch para ahorrar RAM)
+        # 4. Balancear clases (opcional, antes de la codificación)
+        if balance_classes:
+            texts, labels = self.balance_classes(texts, labels)
+        
+        # 5. Codificar (con batch para ahorrar RAM)
         # MiniLM: batch_size=16 (8GB RAM)
         # TF-IDF: no necesita batch
         batch_size = 16 if use_embeddings else None
         X = self.encode_texts(texts, batch_size=batch_size, fit=True)
         
-        # 5. Dividir datos
+        # 6. Dividir datos
         X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(X, labels)
         
         logger.info("=" * 50)

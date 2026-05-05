@@ -100,22 +100,22 @@ class LightGBMClassifier(IClassifier):
         """
         self._check_fitted()
         X = X.astype(np.float32)
-        # LightGBM Booster.predict retorna probabilidades planas o matriciales
-        preds = self.model.predict(X)
-        
-        if preds.ndim == 1:
-            # Forma plana: (n_samples * n_classes,)
+        # LightGBM LGBMClassifier.predict retorna directamente las clases
+        # Pero si usamos Booster.predict retorna probabilidades planas
+        if isinstance(self.model, lgb.LGBMClassifier):
+            return self.model.predict(X).astype(np.int32)
+        else:
+            # Booster.predict retorna probabilidades planas: (n_samples * n_classes,)
+            preds = self.model.predict(X)
+            n_samples = X.shape[0]
             n_classes = self.params['num_class']
-            if len(preds) % n_classes == 0:
-                # Reshape a (n_samples, n_classes) y tomar argmax
-                preds = preds.reshape(-1, n_classes)
+            if preds.ndim == 1 and len(preds) == n_samples * n_classes:
+                preds = preds.reshape(n_samples, n_classes)
+                return np.argmax(preds, axis=1).astype(np.int32)
+            elif preds.ndim == 2:
                 return np.argmax(preds, axis=1).astype(np.int32)
             else:
-                # Ya son predicciones de clase
                 return preds.astype(np.int32)
-        else:
-            # Forma matricial: (n_samples, n_classes)
-            return np.argmax(preds, axis=1).astype(np.int32)
     
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """
@@ -129,19 +129,23 @@ class LightGBMClassifier(IClassifier):
         """
         self._check_fitted()
         X = X.astype(np.float32)
-        preds = self.model.predict(X)
-        
-        if preds.ndim == 1:
+        if isinstance(self.model, lgb.LGBMClassifier):
+            return self.model.predict_proba(X)
+        else:
+            # Booster.predict retorna probabilidades planas: (n_samples * n_classes,)
+            preds = self.model.predict(X)
+            n_samples = X.shape[0]
             n_classes = self.params['num_class']
-            if len(preds) % n_classes == 0:
-                preds = preds.reshape(-1, n_classes)
+            if preds.ndim == 1 and len(preds) == n_samples * n_classes:
+                return preds.reshape(n_samples, n_classes)
+            elif preds.ndim == 2:
+                return preds
             else:
                 # Predicciones de clase, convertir a probabilidades one-hot
                 pred_classes = preds.astype(np.int32)
                 preds_mat = np.zeros((len(pred_classes), n_classes), dtype=np.float32)
                 preds_mat[np.arange(len(pred_classes)), pred_classes] = 1.0
                 return preds_mat
-        return preds
     
     def save(self, path: Path) -> None:
         """

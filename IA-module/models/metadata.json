@@ -1,6 +1,7 @@
 {
   "use_minilm": true,
   "use_ensemble": false,
+  "balance_classes": true,
   "encoder_type": "MiniLMEncoder",
   "classifier_type": "LightGBMClassifier",
   "random_state": 42
