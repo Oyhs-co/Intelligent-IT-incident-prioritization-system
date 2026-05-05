@@ -11,6 +11,7 @@ Principio OCP: Extensible sin modificar código existente.
 Principio DIP: Depende de IClassifier e IEncoder abstracciones.
 """
 
+import json
 import pickle
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -24,6 +25,8 @@ from sklearn.metrics import (
     classification_report
 )
 
+from .classifiers import FallbackEnsembleClassifier, LightGBMClassifier
+from .encoders import MiniLMEncoder, TFIDFEncoder
 from .interfaces import IClassifier, IEncoder
 from .utils import logger, Config
 
@@ -64,20 +67,13 @@ class ModelTrainer:
         Returns:
             Clasificador configurado
         """
-        from .classifiers import LightGBMClassifier
         logger.info("Creando modelo LightGBM classifier (por defecto)")
         
-        model = LightGBMClassifier(
+        model = ModelFactory.create_lightgbm(
             n_classes=n_classes,
-            num_leaves=31,
-            max_depth=6,
-            learning_rate=0.05,
-            n_estimators=200,
-            min_child_samples=20,
-            reg_alpha=0.0,
-            reg_lambda=0.0,
-            random_state=self.random_state,
-            verbose=-1
+            num_leaves=Config.LGB_NUM_LEAVES,
+            max_depth=Config.LGB_MAX_DEPTH,
+            learning_rate=Config.LGB_LEARNING_RATE
         )
         
         self.classifier = model
@@ -160,7 +156,7 @@ class ModelTrainer:
         # Matriz de confusión
         cm = metrics["confusion_matrix"]
         logger.info(f"\n  Confusion Matrix:")
-        logger.info(f"    Predicted →")
+        logger.info(f"    Predicted ->")
         logger.info(f"       P1  P2  P3")
         for i, row in enumerate(cm):
             logger.info(f"  P{i+1}  {row[0]:3d} {row[1]:3d} {row[2]:3d}")
@@ -188,21 +184,21 @@ class ModelTrainer:
         
         val_metrics = self.evaluate(X_val, y_val, "Validation")
         
-        # Verificar requisito mínimo RNF-08 (accuracy ≥ 0.70)
+        # Verificar requisito mínimo RNF-08 (accuracy >= 0.70)
         if val_metrics["accuracy"] < Config.MIN_ACCURACY:
             logger.warning(
-                f"⚠ Accuracy ({val_metrics['accuracy']:.4f}) por debajo del mínimo "
+                f"[WARN] Accuracy ({val_metrics['accuracy']:.4f}) por debajo del mínimo "
                 f"requerido ({Config.MIN_ACCURACY:.4f})"
             )
         else:
             logger.info(
-                f"✓ RNF-08: Accuracy ({val_metrics['accuracy']:.4f}) cumple requisito mínimo"
+                f"[OK] RNF-08: Accuracy ({val_metrics['accuracy']:.4f}) cumple requisito mínimo"
             )
         
-        # Meta aspiracional: accuracy ≥ 0.85 con MiniLM + LightGBM
+        # Meta aspiracional: accuracy >= 0.85 con MiniLM + LightGBM
         if val_metrics["accuracy"] >= 0.85:
             logger.info(
-                f"✓ Excelente: Accuracy ({val_metrics['accuracy']:.4f}) ≥ 85% (Meta aspiracional)"
+                f"[OK] Excelente: Accuracy ({val_metrics['accuracy']:.4f}) >= 85% (Meta aspiracional)"
             )
         
         self.metrics["validation"] = val_metrics
@@ -237,7 +233,7 @@ class ModelTrainer:
             )
         else:
             logger.info(
-                f"✓ RNF-08: Test Accuracy ({test_metrics['accuracy']:.4f}) cumple requisito"
+                f"[OK] RNF-08: Test Accuracy ({test_metrics['accuracy']:.4f}) cumple requisito"
             )
         
         # Verificar RNF-10 (capacidad de generalización)
@@ -246,9 +242,9 @@ class ModelTrainer:
             train_val_gap = abs(self.metrics["validation"]["accuracy"] - test_metrics["accuracy"])
             logger.info(f"\n  Gap validation-test: {train_val_gap:.4f}")
             if train_val_gap < 0.05:
-                logger.info(f"✓ RNF-10: Buena capacidad de generalización (gap < 5%)")
+                logger.info(f"[OK] RNF-10: Buena capacidad de generalización (gap < 5%)")
             else:
-                logger.warning(f"⚠ RNF-10: Posible overfitting (gap > 5%)")
+                logger.warning(f"[WARN] RNF-10: Posible overfitting (gap > 5%)")
         
         self.metrics["test"] = test_metrics
         return test_metrics
@@ -292,7 +288,6 @@ class ModelTrainer:
         
         metadata_path = save_path.parent / "metadata.json"
         with open(metadata_path, 'w') as f:
-            import json
             # Convertir numpy types a Python types para JSON
             def default_serializer(obj):
                 if isinstance(obj, np.integer):
@@ -325,13 +320,11 @@ class ModelTrainer:
         
         # Intentar cargar como LightGBM primero
         try:
-            from .classifiers import LightGBMClassifier
             self.classifier = LightGBMClassifier()
             self.classifier.load(load_path)
             logger.info(f"Modelo LightGBM cargado desde {load_path}")
         except Exception:
             # Fallback a LogisticRegression
-            from sklearn.linear_model import LogisticRegression
             with open(load_path, 'rb') as f:
                 self.classifier = pickle.load(f)
             logger.info(f"Modelo LogisticRegression cargado desde {load_path}")
@@ -342,7 +335,6 @@ class ModelTrainer:
     
     def _load_encoder(self, encoder_path: Path) -> None:
         """Carga encoder desde disco."""
-        from .encoders import MiniLMEncoder, TFIDFEncoder
         
         # Intenta MiniLM primero
         try:
@@ -440,35 +432,31 @@ class ModelFactory:
         learning_rate: float = 0.05
     ) -> IClassifier:
         """Crea un clasificador LightGBM."""
-        from .classifiers import LightGBMClassifier
         return LightGBMClassifier(
             n_classes=n_classes,
             num_leaves=num_leaves,
             max_depth=max_depth,
             learning_rate=learning_rate,
-            n_estimators=200,
-            min_child_samples=20,
+            n_estimators=Config.LGB_N_ESTIMATORS,
+            min_child_samples=Config.LGB_MIN_CHILD_SAMPLES,
             reg_alpha=0.0,
             reg_lambda=0.0,
-            random_state=42,
+            random_state=Config.RANDOM_STATE,
             verbose=-1
         )
     
     @staticmethod
     def create_ensemble() -> IClassifier:
         """Crea un ensamble LightGBM + LogisticRegression."""
-        from .classifiers import FallbackEnsembleClassifier
         return FallbackEnsembleClassifier(lgb_weight=0.6)
     
     @staticmethod
     def create_minilm_encoder() -> IEncoder:
         """Crea un encoder MiniLM."""
-        from .encoders import MiniLMEncoder
         return MiniLMEncoder()
     
     @staticmethod
     def create_tfidf_encoder(max_features: int = 1000) -> IEncoder:
         """Crea un encoder TF-IDF."""
-        from .encoders import TFIDFEncoder
         return TFIDFEncoder(max_features=max_features)
 

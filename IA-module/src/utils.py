@@ -45,7 +45,7 @@ def setup_logger(name: str, log_file: Optional[str] = None) -> logging.Logger:
     # Handler en archivo si se especifica
     if log_file:
         os.makedirs(Path(log_file).parent, exist_ok=True)
-        with open(log_file, "w", encoding="utf-8") as f:
+        with open(log_file, "a", encoding="utf-8") as f:
             f.write("[LOG INICIALIZADO] " + datetime.now().strftime("%Y-%m-%d %H:%M:%S") + "\n")
 
 
@@ -154,9 +154,9 @@ def save_training_report(
         
         # Verificar RNF-08
         if test_metrics['accuracy'] >= 0.70:
-            content.append(f"| **RNF-08** | CUMPLIDO (≥70%) |")
+            content.append(f"| **RNF-08** | CUMPLIDO (>=70%) |")
         else:
-            content.append(f"| **RNF-08** | NO CUMPLIDO (≥70%) |")
+            content.append(f"| **RNF-08** | NO CUMPLIDO (>=70%) |")
     
     content.append("")
     
@@ -253,7 +253,7 @@ def save_training_report(
     
     # RNF-08
     if test_metrics.get("accuracy", 0) >= 0.70:
-        content.append("-**RNF-08**: Precisión mínima del 70% - CUMPLIDO")
+        content.append("- **RNF-08**: Precisión mínima del 70% - CUMPLIDO")
     else:
         content.append("- **RNF-08**: Precisión mínima del 70% - NO CUMPLIDO")
     
@@ -267,7 +267,7 @@ def save_training_report(
         content.append("")
         content.append("## Meta Aspiracional")
         content.append("")
-        content.append("**META ALCANZADA**: Precisión ≥ 85%")
+        content.append("**META ALCANZADA**: Precisión >= 85%")
     
     content.append("")
     content.append("---")
@@ -321,7 +321,7 @@ class Config:
     # MiniLM / Embeddings
     MINILM_MODEL_NAME = "all-MiniLM-L6-v2"
     EMBEDDING_DIM = 384
-    EMBEDDING_BATCH_SIZE = 16  # Para RAM ≤8GB
+    EMBEDDING_BATCH_SIZE = 16  # Para RAM <=8GB
     
     # LightGBM
     LGB_NUM_LEAVES = 31
@@ -351,7 +351,20 @@ class Config:
         cls.REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-logger = setup_logger(__name__, str(Config.LOGS_DIR / "app.log"))
+_logger: Optional[logging.Logger] = None
+
+
+def get_logger() -> logging.Logger:
+    """Retorna el logger de la aplicación, inicializándolo si es necesario."""
+    global _logger
+    if _logger is None:
+        Config.ensure_dirs()
+        _logger = setup_logger(__name__, str(Config.LOGS_DIR / "app.log"))
+    return _logger
+
+
+# Alias para compatibilidad
+logger = get_logger()
 
 # Cargar configuración desde archivo JSON si existe
 _config_file = Path(__file__).parent.parent / "config" / "default.json"

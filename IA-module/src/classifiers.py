@@ -9,6 +9,7 @@ import numpy as np
 from pathlib import Path
 from typing import Optional
 import lightgbm as lgb
+from sklearn.linear_model import LogisticRegression
 from .interfaces import IClassifier
 from .utils import logger
 
@@ -213,7 +214,6 @@ class FallbackEnsembleClassifier(IClassifier):
         Args:
             lgb_weight: Peso para LightGBM en votación (resto para LR)
         """
-        from sklearn.linear_model import LogisticRegression
         self.lgb_weight = lgb_weight
         self.lr_weight = 1.0 - lgb_weight
         

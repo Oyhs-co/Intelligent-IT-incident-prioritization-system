@@ -2,81 +2,46 @@
 
 Documentación de la arquitectura del sistema de priorización de incidentes.
 
-## Diseño de Capas
-
-El módulo sigue una **arquitectura modular en capas** (Clean Architecture) para máxima escalabilidad:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                 CAPA DE PRESENTACIÓN                        │
-│  (Scripts: train.py, predict.py, examples.py)               │
-│  - Orquestación del flujo                                   │
-│  - Interfaz con usuario/API                                 │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│                CAPA DE APLICACIÓN (SERVICIOS)               │
-│  - ModelTrainer (modelo_trainer.py)                         │
-│  - PriorityPredictor (predictor.py)                         │
-│  - DataProcessor (data_processor.py)                        │
-│  Responsabilidades: Lógica de negocio, Orquestación         │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│            CAPA DE UTILIDADES & CONFIGURACIÓN               │
-│  - Utils (utils.py): Config, Logger, Validación             │
-│  Responsabilidades: Configuración centralizada, Logging     │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│              CAPA DE PERSISTENCIA                           │
-│  - LightGBM & MiniLM (pickle files & encoder directory)     │
-│  - CSV (pandas)                                             │
-│  - File System                                              │
-│  Responsabilidades: Almacenamiento de datos y modelos       │
-└─────────────────────────────────────────────────────────────┘
-```
-
 ## Flujo de Datos
 
 ```
 it_tickets_merged.csv (45,988 tickets)
     │
-    ├─→ DataProcessor.load_data()
-    │   └─→ Lectura CSV con pandas
+    ├-> DataProcessor.load_data()
+    │   └-> Lectura CSV con pandas
     │
-    ├─→ DataProcessor.clean_data()
-    │   ├─→ Reemplazo NS/NA → NaN
-    │   ├─→ Conversión priority a numérico
-    │   ├─→ Filtrado prioridades (1-3)
-    │   └─→ Filtrado textos vacíos
+    ├-> DataProcessor.clean_data()
+    │   ├-> Reemplazo NS/NA -> NaN
+    │   ├-> Conversión priority a numérico
+    │   ├-> Filtrado prioridades (1-3)
+    │   └-> Filtrado textos vacíos
     │
-    ├─→ DataProcessor.prepare_texts_and_labels()
-    │   ├─→ Extracción de columna 'text'
-    │   └─→ Extracción de etiquetas (priority)
+    ├-> DataProcessor.prepare_texts_and_labels()
+    │   ├-> Extracción de columna 'text'
+    │   └-> Extracción de etiquetas (priority)
     │
-    ├─→ DataProcessor.vectorize_texts()
-    │   ├─→ MiniLM-L6-v2.encode() o TF-IDF.fit_transform()
-    │   └─→ Matriz densa (n_samples, 384) o sparse (n_samples, n_features)
+    ├-> DataProcessor.vectorize_texts()
+    │   ├-> MiniLM-L6-v2.encode() o TF-IDF.fit_transform()
+    │   └-> Matriz densa (n_samples, 384) o sparse (n_samples, n_features)
     │
-    ├─→ DataProcessor.split_data()
-    │   ├─→ Train: 70%
-    │   ├─→ Validation: 10%
-    │   └─→ Test: 20%
+    ├-> DataProcessor.split_data()
+    │   ├-> Train: 70%
+    │   ├-> Validation: 10%
+    │   └-> Test: 20%
     │
-    ├─→ ModelTrainer.train()
-    │   ├─→ LightGBM.fit(X_train, y_train) o LogisticRegression.fit()
-    │   └─→ Aprendizaje de pesos/coeficientes
+    ├-> ModelTrainer.train()
+    │   ├-> LightGBM.fit(X_train, y_train) o LogisticRegression.fit()
+    │   └-> Aprendizaje de pesos/coeficientes
     │
-    ├─→ ModelTrainer.validate/test()
-    │   ├─→ Evaluación con métricas
-    │   ├─→ Confusion matrix
-    │   └─→ Classification report
+    ├-> ModelTrainer.validate/test()
+    │   ├-> Evaluación con métricas
+    │   ├-> Confusion matrix
+    │   └-> Classification report
     │
-    ├─→ ModelTrainer.save_model()
-    │   └─→ Pickle → models/priority_classifier_v1.pkl y encoder/
+    ├-> ModelTrainer.save_model()
+    │   └-> Pickle -> models/priority_classifier_v1.pkl
     │
-    └─→ SALIDA (Predicciones)
+    └-> SALIDA (Predicciones)
 ```
 
 ## Sistema de Prioridades
@@ -161,7 +126,7 @@ ModelTrainer
 ├── save_model()
 │   └─→ Pickle → models/priority_classifier_v1.pkl
 ├── load_model()
-│   └─→ Pickle ← models/priority_classifier_v1.pkl
+│       └-> Pickle <- models/priority_classifier_v1.pkl
 └── predict(X) / predict_proba(X)
     └─→ Predicción
 ```
@@ -233,25 +198,25 @@ explanation = {
 
 ```
 train.py
-├─→ DataProcessor (data_processor.py)
-│   └─→ Utils (utils.py)
-├─→ ModelTrainer (model_trainer.py)
-│   └─→ Utils (utils.py)
-└─→ save_vectorizer (predictor.py)
+├-> DataProcessor (data_processor.py)
+│   └-> Utils (utils.py)
+├-> ModelTrainer (model_trainer.py)
+│   └-> Utils (utils.py)
+└-> save_vectorizer (predictor.py)
 
 predict.py
-├─→ PriorityPredictor (predictor.py)
-│   └─→ Utils (utils.py)
-└─→ [Carga modelos guardados]
+├-> PriorityPredictor (predictor.py)
+│   └-> Utils (utils.py)
+└-> [Carga modelos guardados]
 
 test/test_model.py
-├─→ DataProcessor
-├─→ ModelTrainer
-├─→ PriorityPredictor
-└─→ Utils
+├-> DataProcessor
+├-> ModelTrainer
+├-> PriorityPredictor
+└-> Utils
 ```
 
-**Nota**: Dependencias unidireccionales → Bajo acoplamiento
+**Nota**: Dependencias unidireccionales -> Bajo acoplamiento
 
 ## Patrones de Diseno
 
@@ -365,7 +330,7 @@ Load Tests
 |------|-----------|---|
 | **RF** | RF-05 a RF-09 | DataProcessor + ModelTrainer |
 | **RF** | RF-23 | ExplainPrediction |
-| **RNF** | RNF-08 (≥70%) | trainer.validate() |
+| **RNF** | RNF-08 (>=70%) | trainer.validate() |
 | **RNF** | RNF-09 | data cleaning |
 | **RNF** | RNF-10 | test set evaluation |
 | **RNF** | RNF-11 | no automático |

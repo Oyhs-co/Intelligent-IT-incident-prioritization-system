@@ -29,7 +29,7 @@ def format_explanation(explanation: dict) -> str:
     output.append("=" * 70)
     
     # Predicción y confianza
-    output.append(f"\n✓ Prioridad Predicha: {explanation['priority_label']}")
+    output.append(f"\n[OK] Prioridad Predicha: {explanation['priority_label']}")
     output.append(f"  Descripción: {explanation['priority_description']}")
     output.append(f"  Confianza: {explanation['confidence'] * 100:.1f}%")
     

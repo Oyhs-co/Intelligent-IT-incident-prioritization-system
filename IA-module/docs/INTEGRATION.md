@@ -1,59 +1,59 @@
-# Integración: Entradas y Salidas
+# Integracion: Entradas y Salidas
 
-Este documento detalla las entradas y salidas del modelo entrenado para integración externa vía API o uso directo de la biblioteca.
+Este documento detalla las entradas y salidas del modelo entrenado para integración externa via API o uso directo de la biblioteca.
 
 ## Interfaz del Modelo
 
-El modelo entrenado es accesible a través de la clase `PriorityPredictor` en `src/predictor.py`. Proporciona métodos para predicción, puntuación de confianza y explicabilidad.
+El modelo entrenado es accesible a traves de la clase `PriorityPredictor` en `src/predictor.py`. Proporciona metodos para prediccion, puntuacion de confianza y explicabilidad.
 
 ### Entradas
 
-Todos los métodos de predicción aceptan una sola cadena o una lista de cadenas que representan la descripción del incidente.
+Todos los metodos de prediccion aceptan una sola cadena o una lista de cadenas que representan la descripcion del incidente.
 
-**Entrada de Texto Único:**
+**Entrada de Texto Unico:**
 - Tipo: `str`
-- Descripción: Descripción textual del incidente de TI
-- Ejemplo: `"Falló el servidor crítico afectando a todos los usuarios"`
+- Descripcion: Descripcion textual del incidente de TI
+- Ejemplo: `"Fallo el servidor critico afectando a todos los usuarios"`
 
 **Entrada de Texto en Lote:**
 - Tipo: `List[str]`
-- Descripción: Lista de descripciones de incidentes
-- Ejemplo: `["Servidor caído", "Error menor de UI", "Problema de latencia de red"]`
+- Descripcion: Lista de descripciones de incidentes
+- Ejemplo: `["Servidor caido", "Error menor de UI", "Problema de latencia de red"]`
 
 ### Salidas
 
-#### 1. Predicción Básica (`predict`)
+#### 1. Prediccion Basica (`predict`)
 Devuelve el nivel de prioridad predicho como un entero.
 
 - Tipo de retorno: `int`
 - Valores: 
-  - `1` → P1 (Crítico)
-  - `2` → P2 (Medio)
-  - `3` → P3 (Bajo)
+  - `1` -> P1 (Critico)
+  - `2` -> P2 (Medio)
+  - `3` -> P3 (Bajo)
 
-#### 2. Predicción con Confianza (`predict_with_confidence`)
+#### 2. Prediccion con Confianza (`predict_with_confidence`)
 Devuelve una tupla de (prioridad, confianza).
 
 - Tipo de retorno: `Tuple[int, float]`
 - Prioridad: Igual que arriba (1-3)
 - Confianza: Flotante entre 0.0 y 1.0 que representa la confianza del modelo
 
-#### 3. Explicación Completa (`explain_prediction`)
-Devuelve un diccionario con explicación detallada (para cumplimiento de RF-23).
+#### 3. Explicacion Completa (`explain_prediction`)
+Devuelve un diccionario con explicacion detallada (para cumplimiento de RF-23).
 
 ```python
 {
     'predicted_priority': int,           # 1, 2, o 3
-    'priority_label': str,               # "P1 (Crítico)", etc.
+    'priority_label': str,               # "P1 (Critico)", etc.
     'confidence': float,                 # 0.0 a 1.0
     'all_probabilities': {               # Probabilidad por clase
-        'P1 (Crítico)': float,
+        'P1 (Critico)': float,
         'P2 (Medio)': float,
         'P3 (Bajo)': float
     },
     'contributing_features': [           # Palabras clave principales
         {
-            'feature': str,              # Palabra clave/término
+            'feature': str,              # Palabra clave/termino
             'score': float,              # Puntuación de contribución
             'importance': str            # 'positiva' o 'negativa'
         },
@@ -72,7 +72,7 @@ from src.predictor import PriorityPredictor
 predictor = PriorityPredictor()
 
 # Predicción única
-texto = "Fallo crítico de conexión a la base de datos"
+texto = "Fallo critico de conexion a la base de datos"
 prioridad = predictor.predict(texto)  # Devuelve 1
 
 # Con confianza
@@ -140,13 +140,13 @@ Para despliegue externo, se requieren los siguientes artefactos:
 2. `models/priority_classifier_v1_vectorizer.pkl` - Vectorizador TF-IDF
 
 ### Versionamiento
-- Versión del modelo: `v1.0.0`
-- El contrato de entrada/salida es estable para esta versión
-- Cualquier cambio rotundo incrementará la versión mayor
+- Version del modelo: `v1.0.0`
+- El contrato de entrada/salida es estable para esta version
+- Cualquier cambio rotundo incrementara la version mayor
 
 ### Características de Rendimiento
-- Latencia de predicción individual: < 50ms (CPU)
-- Rendimiento de predicción en lote: ~1000 predicciones/segundo
+- Latencia de prediccion individual: < 50ms (CPU)
+- Rendimiento de prediccion en lote: ~1000 predicciones/segundo
 - Huella de memoria: ~150MB (modelo + vectorizador)
 
 ### Manejo de Errores

@@ -10,7 +10,7 @@ Principio SRP: Cada clase tiene una única responsabilidad.
 Principio OCP: Soporta múltiples backends (TF-IDF, MiniLM).
 """
 
-import pickle
+import json
 from pathlib import Path
 import warnings
 from typing import Tuple, List, Dict, Any, Optional
@@ -19,8 +19,6 @@ import numpy as np
 from .interfaces import IEncoder, IClassifier
 from .utils import logger, Config
 
-# Suppress SHAP warnings for cleaner output
-warnings.filterwarnings('ignore')
 
 
 class PriorityPredictor:
@@ -213,23 +211,22 @@ class PriorityPredictor:
             Valores SHAP para cada feature
         """
         import shap
-        
+
         if self._shap_explainer is None:
-            # KernelExplainer funciona con cualquier modelo
-            # Pero es lento, así que usamos una muestra del training
-            # Para producción, considerar usar LinearExplainer si el modelo es lineal
             try:
-                # Intentar explicador específico del modelo si es posible
-                self._shap_explainer = shap.Explainer(
-                    self.classifier.predict_proba,
-                    self.encoder.encode  # Función de codificación como background
-                )
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    self._shap_explainer = shap.Explainer(
+                        self.classifier.predict_proba,
+                        self.encoder.encode
+                    )
             except Exception:
-                # Fallback simple
                 background = np.zeros((1, X.shape[1]))
-                self._shap_explainer = shap.KernelExplainer(
-                    self.classifier.predict_proba, background
-                )
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    self._shap_explainer = shap.KernelExplainer(
+                        self.classifier.predict_proba, background
+                    )
         
         shap_values = self._shap_explainer(X)
         return shap_values.values[0]  # Solo para la primera instancia
@@ -398,6 +395,16 @@ class PriorityPredictor:
         
         return reasoning
     
+    def _encode_batch_texts(self, texts: List[str]) -> np.ndarray:
+        """Codifica una lista de textos en lotes para no saturar RAM."""
+        batch_size = 16 if 'MiniLM' in type(self.encoder).__name__ else 32
+        all_encoded = []
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i+batch_size]
+            encoded = self.encoder.encode(batch)
+            all_encoded.append(encoded)
+        return np.vstack(all_encoded)
+
     def batch_predict(self, texts: List[str]) -> np.ndarray:
         """
         Realiza predicciones en lotes.
@@ -414,16 +421,7 @@ class PriorityPredictor:
         if not texts:
             return np.array([], dtype=np.int32)
         
-        # Codificar en lotes para no saturar RAM
-        batch_size = 16 if isinstance(self.encoder, type) and 'MiniLM' in str(type(self.encoder)) else 32
-        all_encoded = []
-        
-        for i in range(0, len(texts), batch_size):
-            batch = texts[i:i+batch_size]
-            encoded = self.encoder.encode(batch)
-            all_encoded.append(encoded)
-        
-        X = np.vstack(all_encoded)
+        X = self._encode_batch_texts(texts)
         predictions = self.classifier.predict(X)
         return predictions.astype(np.int32)
     
@@ -446,16 +444,7 @@ class PriorityPredictor:
         if not texts:
             return []
         
-        # Codificar en lotes
-        batch_size = 16 if isinstance(self.encoder, type) and 'MiniLM' in str(type(self.encoder)) else 32
-        all_encoded = []
-        
-        for i in range(0, len(texts), batch_size):
-            batch = texts[i:i+batch_size]
-            encoded = self.encoder.encode(batch)
-            all_encoded.append(encoded)
-        
-        X = np.vstack(all_encoded)
+        X = self._encode_batch_texts(texts)
         predictions = self.classifier.predict(X)
         probabilities = self.classifier.predict_proba(X)
         
@@ -493,7 +482,6 @@ def save_model_artifacts(
     # Guardar metadata
     if metadata:
         with open(save_dir / "metadata.json", 'w') as f:
-            import json
             json.dump(metadata, f, indent=2)
     
     logger.info(f"Artefactos guardados en {save_dir}")

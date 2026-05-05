@@ -8,7 +8,9 @@ Proporciona embeddings densos de 384 dimensiones.
 import numpy as np
 from pathlib import Path
 from typing import List
+import pickle
 from sentence_transformers import SentenceTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from .interfaces import IEncoder
 from .utils import logger
 
@@ -27,7 +29,7 @@ class MiniLMEncoder(IEncoder):
         """
         logger.info(f"Cargando modelo MiniLM: {model_name}")
         self.model = SentenceTransformer(model_name)
-        self._dimension = self.model.get_sentence_embedding_dimension()
+        self._dimension = self.model.get_embedding_dimension()
         logger.info(f"Modelo cargado. Dimensión: {self._dimension}")
     
     def encode(self, texts: List[str], batch_size: int = 32) -> np.ndarray:
@@ -36,7 +38,7 @@ class MiniLMEncoder(IEncoder):
         
         Args:
             texts: Lista de textos (limpios)
-            batch_size: Tamaño de lote (default: 32 para RAM ≤8GB)
+            batch_size: Tamaño de lote (default: 32 para RAM <=8GB)
             
         Returns:
             Array numpy float32 de forma (len(texts), 384)
@@ -89,7 +91,7 @@ class MiniLMEncoder(IEncoder):
         """
         instance = cls.__new__(cls)
         instance.model = SentenceTransformer(str(path))
-        instance._dimension = instance.model.get_sentence_embedding_dimension()
+        instance._dimension = instance.model.get_embedding_dimension()
         logger.info(f"Encoder cargado desde {path}")
         return instance
 
@@ -104,7 +106,6 @@ class TFIDFEncoder(IEncoder):
             min_df: Frecuencia mínima (int o float)
             max_df: Frecuencia máxima (int o float)
         """
-        from sklearn.feature_extraction.text import TfidfVectorizer
         self.vectorizer = TfidfVectorizer(
             max_features=max_features,
             min_df=min_df,
@@ -114,7 +115,7 @@ class TFIDFEncoder(IEncoder):
         )
         self._fitted = False
     
-    def encode(self, texts: List[str]) -> np.ndarray:
+    def encode(self, texts: List[str], batch_size: int = 32) -> np.ndarray:
         """Codifica con TF-IDF (ignora batch_size).
         
         Args:
@@ -136,7 +137,6 @@ class TFIDFEncoder(IEncoder):
     
     def save(self, path: Path) -> None:
         """Guarda vectorizador TF-IDF."""
-        import pickle
         path.parent.mkdir(parents=True, exist_ok=True)
         with open(path, 'wb') as f:
             pickle.dump(self.vectorizer, f)
@@ -145,7 +145,6 @@ class TFIDFEncoder(IEncoder):
     @classmethod
     def load(cls, path: Path) -> 'TFIDFEncoder':
         """Carga vectorizador TF-IDF."""
-        import pickle
         instance = cls.__new__(cls)
         with open(path, 'rb') as f:
             instance.vectorizer = pickle.load(f)

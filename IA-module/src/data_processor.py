@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+from .encoders import MiniLMEncoder, TFIDFEncoder
 from .interfaces import IEncoder
 from .utils import logger, Config
 
@@ -75,17 +76,13 @@ class DataProcessor:
         df_clean = df.copy()
         
         df_clean.replace({"NS": np.nan, "NA": np.nan}, inplace=True)
-        
+
         if "priority" in df_clean.columns:
             df_clean["priority"] = pd.to_numeric(df_clean["priority"], errors="coerce")
-        
-        if "priority" in df_clean.columns:
             initial_rows = len(df_clean)
             df_clean = df_clean.dropna(subset=["priority"])
             removed = initial_rows - len(df_clean)
             logger.info(f"Se eliminaron {removed} filas sin priority")
-        
-        if "priority" in df_clean.columns:
             df_clean = df_clean[df_clean["priority"].isin([1, 2, 3])]
             logger.info(f"Después de filtrar: {len(df_clean)} filas válidas")
         
@@ -155,7 +152,6 @@ class DataProcessor:
     
     def _init_tfidf_encoder(self, fit: bool):
         """Inicializa encoder TF-IDF si no hay encoder."""
-        from .encoders import TFIDFEncoder
         if self.encoder is None:
             self.encoder = TFIDFEncoder(max_features=Config.TF_IDF_MAX_FEATURES)
     
@@ -226,7 +222,6 @@ class DataProcessor:
         if encoder is not None:
             self.encoder = encoder
         elif use_embeddings:
-            from .encoders import MiniLMEncoder
             self.encoder = MiniLMEncoder()
         
         # 1. Cargar datos
@@ -293,8 +288,6 @@ class DataProcessor:
         Returns:
             Instancia de IEncoder
         """
-        from .encoders import MiniLMEncoder, TFIDFEncoder
-        
         # Intenta cargar como MiniLM primero
         try:
             encoder = MiniLMEncoder.load(path)

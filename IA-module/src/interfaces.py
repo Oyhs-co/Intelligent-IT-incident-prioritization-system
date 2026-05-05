@@ -12,7 +12,7 @@ Principio: Dependency Inversion Principle (DIP)
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 import numpy as np
 
 
@@ -112,18 +112,4 @@ class IClassifier(ABC):
         Returns:
             Array de importancias o None si no aplica
         """
-        pass
-
-
-class IModelPersistence(ABC):
-    """Interfaz para guardar/cargar artefactos de forma consistente."""
-    
-    @abstractmethod
-    def save_artifacts(self, encoder: IEncoder, classifier: IClassifier, metadata: Dict[str, Any]) -> None:
-        """Guarda todos los artefactos del pipeline."""
-        pass
-    
-    @abstractmethod
-    def load_artifacts(self) -> Dict[str, Any]:
-        """Carga todos los artefactos del pipeline."""
         pass

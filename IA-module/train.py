@@ -16,6 +16,8 @@ from pathlib import Path
 import sys
 import time
 
+from sklearn.linear_model import LogisticRegression
+
 # Add parent directory to path to import src as package
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -84,10 +86,7 @@ def main():
             use_embeddings=USE_MINILM
         )
         
-        if USE_MINILM:
-            X_train, X_val, X_test, y_train, y_val, y_test, encoder = result
-        else:
-            X_train, X_val, X_test, y_train, y_val, y_test, encoder = result
+        X_train, X_val, X_test, y_train, y_val, y_test, encoder = result
         
         training_logger.info(f"Datos procesados - Train: {X_train.shape}, Val: {X_val.shape}, Test: {X_test.shape}")
         
@@ -114,8 +113,6 @@ def main():
                 learning_rate=Config.LGB_LEARNING_RATE
             )
         else:
-            # Usar LogisticRegression por defecto
-            from sklearn.linear_model import LogisticRegression
             logger.info("Creando modelo Logistic Regression...")
             training_logger.info("Tipo de modelo: Logistic Regression")
             classifier = LogisticRegression(
@@ -208,23 +205,23 @@ def main():
         logger.info("=" * 70)
         
         if test_metrics["accuracy"] >= Config.MIN_ACCURACY:
-            logger.info(f"✓ RNF-08: Precisión mínima {Config.MIN_ACCURACY:.0%} - CUMPLIDO")
+            logger.info(f"[OK] RNF-08: Precisión mínima {Config.MIN_ACCURACY:.0%} - CUMPLIDO")
             logger.info(f"  Accuracy alcanzado: {test_metrics['accuracy']:.4f} ({test_metrics['accuracy']:.1%})")
             training_logger.info(f"RNF-08: CUMPLIDO - Accuracy: {test_metrics['accuracy']:.4f}")
         else:
-            logger.warning(f"✗ RNF-08: Precisión mínima {Config.MIN_ACCURACY:.0%} - NO CUMPLIDO")
+            logger.warning(f"[X] RNF-08: Precisión mínima {Config.MIN_ACCURACY:.0%} - NO CUMPLIDO")
             logger.warning(f"  Accuracy alcanzado: {test_metrics['accuracy']:.4f} ({test_metrics['accuracy']:.1%})")
             training_logger.warning(f"RNF-08: NO CUMPLIDO - Accuracy: {test_metrics['accuracy']:.4f}")
         
-        logger.info(f"✓ RNF-09: Manejo de datos incompletos - IMPLEMENTADO")
-        logger.info(f"✓ RNF-10: Capacidad de generalización - VALIDADO CON TEST")
-        logger.info(f"✓ RF-05 a RF-09: Pipeline de análisis y predicción - COMPLETADO")
-        logger.info(f"✓ RF-23: Explicabilidad con SHAP/coeficientes - IMPLEMENTADA")
+        logger.info(f"[OK] RNF-09: Manejo de datos incompletos - IMPLEMENTADO")
+        logger.info(f"[OK] RNF-10: Capacidad de generalización - VALIDADO CON TEST")
+        logger.info(f"[OK] RF-05 a RF-09: Pipeline de análisis y predicción - COMPLETADO")
+        logger.info(f"[OK] RF-23: Explicabilidad con SHAP/coeficientes - IMPLEMENTADA")
         
         # Meta aspiracional
         if test_metrics["accuracy"] >= 0.85:
-            logger.info(f"\n META ASPIRACIONAL ALCANZADA: Accuracy ≥ 85%")
-            training_logger.info(f"META ALCANZADA: Accuracy ≥ 85% ({test_metrics['accuracy']:.4f})")
+            logger.info(f"\n META ASPIRACIONAL ALCANZADA: Accuracy >= 85%")
+            training_logger.info(f"META ALCANZADA: Accuracy >= 85% ({test_metrics['accuracy']:.4f})")
         
         # Log tiempo total
         logger.info(f"\n Tiempo total de entrenamiento: {training_time:.2f} segundos")

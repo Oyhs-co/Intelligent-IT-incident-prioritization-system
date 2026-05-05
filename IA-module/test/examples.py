@@ -39,7 +39,7 @@ def example_1_train_model():
     data_file = Config.get_data_path("it_tickets_merged.csv")
     
     if not data_file.exists():
-        print(f"⚠ Dataset no encontrado: {data_file}")
+        print(f"[WARN] Dataset no encontrado: {data_file}")
         print("Por favor asegúrese de que it_tickets_merged.csv existe en IA-module/data/")
         return False
     
@@ -111,16 +111,16 @@ def example_1_train_model():
         print(f"  F1-Score: {test_metrics['f1']:.4f}")
         
         reach_goal = test_metrics['accuracy'] >= Config.MIN_ACCURACY
-        status = "✓ CUMPLIDO" if reach_goal else "✗ NO CUMPLIDO"
-        print(f"\n  [OK] Requisito RNF-08 (Precisión ≥ {Config.MIN_ACCURACY}): {status}")
+        status = "[OK] CUMPLIDO" if reach_goal else "[X] NO CUMPLIDO"
+        print(f"\n  [OK] Requisito RNF-08 (Precisión >= {Config.MIN_ACCURACY}): {status}")
         
         if test_metrics['accuracy'] >= 0.85:
-            print(f"  META ASPIRACIONAL (≥85%): ¡ALCANZADA!")
+            print(f"  META ASPIRACIONAL (>=85%): !ALCANZADA!")
         
         return True
         
     except Exception as e:
-        print(f"✗ Error: {str(e)}")
+        print(f"[X] Error: {str(e)}")
         import traceback
         traceback.print_exc()
         return False
@@ -201,9 +201,9 @@ def example_3_predict_with_explanation():
             
             print("Factores clave (explicabilidad):")
             for feat in explanation['contributing_features']:
-                direction = "↑↑" if feat['importance'] == 'positive' else "↓↓"
+                direction = "^^" if feat['importance'] == 'positive' else "vv"
                 sign = "+" if feat['importance'] == 'positive' else "-"
-            print(f"  [{sign}] Feature {feat['feature_index']:3d} (impacto: {feat['abs_score']:+.4f})")
+                print(f"  [{sign}] Feature {feat['feature_index']:3d} (impacto: {feat['abs_score']:+.4f})")
             
             print(f"\nRazonamiento: {explanation['reasoning']}")
         
