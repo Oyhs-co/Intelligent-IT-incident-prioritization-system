@@ -2,21 +2,25 @@
 
 Documentación del modelo de machine learning y su arquitectura.
 
-## Descripcion
+## Descripción
 
 Módulo que implementa un sistema inteligente de priorización automática de incidentes IT usando:
-- **Modelo**: LightGBM (o Logistic Regression como fallback)
-- **Vectorización**: MiniLM-L6-v2 embeddings (o TF-IDF como fallback)
-- **Explicabilidad**: Análisis de palabras clave con SHAP (RF-23)
-- **Framework**: scikit-learn, sentence-transformers, lightgbm
+
+- **Modelo principal**: LightGBM (Gradient Boosting)
+- **Modelo fallback**: Logistic Regression (ensamble opcional)
+- **Codificador principal**: MiniLM-L6-v2 embeddings (384 dimensiones)
+- **Codificador fallback**: TF-IDF (1000 features, bigrams)
+- **Explicabilidad**: SHAP (SHapley Additive exPlanations)
+- **Framework**: scikit-learn, sentence-transformers, lightgbm, shap
+- **Dataset**: 45,988 tickets IT (3 clases: P1, P2, P3)
 
 ## Sistema de Prioridades
 
 | Prioridad | Etiqueta | Descripción |
 |-----------|----------|--------------|
-| P1 | Critical | Incidentes de máxima urgencia |
-| P2 | Medium | Incidentes de prioridad media |
-| P3 | Low | Incidentes de baja prioridad |
+| P1 | Critical | Incidentes de máxima urgencia - atención inmediata |
+| P2 | Medium | Incidentes de prioridad media - atención pronta |
+| P3 | Low | Incidentes de baja prioridad - puede ser programado |
 
 ## Estructura del Proyecto
 
@@ -24,57 +28,121 @@ Módulo que implementa un sistema inteligente de priorización automática de in
 IA-module/
 ├── src/                      # Módulos principales
 │   ├── __init__.py          # Inicialización del paquete
-│   ├── utils.py             # Utilidades y configuración
+│   ├── interfaces.py        # Interfaces abstractas (IEncoder, IClassifier)
+│   ├── utils.py             # Utilidades, configuración y reportes
+│   ├── encoders.py          # Codificadores (MiniLM, TF-IDF)
+│   ├── classifiers.py       # Clasificadores (LightGBM, Ensemble)
 │   ├── data_processor.py    # Preprocesamiento de datos
 │   ├── model_trainer.py     # Entrenamiento y evaluación
 │   └── predictor.py         # Predicción y explicabilidad
 │
+├── config/                   # Configuración
+│   └── default.json         # Hiperparámetros y opciones
+│
 ├── data/                     # Datos
-│   ├── it_tickets_merged.csv    # Dataset principal (45,988 tickets)
-│   ├── aa_dataset-tickets-multi-lang-5-2-50-version.csv
-│   └── IT Support Ticket Data.csv
+│   └── it_tickets_merged.csv    # Dataset principal (45,988 tickets)
 │
 ├── models/                   # Modelos entrenados (generado)
 │   ├── priority_classifier_v1.pkl
-│   └── encoder/              # Directorio con el codificador MiniLM
+│   ├── encoder/              # Modelo MiniLM guardado
+│   └── metadata.json         # Metadatos del entrenamiento
+│
+├── cache/                    # Caché de embeddings (generado)
+│   └── X_MiniLM_{hash}.npy  # Embeddings cacheados
+│
+├── logs/                     # Logs (generado)
+│   ├── app.log
+│   └── training_{timestamp}.log
+│
+├── reports/                  # Reportes de entrenamiento (generado)
+│   ├── training_report_{timestamp}.md
+│   └── training_config.json
 │
 ├── test/                     # Tests
 │   ├── test_model.py        # Tests unitarios
 │   └── examples.py          # Ejemplos de uso
 │
 ├── docs/                     # Documentación
-│   └── seleccion_dataset.md # Análisis de datasets
+│   ├── ARQUITECTURA.md      # Arquitectura del sistema
+│   ├── INTEGRATION.md       # Guía de integración
+│   └── MODEL.md             # Este archivo
 │
-├── train.py                 # Script de entrenamiento
-├── predict.py               # Script de predicción
-└── pyproject.toml           # Dependencias (Poetry)
-
+├── train.py                  # Script de entrenamiento
+├── predict.py                # Script de predicción
+├── pyproject.toml           # Dependencias (Poetry)
+└── poetry.lock              # Lock de dependencias
 ```
 
-## Como Usar
+## Cómo Usar
 
-### 1. Entrenamiento del Modelo
+### 1. Instalación
 
 ```bash
 cd IA-module
+poetry install
+```
+
+### 2. Entrenamiento del Modelo
+
+```bash
 poetry run python train.py
 ```
 
 **Qué hace:**
-- Carga `it_tickets_merged.csv`
-- Limpia y valida datos
-- Extrae textos de la columna `text`
-- Codifica con MiniLM-L6-v2 embeddings (384 dimensiones)
-- Entrena modelo LightGBM
-- Valida y evalúa el modelo
-- Guarda artefactos en `models/`
+1. Carga `data/it_tickets_merged.csv`
+2. Limpia y valida datos (reemplaza NS/NA, filtra prioridades válidas)
+3. Elimina boilerplate LLM de los textos (14 patrones regex)
+4. Deduplica textos exactos (~29% del dataset)
+5. Codifica con MiniLM-L6-v2 embeddings (384 dimensiones)
+   - Usa caché si está disponible (evita ~15 min de codificación)
+6. Divide datos: train 72.25%, validation 12.75%, test 15%
+7. Entrena modelo LightGBM con early stopping
+8. Valida y evalúa el modelo
+9. Guarda artefactos en `models/`
+10. Genera reporte en `reports/`
+
+**Configuración (`config/default.json`):**
+
+```json
+{
+  "minilm_model_name": "all-MiniLM-L6-v2",
+  "embedding_dim": 384,
+  "embedding_batch_size": 16,
+  "lgb_num_leaves": 50,
+  "lgb_max_depth": 7,
+  "lgb_learning_rate": 0.03,
+  "lgb_n_estimators": 500,
+  "lgb_min_child_samples": 20,
+  "lgb_reg_alpha": 0.05,
+  "lgb_reg_lambda": 0.05,
+  "lgb_early_stopping_rounds": 30,
+  "random_state": 42,
+  "test_size": 0.15,
+  "validation_size": 0.15,
+  "balance_classes": false,
+  "min_accuracy": 0.70
+}
+```
+
+**Opciones en `train.py`:**
+
+```python
+USE_MINILM = True          # True: MiniLM, False: TF-IDF
+USE_ENSEMBLE = False       # True: LightGBM+LR, False: LightGBM solo
+BALANCE_CLASSES = False    # Undersampling para igualar clases
+DEDUPLICATE = True         # Eliminar textos duplicados
+BOILERPLATE_REMOVAL = True # Eliminar frases boilerplate LLM
+USE_CACHE = True           # Usar caché de embeddings
+```
 
 **Salida esperada:**
 - `models/priority_classifier_v1.pkl` - Modelo entrenado
 - `models/encoder/` - Codificador MiniLM-L6-v2
-- Métricas de desempeño (Accuracy, Precision, Recall, F1)
+- `models/metadata.json` - Metadatos del entrenamiento
+- `reports/training_report_{timestamp}.md` - Reporte detallado
+- `reports/training_config.json` - Configuración usada
 
-### 2. Predicción
+### 3. Predicción
 
 #### Desde línea de comandos:
 
@@ -90,54 +158,112 @@ poetry run python predict.py
 
 Mostrará ejemplos de predicción con explicaciones.
 
-### 3. Tests
+#### Como biblioteca:
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent / "IA-module"))
+
+from src.predictor import PriorityPredictor
+
+predictor = PriorityPredictor()
+
+# Predicción simple (0=P1, 1=P2, 2=P3)
+priority = predictor.predict("Server is down")
+
+# Con confianza
+priority, confidence = predictor.predict_with_confidence("Server is down")
+
+# Con explicación completa (RF-23)
+explanation = predictor.explain_prediction("Server is down", top_k=5)
+print(f"Prioridad: {explanation['priority_label']}")
+print(f"Confianza: {explanation['confidence']*100:.1f}%")
+```
+
+### 4. Tests
 
 ```bash
 poetry run python test/test_model.py
 ```
 
-## Modulos Principales
+## Módulos Principales
 
-### `utils.py` - Configuración y Utilidades
-- `Config`: Clase para parámetros centrales
-- `setup_logger()`: Logging estandarizado
-- `validate_priority()`: Validación de prioridades (1-3)
-- Rutas y configuraciones centralizadas
+### `interfaces.py` - Interfaces Abstractas
+
+Define contratos para componentes intercambiables:
+
+| Interfaz | Descripción |
+|----------|-------------|
+| `IEncoder` | Codificación de texto a vectores numéricos |
+| `IClassifier` | Clasificación multiclase con probabilidades |
+
+Principio: Dependency Inversion (DIP)
+
+### `encoders.py` - Codificadores de Texto
+
+| Clase | Descripción | Dimensión |
+|-------|-------------|-----------|
+| `MiniLMEncoder` | Embeddings con Sentence Transformers | 384 |
+| `TFIDFEncoder` | TF-IDF vectorizer (fallback) | 1000 |
+
+**MiniLMEncoder**: Modelo `all-MiniLM-L6-v2`, optimizado para CPU, normalización de embeddings.
+
+**TFIDFEncoder**: `TfidfVectorizer` con bigrams, `max_features=1000`.
+
+### `classifiers.py` - Clasificadores
+
+| Clase | Descripción |
+|-------|-------------|
+| `LightGBMClassifier` | Modelo principal, early stopping opcional |
+| `FallbackEnsembleClassifier` | Ensamble LightGBM (60%) + LR (40%) |
+
+**LightGBMClassifier parámetros**:
+```python
+LightGBMClassifier(
+    n_classes=3,
+    num_leaves=50,
+    max_depth=7,
+    learning_rate=0.03,
+    n_estimators=500,
+    min_child_samples=20,
+    reg_alpha=0.05,
+    reg_lambda=0.05,
+    early_stopping_rounds=30,
+    random_state=42
+)
+```
 
 ### `data_processor.py` - Procesamiento de Datos
 
-**Clase: `DataProcessor`**
+**Pipeline completo:**
 
 ```python
 processor = DataProcessor()
 
-# Pipeline completo
-X_train, X_val, X_test, y_train, y_val, y_test = processor.preprocess_pipeline(
-    Path("data/it_tickets_merged.csv")
+# Pipeline end-to-end
+X_train, X_val, X_test, y_train, y_val, y_test, encoder = processor.preprocess_pipeline(
+    input_file=Path("data/it_tickets_merged.csv"),
+    use_embeddings=True,
+    deduplicate=True,
+    use_cache=True
 )
-
-# Pasos individuales
-df = processor.load_data(file_path)
-df_clean = processor.clean_data(df)
-texts, labels = processor.prepare_texts_and_labels(df_clean)
-X = processor.vectorize_texts(texts, fit=True)
 ```
 
 **Características:**
 - Limpieza de valores inválidos (NS, NA)
-- Filtrado de textos vacíos
-- Validación de prioridades (1-3)
-- División train/validation/test automática
-- MiniLM-L6-v2 embeddings (384 dimensiones) o TF-IDF como fallback
+- Eliminación de boilerplate LLM (14 patrones regex)
+- Deduplicación exacta de textos
+- Caché de embeddings (.npy) con hash SHA256
+- División estratificada train/val/test
+- Soporte para meta-features (department, type, tags)
+- Balanceo de clases (undersampling opcional)
 
 ### `model_trainer.py` - Entrenamiento
 
-**Clase: `ModelTrainer`**
-
 ```python
 trainer = ModelTrainer()
-trainer.create_model()
-trainer.train(X_train, y_train)
+trainer.train(X_train, y_train, X_val, y_val)
 
 # Validación
 val_metrics = trainer.validate(X_val, y_val)
@@ -150,88 +276,91 @@ trainer.save_model()
 ```
 
 **Métricas Capturadas:**
-- Accuracy
-- Precision (weighted)
-- Recall (weighted)
-- F1-Score
-- Confusion Matrix
-- Classification Report
+- Accuracy, Precision (weighted), Recall (weighted), F1-Score
+- Confusion Matrix, Classification Report
+- Gap validation-test (RNF-10)
 
 ### `predictor.py` - Predicción y Explicabilidad
-
-**Clase: `PriorityPredictor`**
 
 ```python
 predictor = PriorityPredictor()
 
-# Predicción simple
-priority = predictor.predict(text)  # Retorna 1-3
+# Predicción simple (0-2)
+priority = predictor.predict(text)
 
 # Con confianza
 priority, confidence = predictor.predict_with_confidence(text)
 
 # Con explicación (RF-23)
 explanation = predictor.explain_prediction(text, top_k=5)
+
+# Batch
+priorities = predictor.batch_predict(texts)
+results = predictor.batch_predict_with_confidence(texts)
 ```
 
 **Explicación Incluye:**
 - Prioridad predicha (P1-P3)
 - Nivel de confianza (0-100%)
 - Probabilidades por clase
-- Top 5 palabras clave contribuyentes
+- Top 5 features contribuyentes
+- Método de explicación (SHAP o coeficientes)
 - Razonamiento textual
 
-## Configuracion
+## Configuración
 
-Todos los parámetros centralizados en `src/utils.py - Config`:
+Parámetros centralizados en `src/utils.py` (clase `Config`) y `config/default.json`.
 
 ```python
-# Parámetros del modelo
-MINILM_MODEL_NAME = "all-MiniLM-L6-v2"  # Nombre del modelo de embeddings
-EMBEDDING_DIM = 384                     # Dimensión de embeddings
-EMBEDDING_BATCH_SIZE = 16               # Tamaño de lote para embeddings
+# Embeddings
+MINILM_MODEL_NAME = "all-MiniLM-L6-v2"
+EMBEDDING_DIM = 384
+EMBEDDING_BATCH_SIZE = 16
 
 # LightGBM
-LGB_NUM_LEAVES = 31                     # Número de hojas en árboles
-LGB_MAX_DEPTH = 6                       # Profundidad máxima de árboles
-LGB_LEARNING_RATE = 0.05                # Tasa de aprendizaje
-LGB_N_ESTIMATORS = 200                  # Número de estimadores
+LGB_NUM_LEAVES = 50
+LGB_MAX_DEPTH = 7
+LGB_LEARNING_RATE = 0.03
+LGB_N_ESTIMATORS = 500
+LGB_MIN_CHILD_SAMPLES = 20
+LGB_REG_ALPHA = 0.05
+LGB_REG_LAMBDA = 0.05
+LGB_EARLY_STOPPING_ROUNDS = 30
 
 # División de datos
-TEST_SIZE = 0.2                         # 20% para test
-VALIDATION_SIZE = 0.1                   # 10% para validation
+TEST_SIZE = 0.15           # 15% para test
+VALIDATION_SIZE = 0.15     # 15% para validation
 
 # Requerimientos
-MIN_ACCURACY = 0.70                     # RNF-08: Precisión mínima 70%
-RESPONSE_TIME_SECONDS = 2               # RNF-01: < 2 segundos
+MIN_ACCURACY = 0.70        # RNF-08: Precisión mínima 70%
+RESPONSE_TIME_SECONDS = 2  # RNF-01: < 2 segundos
 ```
 
 ## Flujo de Datos
 
 ```
-it_tickets_merged.csv
+it_tickets_merged.csv (45,988 tickets)
     ↓
 [DataProcessor]
     ├─ load_data()
-    ├─ clean_data()
+    ├─ clean_data() + remove_boilerplate()
+    ├─ deduplicate_data()
     ├─ prepare_texts_and_labels()
-    └─ vectorize_texts()  → MiniLM Embeddings
-    ↓
-    X_train, y_train  (vectores y etiquetas)
+    ├─ encode_texts() → MiniLM Embeddings (384-dim)
+    │   └─ [Caché: si disponible, skip encoding]
+    └─ split_data() → train/val/test
     ↓
 [ModelTrainer]
-    ├─ create_model()  → LightGBM
-    ├─ train()
-    ├─ validate()
-    ├─ test()
-    └─ save_model()
-    ↓
-    priority_classifier_v1.pkl
+    ├─ create_model() → LightGBM (via ModelFactory)
+    ├─ train() + early stopping
+    ├─ validate() → check RNF-08
+    ├─ test() → check RNF-10
+    └─ save_model() → priority_classifier_v1.pkl + encoder/
     ↓
 [PriorityPredictor]
-    ├─ predict()              → Prioridad (1-3)
+    ├─ predict()              → Prioridad (0-2)
     ├─ predict_with_confidence() → (Prioridad, Confianza)
-    └─ explain_prediction()   → Explicación con palabras clave
+    └─ explain_prediction()   → Explicación con SHAP
     ↓
 API / Frontend
 ```
@@ -239,20 +368,27 @@ API / Frontend
 ## Requisitos Implementados
 
 ### Requisitos Funcionales (RF)
-- **RF-05**: Analisis automatico del incidente (TextProcessing + TF-IDF)
-- **RF-06**: Generacion de prioridad sugerida (Prediccion 1-3)
-- **RF-07**: Servicio de prediccion (PriorityPredictor.predict())
-- **RF-08**: Uso de datos historicos (it_tickets_merged.csv)
-- **RF-09**: Reentrenamiento controlado (train.py)
-- **RF-23**: Explicacion de prediccion (explain_prediction())
+
+| ID | Requisito | Implementación |
+|----|-----------|---------------|
+| RF-05 | Análisis automático del incidente | DataProcessor + MiniLM |
+| RF-06 | Generación de prioridad sugerida | PriorityPredictor.predict() |
+| RF-07 | Servicio de predicción | PriorityPredictor (batch + individual) |
+| RF-08 | Uso de datos históricos | it_tickets_merged.csv (45,988 tickets) |
+| RF-09 | Reentrenamiento controlado | train.py (manual) |
+| RF-23 | Explicación de predicción | explain_prediction() con SHAP |
 
 ### Requisitos No Funcionales (RNF)
-- **RNF-08**: Precision minima 70% (validacion en trainer.validate())
-- **RNF-09**: Manejo de datos incompletos (limpieza y fillna)
-- **RNF-10**: Capacidad de generalizacion (train/val/test split)
-- **RNF-11**: Evaluacion controlada (no hay automatica en prodencion)
-- **RNF-12**: Supervision humana (prediccion es "sugerida", no final)
-- **RNF-13**: Transparencia (explicabilidad integrada)
+
+| ID | Requisito | Implementación |
+|----|-----------|---------------|
+| RNF-01 | Response time < 2s | LightGBM optimizado, caché |
+| RNF-08 | Precisión mínima 70% | Validación en trainer.validate() |
+| RNF-09 | Manejo de datos incompletos | Limpieza y validación en DataProcessor |
+| RNF-10 | Capacidad de generalización | Train/val/test split + gap analysis |
+| RNF-11 | Evaluación controlada | Sin auto-reentrenamiento en producción |
+| RNF-12 | Supervisión humana | Predicción es "sugerida", no final |
+| RNF-13 | Transparencia | Explicabilidad integrada (SHAP) |
 
 ## Ejemplos de Uso
 
@@ -265,14 +401,13 @@ from pathlib import Path
 
 # Preprocesar
 processor = DataProcessor()
-X_train, X_val, X_test, y_train, y_val, y_test = processor.preprocess_pipeline(
+X_train, X_val, X_test, y_train, y_val, y_test, encoder = processor.preprocess_pipeline(
     Path("data/it_tickets_merged.csv")
 )
 
 # Entrenar
-trainer = ModelTrainer()
-trainer.create_model()
-trainer.train(X_train, y_train)
+trainer = ModelTrainer(encoder=encoder)
+trainer.train(X_train, y_train, X_val, y_val)
 
 # Validar
 trainer.validate(X_val, y_val)
@@ -294,10 +429,10 @@ explanation = predictor.explain_prediction(text)
 
 print(f"Prioridad: {explanation['priority_label']}")
 print(f"Confianza: {explanation['confidence']*100:.1f}%")
-print(f"Palabras clave: {[f['feature'] for f in explanation['contributing_features']]}")
+print(f"Método: {explanation['explanation_method']}")
 ```
 
-### Batch Prediction
+### Predicción en Lote
 
 ```python
 texts = [
@@ -312,34 +447,49 @@ results = predictor.batch_predict_with_confidence(texts)
 
 ## Notas y Limitaciones
 
-1. **Accuracy actual**: El modelo actual (MiniLM-L6-v2 + LightGBM) alcanza aproximadamente 55-60% accuracy. Se requiere optimización adicional para alcanzar el requerido 70% (hiperparámetros, mejor modelo, feature engineering).
-
-2. **Escalabilidad**: El modelo es un monolito modular, pero la arquitectura permite migración futura a microservicios sin cambios significativos en el código.
-
-3. **Mejoras Futuras**:
-   - Ajuste de hiperparámetros de LightGBM
-   - Usar embeddings más avanzados (MPNet, etc.)
+1. **Accuracy**: El modelo usa MiniLM-L6-v2 + LightGBM con hiperparámetros optimizados. Si no se alcanza el 70%, considerar:
+   - Ajustar hiperparámetros (num_leaves, max_depth, learning_rate)
+   - Usar embeddings más avanzados (MPNet)
+   - Agregar meta-features (department, type, tags)
    - Ensemble de modelos
-   - Feature engineering más sofisticado
-   - Detección de anomalías
+
+2. **Escalabilidad**: Arquitectura modular permite migración a microservicios sin cambios significativos.
+
+3. **Caché**: Los embeddings se cachean automáticamente. Si cambian los datos, el caché se invalida por hash mismatch.
 
 4. **Rendimiento**:
-   - Predicción individual: ~50-100ms (CPU)
-   - Batch prediction: depende del tamaño y uso de GPU para embeddings
+   - Predicción individual: ~50-100ms (CPU, sin embeddings)
+   - Codificación MiniLM: ~2-3ms por texto (batch_size=16)
+   - Batch prediction: depende del tamaño y CPU
 
-## Dependencies
+5. **Meta-features**: Desactivadas por defecto. Requieren que el backend pase metadata (`department`, `type`, `tags`) al predecir.
 
-El modelo requiere las siguientes dependencias principales:
-- sentence-transformers (para MiniLM-L6-v2)
-- lightgbm
-- shap (para explicabilidad)
-- numpy, scikit-learn
+## Dependencias
+
+| Paquete | Uso |
+|---------|-----|
+| sentence-transformers | Codificación MiniLM-L6-v2 |
+| lightgbm | Modelo principal de clasificación |
+| scikit-learn | TF-IDF, métricas, utilidades |
+| shap | Explicabilidad de predicciones |
+| numpy | Operaciones numéricas |
+| pandas | Procesamiento de datos |
 
 ## Debugging
 
-### Logs detallados
+### Logs
 
-Los logs incluyen información de cada fase. Ver `setup_logger()` en utils.py
+Los logs se guardan en `logs/`:
+- `app.log`: Logs generales de la aplicación
+- `training_{timestamp}.log`: Logs específicos de entrenamiento
+
+Cada fase del pipeline loggea información detallada.
+
+### Reportes
+
+Cada entrenamiento genera un reporte en `reports/`:
+- `training_report_{timestamp}.md`: Métricas, matriz de confusión, clasificación
+- `training_config.json`: Configuración usada
 
 ### Tests
 
@@ -351,11 +501,14 @@ poetry run python test/test_model.py
 ## Referencias
 
 - Scikit-learn: https://scikit-learn.org/
-- TF-IDF: https://en.wikipedia.org/wiki/Tf%E2%80%93idf
-- Logistic Regression: https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html
+- LightGBM: https://lightgbm.readthedocs.io/
+- Sentence Transformers: https://www.sbert.net/
+- SHAP: https://shap.readthedocs.io/
+- MiniLM-L6-v2: https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2
 
 ## Autor
 
 Equipo IA - Sistema de Priorización de Incidentes IT
 
-Versión: 1.1.0
+Versión: 2.0.0
+Última actualización: Mayo 2026

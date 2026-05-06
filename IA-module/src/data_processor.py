@@ -4,6 +4,9 @@ Procesamiento y preparación de datos para el modelo de priorización.
 Incluye:
 - Carga de datos
 - Limpieza y validación
+- Eliminación de boilerplate y deduplicación
+- Caché de embeddings para evitar recodificación
+- Extracción de meta-features (department, type, tags)
 - Generación de características (TF-IDF o embeddings)
 - División train/test
 
@@ -12,13 +15,35 @@ Principio DIP: DataProcessor depende de abstracciones (IEncoder), no de implemen
 
 from pathlib import Path
 from typing import Tuple, List, Optional
+import re
+import json
+import hashlib
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 
 from .encoders import MiniLMEncoder, TFIDFEncoder
 from .interfaces import IEncoder
 from .utils import logger, Config
+
+LLM_BOILERPLATE_PATTERNS = [
+    r"Dear Customer Support Team,?\s*",
+    r"I hope this message reaches you well\.?\s*",
+    r"I hope you are doing well\.?\s*",
+    r"I am reaching out to\s*",
+    r"I am writing to\s*",
+    r"Thank you for your time and assistance\.?\s*",
+    r"Thank you for your attention to this matter\.?\s*",
+    r"Best regards,?\s*",
+    r"Sincerely,?\s*",
+    r"Kind regards,?\s*",
+    r"Please let me know if you need any further information\.?\s*",
+    r"I would appreciate your prompt assistance\.?\s*",
+    r"Could you please provide an update on\s*",
+    r"I look forward to your response\.?\s*",
+    r"Your prompt assistance would be greatly appreciated\.?\s*",
+]
 
 
 class DataProcessor:
@@ -42,17 +67,120 @@ class DataProcessor:
         self.random_state = random_state
         self.encoder = encoder
         self._is_encoder_fitted = False
+        self.meta_feature_columns: List[str] = []
+        self.meta_encoders: dict = {}
         
-    def load_data(self, filepath: Path) -> pd.DataFrame:
+    def _compute_data_hash(self, texts: List[str], labels: np.ndarray) -> str:
         """
-        Carga datos desde CSV.
+        Calcula un hash determinístico de los textos y etiquetas procesados.
+        Se usa para identificar si ya existe un caché de embeddings válido.
         
         Args:
-            filepath: Ruta al archivo CSV
+            texts: Lista de textos procesados
+            labels: Array de etiquetas
             
         Returns:
-            DataFrame con los datos
+            Hash SHA256 hexadecimal
         """
+        hasher = hashlib.sha256()
+        hasher.update(f"n={len(texts)}".encode())
+        hasher.update(f"rs={self.random_state}".encode())
+        
+        sample_texts = texts[:500] + texts[-500:] if len(texts) > 1000 else texts
+        for t in sample_texts:
+            hasher.update(t.encode("utf-8"))
+        
+        hasher.update(" ".join(str(l) for l in labels[:500]).encode())
+        hasher.update(" ".join(str(l) for l in labels[-500:]).encode())
+        return hasher.hexdigest()[:16]
+    
+    def _get_cache_dir(self) -> Path:
+        """Obtiene el directorio de caché."""
+        cache_dir = Path(__file__).parent.parent / "cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir
+    
+    def _get_cache_path(self, data_hash: str, encoder_type: str) -> Tuple[Path, Path]:
+        """
+        Obtiene las rutas de los archivos de caché.
+        
+        Returns:
+            Tupla (path de features, path de labels)
+        """
+        cache_dir = self._get_cache_dir()
+        features_path = cache_dir / f"X_{encoder_type}_{data_hash}.npy"
+        labels_path = cache_dir / f"y_{data_hash}.npy"
+        return features_path, labels_path
+    
+    def load_cache(self, data_hash: str, encoder_type: str) -> Optional[Tuple[np.ndarray, np.ndarray]]:
+        """
+        Intenta cargar embeddings desde caché.
+        
+        Args:
+            data_hash: Hash de los datos procesados
+            encoder_type: Tipo de encoder usado ("MiniLM" o "TFIDF")
+            
+        Returns:
+            Tupla (X, y) si existe caché, None si no
+        """
+        features_path, labels_path = self._get_cache_path(data_hash, encoder_type)
+        
+        if features_path.exists() and labels_path.exists():
+            logger.info("=" * 50)
+            logger.info("CACHÉ DE EMBEDDINGS ENCONTRADA")
+            logger.info(f"  Hash: {data_hash}")
+            logger.info(f"  Encoder: {encoder_type}")
+            logger.info(f"  Cargando X desde {features_path.name}")
+            logger.info(f"  Cargando y desde {labels_path.name}")
+            
+            X = np.load(features_path)
+            y = np.load(labels_path)
+            
+            logger.info(f"  X shape: {X.shape}, y shape: {y.shape}")
+            logger.info("=" * 50)
+            return X, y
+        
+        return None
+    
+    def save_cache(self, data_hash: str, encoder_type: str, X: np.ndarray, y: np.ndarray) -> None:
+        """
+        Guarda embeddings en caché para reutilizar.
+        
+        Args:
+            data_hash: Hash de los datos procesados
+            encoder_type: Tipo de encoder usado
+            X: Features codificadas
+            y: Etiquetas
+        """
+        features_path, labels_path = self._get_cache_path(data_hash, encoder_type)
+        
+        np.save(features_path, X)
+        np.save(labels_path, y)
+        
+        logger.info(f"Caché guardada: {features_path.name} ({X.shape})")
+    
+    def invalidate_cache(self, data_hash: str = None) -> None:
+        """
+        Invalida archivos de caché. Si no se pasa hash, invalida todo el caché.
+        
+        Args:
+            data_hash: Hash específico a invalidar, o None para borrar todo
+        """
+        cache_dir = self._get_cache_dir()
+        if not cache_dir.exists():
+            return
+        
+        if data_hash:
+            for f in cache_dir.glob(f"*{data_hash}*.npy"):
+                f.unlink()
+                logger.info(f"Caché invalidado: {f.name}")
+        else:
+            for f in cache_dir.glob("*.npy"):
+                f.unlink()
+            logger.info("Todo el caché ha sido invalidado")
+    
+    def load_data(self, filepath: Path) -> pd.DataFrame:
+        """Carga datos desde CSV."""
         if not filepath.exists():
             raise FileNotFoundError(f"No se encontró el archivo: {filepath}")
         
@@ -62,16 +190,16 @@ class DataProcessor:
         
         return df
     
+    def remove_boilerplate(self, text: str) -> str:
+        """Elimina frases boilerplate generadas por LLM del texto."""
+        cleaned = text
+        for pattern in LLM_BOILERPLATE_PATTERNS:
+            cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\s+", " ", cleaned).strip()
+        return cleaned
+    
     def clean_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Limpia y valida los datos.
-        
-        Args:
-            df: DataFrame con datos crudos
-            
-        Returns:
-            DataFrame limpio
-        """
+        """Limpia y valida los datos. Elimina boilerplate LLM."""
         logger.info("Iniciando limpieza de datos")
         df_clean = df.copy()
         
@@ -89,25 +217,97 @@ class DataProcessor:
         if "text" in df_clean.columns:
             df_clean = df_clean[df_clean["text"].notna() & (df_clean["text"].str.strip() != "")]
             logger.info(f"Después de filtrar textos vacíos: {len(df_clean)} filas")
+            
+            logger.info("Eliminando boilerplate LLM de los textos...")
+            df_clean["text"] = df_clean["text"].apply(self.remove_boilerplate)
+            df_clean = df_clean[df_clean["text"].str.strip() != ""]
+            logger.info(f"Después de eliminar boilerplate: {len(df_clean)} filas")
         
         logger.info(f"Limpieza completada: {len(df_clean)} filas")
         return df_clean
     
-    def prepare_texts_and_labels(self, df: pd.DataFrame) -> Tuple[List[str], np.ndarray]:
-        """
-        Prepara textos de incidentes y etiquetas de prioridad.
+    def deduplicate_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Elimina textos duplicados exactos."""
+        initial_count = len(df)
         
-        Args:
-            df: DataFrame con datos limpios
+        df_dedup = df.drop_duplicates(subset=["text"], keep="first")
+        removed = initial_count - len(df_dedup)
+        
+        logger.info("=" * 50)
+        logger.info("DEDUPLICACIÓN DE TEXTOS")
+        logger.info(f"Textos originales: {initial_count}")
+        logger.info(f"Duplicados eliminados: {removed}")
+        logger.info(f"Textos únicos: {len(df_dedup)}")
+        logger.info("=" * 50)
+        
+        return df_dedup
+    
+    def extract_meta_features(self, df: pd.DataFrame) -> np.ndarray:
+        """Extrae y codifica meta-features categóricas (department, type, tags)."""
+        meta_features = []
+        self.meta_encoders = {}
+        self.meta_feature_columns = []
+        
+        if "department" in df.columns:
+            logger.info("Codificando meta-feature: department")
+            le = LabelEncoder()
+            le.fit_transform(df["department"].fillna("Unknown"))
+            self.meta_encoders["department"] = le
             
-        Returns:
-            Tupla (lista de textos, array de etiquetas ajustadas a 0-index)
-        """
+            dept_ohe = pd.get_dummies(df["department"].fillna("Unknown"), prefix="dept")
+            meta_features.append(dept_ohe)
+            self.meta_feature_columns.extend(dept_ohe.columns.tolist())
+            logger.info(f"  Department: {len(dept_ohe.columns)} categorías")
+        
+        if "type" in df.columns:
+            logger.info("Codificando meta-feature: type")
+            le = LabelEncoder()
+            le.fit_transform(df["type"].fillna("Unknown"))
+            self.meta_encoders["type"] = le
+            
+            type_ohe = pd.get_dummies(df["type"].fillna("Unknown"), prefix="type")
+            meta_features.append(type_ohe)
+            self.meta_feature_columns.extend(type_ohe.columns.tolist())
+            logger.info(f"  Type: {len(type_ohe.columns)} categorías")
+        
+        if "tags" in df.columns:
+            logger.info("Codificando meta-feature: tags")
+            tags_series = df["tags"].fillna("")
+            all_tags = set()
+            for tags_str in tags_series:
+                if tags_str:
+                    tags = [t.strip() for t in str(tags_str).split(",")]
+                    all_tags.update(tags)
+            
+            all_tags = sorted([t for t in all_tags if t])
+            logger.info(f"  Tags únicos: {len(all_tags)}")
+            
+            tag_cols = {f"tag_{t}": [] for t in all_tags}
+            for tags_str in tags_series:
+                row_tags = set()
+                if tags_str:
+                    row_tags = set(t.strip() for t in str(tags_str).split(",") if t.strip())
+                for t in all_tags:
+                    tag_cols[f"tag_{t}"].append(1 if t in row_tags else 0)
+            
+            tags_df = pd.DataFrame(tag_cols)
+            meta_features.append(tags_df)
+            self.meta_feature_columns.extend(tags_df.columns.tolist())
+            logger.info(f"  Tags codificados: {len(tags_df.columns)}")
+        
+        if meta_features:
+            meta_array = pd.concat(meta_features, axis=1).astype(np.float32).values
+            logger.info(f"Total meta-features: {meta_array.shape[1]}")
+            return meta_array
+        else:
+            logger.info("No se encontraron columnas para meta-features")
+            return np.empty((len(df), 0), dtype=np.float32)
+    
+    def prepare_texts_and_labels(self, df: pd.DataFrame) -> Tuple[List[str], np.ndarray]:
+        """Prepara textos de incidentes y etiquetas de prioridad."""
         logger.info("Preparando textos y etiquetas")
         
         texts = df["text"].tolist()
-        
-        # Convertir prioridad 1,2,3 a índices 0,1,2 (para clasificación)
         labels = (df["priority"].astype(int).values - 1).astype(np.int32)
         
         logger.info(f"Textos preparados: {len(texts)}")
@@ -121,27 +321,12 @@ class DataProcessor:
         batch_size: int = 32,
         fit: bool = True
     ) -> np.ndarray:
-        """
-        Convierte textos a features usando el encoder inyectado.
-        
-        Soporta tanto TF-IDF (sparse/densa) como MiniLM (embeddings).
-        
-        Args:
-            texts: Lista de textos
-            batch_size: Tamaño de lote para procesamiento en lotes
-            fit: Si True, prepara/entrena el encoder
-            
-        Returns:
-            Matriz de features (n_texts, n_features)
-        """
+        """Convierte textos a features usando el encoder inyectado."""
         if self.encoder is None:
-            # Fallback a TF-IDF clásico
             logger.info("Usando TF-IDF como encoder por defecto")
             self._init_tfidf_encoder(fit)
         
         logger.info(f"Codificando {len(texts)} textos...")
-        
-        # Codificación con batch para no saturar RAM
         features = self.encoder.encode(texts, batch_size=batch_size)
         
         if fit:
@@ -161,20 +346,7 @@ class DataProcessor:
         labels: np.ndarray,
         random_state: Optional[int] = None
     ) -> Tuple[List[str], np.ndarray]:
-        """
-        Realiza undersampling para igualar todas las clases a la que tiene menos datos.
-        
-        Si la clase minoritaria tiene N muestras, todas las demás clases se reducen
-        aleatoriamente a N muestras.
-        
-        Args:
-            texts: Lista de textos
-            labels: Array de etiquetas (0-index: 0=P1, 1=P2, 2=P3)
-            random_state: Semilla para reproducibilidad
-            
-        Returns:
-            Tupla (textos_balanceados, etiquetas_balanceadas)
-        """
+        """Realiza undersampling para igualar todas las clases a la que tiene menos datos."""
         if random_state is None:
             random_state = self.random_state
             
@@ -226,17 +398,7 @@ class DataProcessor:
         labels: np.ndarray,
         rng: np.random.RandomState
     ) -> Tuple[List[str], np.ndarray]:
-        """
-        Mezcla los datos de forma aleatoria manteniendo la correspondencia texto-label.
-        
-        Args:
-            texts: Lista de textos
-            labels: Array de etiquetas
-            rng: Generador de números aleatorios
-            
-        Returns:
-            Tupla (textos_mezclados, etiquetas_mezcladas)
-        """
+        """Mezcla los datos manteniendo la correspondencia texto-label."""
         indices = np.arange(len(texts))
         rng.shuffle(indices)
         
@@ -252,21 +414,9 @@ class DataProcessor:
         test_size: float = Config.TEST_SIZE,
         validation_size: float = Config.VALIDATION_SIZE
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        """
-        Divide datos en train/validation/test.
-        
-        Args:
-            X: Features (pueden ser densos o sparse)
-            y: Labels (0-index: 0=P1, 1=P2, 2=P3)
-            test_size: Proporción para test
-            validation_size: Proporción para validation (del training)
-            
-        Returns:
-            Tupla (X_train, X_val, X_test, y_train, y_val, y_test)
-        """
+        """Divide datos en train/validation/test."""
         logger.info("Dividiendo datos en train/validation/test")
         
-        # Primero separar test
         X_temp, X_test, y_temp, y_test = train_test_split(
             X, y,
             test_size=test_size,
@@ -274,7 +424,6 @@ class DataProcessor:
             stratify=y
         )
         
-        # Luego separar validation del training
         val_size_adjusted = validation_size / (1 - test_size)
         X_train, X_val, y_train, y_val = train_test_split(
             X_temp, y_temp,
@@ -292,7 +441,10 @@ class DataProcessor:
         input_file: Path,
         encoder: Optional[IEncoder] = None,
         use_embeddings: bool = True,
-        balance_classes: bool = False
+        balance_classes: bool = False,
+        use_meta_features: bool = False,
+        deduplicate: bool = True,
+        use_cache: bool = True
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, IEncoder]:
         """
         Pipeline completo de preprocesamiento.
@@ -302,6 +454,9 @@ class DataProcessor:
             encoder: Encoder a usar. Si None, usa MiniLM si use_embeddings=True
             use_embeddings: Si True usa MiniLM, si False usa TF-IDF
             balance_classes: Si True, aplica undersampling para igualar clases
+            use_meta_features: Si True, agrega department/type/tags como features
+            deduplicate: Si True, elimina textos duplicados antes del split
+            use_cache: Si True, usa caché de embeddings si está disponible
             
         Returns:
             Datos divididos train/val/test + encoder usado
@@ -316,26 +471,76 @@ class DataProcessor:
         elif use_embeddings:
             self.encoder = MiniLMEncoder()
         
+        encoder_type = type(self.encoder).__name__.replace("Encoder", "")
+        
         # 1. Cargar datos
         df = self.load_data(input_file)
         
-        # 2. Limpiar datos
+        # 2. Limpiar datos (incluye eliminación de boilerplate)
         df_clean = self.clean_data(df)
         
-        # 3. Generar textos y etiquetas
+        # 3. Deduplicar
+        if deduplicate:
+            df_clean = self.deduplicate_data(df_clean)
+        
+        # 4. Extraer meta-features del DataFrame
+        meta_features = None
+        if use_meta_features:
+            meta_features = self.extract_meta_features(df_clean)
+        
+        # 5. Generar textos y etiquetas
         texts, labels = self.prepare_texts_and_labels(df_clean)
         
-        # 4. Balancear clases (opcional, antes de la codificación)
+        # 6. Balancear clases (opcional)
         if balance_classes:
             texts, labels = self.balance_classes(texts, labels)
         
-        # 5. Codificar (con batch para ahorrar RAM)
-        # MiniLM: batch_size=16 (8GB RAM)
-        # TF-IDF: no necesita batch
-        batch_size = 16 if use_embeddings else None
-        X = self.encode_texts(texts, batch_size=batch_size, fit=True)
+        # 7. Intentar cargar desde caché si no hay balanceo (el balanceo cambia los datos)
+        if use_cache and not balance_classes and use_embeddings:
+            data_hash = self._compute_data_hash(texts, labels)
+            cached = self.load_cache(data_hash, encoder_type)
+            
+            if cached is not None:
+                X_text, _ = cached
+                logger.info("CACHÉ HIT: Skipping encoding (loaded from cache)")
+                if use_meta_features and meta_features is not None and meta_features.shape[1] > 0:
+                    logger.info(f"Concatenando meta-features a embeddings cacheados...")
+                    X = np.hstack([X_text, meta_features.astype(np.float32)])
+                    logger.info(f"  Features combinadas: {X.shape[1]}")
+                else:
+                    X = X_text
+                
+                X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(X, labels)
+                
+                logger.info("=" * 50)
+                logger.info("PIPELINE DE PREPROCESAMIENTO COMPLETADO (CACHE HIT)")
+                logger.info("=" * 50)
+                
+                return X_train, X_val, X_test, y_train, y_val, y_test, self.encoder
+            else:
+                logger.info("CACHE MISS: Encoding required")
         
-        # 6. Dividir datos
+        # 8. Codificar textos (solo si no hay caché o no aplica)
+        batch_size = 16 if use_embeddings else None
+        X_text = self.encode_texts(texts, batch_size=batch_size, fit=True)
+        
+        # 9. Guardar en caché si aplica
+        if use_cache and not balance_classes and use_embeddings:
+            data_hash = self._compute_data_hash(texts, labels)
+            self.save_cache(data_hash, encoder_type, X_text, labels)
+        
+        # 10. Concatenar meta-features si están disponibles
+        if meta_features is not None and meta_features.shape[1] > 0 and not balance_classes:
+            logger.info(f"Concatenando meta-features a embeddings de texto...")
+            logger.info(f"  Text features: {X_text.shape[1]}, Meta-features: {meta_features.shape[1]}")
+            X = np.hstack([X_text, meta_features.astype(np.float32)])
+            logger.info(f"  Features combinadas: {X.shape[1]}")
+        else:
+            if balance_classes and use_meta_features:
+                logger.info("Meta-features desactivadas porque balance_classes=True")
+            X = X_text
+        
+        # 11. Dividir datos
         X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(X, labels)
         
         logger.info("=" * 50)
@@ -345,15 +550,7 @@ class DataProcessor:
         return X_train, X_val, X_test, y_train, y_val, y_test, self.encoder
     
     def encode_single_text(self, text: str) -> np.ndarray:
-        """
-        Preprocesa un texto individual para predicción.
-        
-        Args:
-            text: Texto del incidente
-            
-        Returns:
-            Features (1, n_features)
-        """
+        """Preprocesa un texto individual para predicción."""
         if self.encoder is None:
             raise ValueError("Encoder no disponible")
         
@@ -361,12 +558,7 @@ class DataProcessor:
         return features
     
     def save_encoder(self, path: Path) -> None:
-        """
-        Guarda el encoder entrenado.
-        
-        Args:
-            path: Directorio donde guardar
-        """
+        """Guarda el encoder entrenado."""
         if self.encoder is None:
             raise ValueError("Encoder no disponible")
         
@@ -375,25 +567,14 @@ class DataProcessor:
         logger.info(f"Encoder guardado en {path}")
     
     def load_encoder(self, path: Path) -> IEncoder:
-        """
-        Carga un encoder desde disco.
-        
-        Args:
-            path: Directorio del encoder guardado
-            
-        Returns:
-            Instancia de IEncoder
-        """
-        # Intenta cargar como MiniLM primero
+        """Carga un encoder desde disco."""
         try:
             encoder = MiniLMEncoder.load(path)
             self.encoder = encoder
             logger.info("Encoder MiniLM cargado")
             return encoder
         except Exception:
-            # Fallback a TF-IDF
             encoder = TFIDFEncoder.load(path)
             self.encoder = encoder
             logger.info("Encoder TF-IDF cargado")
             return encoder
-

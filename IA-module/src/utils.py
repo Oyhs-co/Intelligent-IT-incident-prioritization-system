@@ -167,11 +167,17 @@ def save_training_report(
     encoder_type = config.get("encoder_type", "Desconocido")
     classifier_type = config.get("classifier_type", "Desconocido")
     balance_classes = config.get("balance_classes", False)
+    deduplicate = config.get("deduplicate", False)
+    boilerplate_removal = config.get("boilerplate_removal", False)
+    use_cache = config.get("use_cache", False)
     
     content.append(f"- **Encoder:** {encoder_type}")
     content.append(f"- **Clasificador:** {classifier_type}")
     content.append(f"- **Random State:** {config.get('random_state', 'N/A')}")
     content.append(f"- **Balanceo de clases:** {'Undersampling (igualar a clase minoritaria)' if balance_classes else 'Desactivado'}")
+    content.append(f"- **Deduplicación:** {'Activada' if deduplicate else 'Desactivada'}")
+    content.append(f"- **Eliminación boilerplate:** {'Activada' if boilerplate_removal else 'Desactivada'}")
+    content.append(f"- **Caché de embeddings:** {'Activada' if use_cache else 'Desactivada'}")
     content.append("")
     
     # Métricas detalladas de Validación
@@ -329,8 +335,12 @@ class Config:
     LGB_NUM_LEAVES = 31
     LGB_MAX_DEPTH = 6
     LGB_LEARNING_RATE = 0.05
-    LGB_N_ESTIMATORS = 200
-    
+    LGB_N_ESTIMATORS = 300
+    LGB_MIN_CHILD_SAMPLES = 30
+    LGB_REG_ALPHA = 0.1
+    LGB_REG_LAMBDA = 0.1
+    LGB_EARLY_STOPPING_ROUNDS = 20
+
     RANDOM_STATE = 42
     TEST_SIZE = 0.15
     VALIDATION_SIZE = 0.15

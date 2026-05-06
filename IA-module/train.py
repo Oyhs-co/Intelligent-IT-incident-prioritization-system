@@ -73,11 +73,23 @@ def main():
         else:
             logger.info("  Balanceo: DESACTIVADO (usar datos originales)")
         
+        DEDUPLICATE = True  # Elimina textos duplicados antes del split
+        logger.info(f"  Deduplicación: {'ACTIVADA' if DEDUPLICATE else 'DESACTIVADA'}")
+        
+        BOILERPLATE_REMOVAL = True  # Elimina boilerplate LLM de textos
+        logger.info(f"  Eliminación boilerplate: {'ACTIVADA' if BOILERPLATE_REMOVAL else 'DESACTIVADA'}")
+        
+        USE_CACHE = True  # Usa caché de embeddings si está disponible
+        logger.info(f"  Caché de embeddings: {'ACTIVADA' if USE_CACHE else 'DESACTIVADA'}")
+        
         # Registrar configuración en logger de entrenamiento
         training_logger.info(f"Configuración - Encoder: {'MiniLM-L6-v2' if USE_MINILM else 'TF-IDF'}")
         training_logger.info(f"Configuración - Modelo: {'LightGBM' if USE_MINILM else 'Logistic Regression'}")
         training_logger.info(f"Configuración - Ensamble: {'Sí' if USE_ENSEMBLE else 'No'}")
         training_logger.info(f"Configuración - Balanceo: {'Undersampling' if BALANCE_CLASSES else 'Desactivado'}")
+        training_logger.info(f"Configuración - Deduplicación: {'Sí' if DEDUPLICATE else 'No'}")
+        training_logger.info(f"Configuración - Boilerplate removal: {'Sí' if BOILERPLATE_REMOVAL else 'No'}")
+        training_logger.info(f"Configuración - Caché: {'Sí' if USE_CACHE else 'No'}")
         
         # ===== FASE 1: PREPROCESAMIENTO =====
         logger.info("\n[1/3] PREPROCESAMIENTO DE DATOS")
@@ -91,7 +103,10 @@ def main():
             input_file=data_file,
             encoder=None,  # Se creará automáticamente
             use_embeddings=USE_MINILM,
-            balance_classes=BALANCE_CLASSES
+            balance_classes=BALANCE_CLASSES,
+            use_meta_features=False,  # Meta-features requieren backend para pasar metadata
+            deduplicate=DEDUPLICATE,
+            use_cache=USE_CACHE
         )
         
         X_train, X_val, X_test, y_train, y_val, y_test, encoder = result
@@ -155,6 +170,9 @@ def main():
                 "use_minilm": USE_MINILM,
                 "use_ensemble": USE_ENSEMBLE,
                 "balance_classes": BALANCE_CLASSES,
+                "deduplicate": DEDUPLICATE,
+                "boilerplate_removal": BOILERPLATE_REMOVAL,
+                "use_cache": USE_CACHE,
                 "encoder_type": type(encoder).__name__,
                 "classifier_type": type(classifier).__name__,
                 "random_state": Config.RANDOM_STATE
@@ -180,6 +198,9 @@ def main():
             "use_minilm": USE_MINILM,
             "use_ensemble": USE_ENSEMBLE,
             "balance_classes": BALANCE_CLASSES,
+            "deduplicate": DEDUPLICATE,
+            "boilerplate_removal": BOILERPLATE_REMOVAL,
+            "use_cache": USE_CACHE,
             "encoder_type": type(encoder).__name__,
             "classifier_type": type(classifier).__name__,
             "random_state": Config.RANDOM_STATE,

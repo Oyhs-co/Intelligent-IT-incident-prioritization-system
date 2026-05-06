@@ -23,10 +23,12 @@ class LightGBMClassifier(IClassifier):
         num_leaves: int = 31,
         max_depth: int = 6,
         learning_rate: float = 0.05,
-        n_estimators: int = 200,
-        min_child_samples: int = 20,
-        reg_alpha: float = 0.0,    # L1 regularization
-        reg_lambda: float = 0.0,   # L2 regularization
+        n_estimators: int = 300,
+        min_child_samples: int = 30,
+        reg_alpha: float = 0.1,
+        reg_lambda: float = 0.1,
+        class_weight: str = None,
+        early_stopping_rounds: int = 20,
         random_state: int = 42,
         verbose: int = -1
     ):
@@ -34,18 +36,22 @@ class LightGBMClassifier(IClassifier):
         Inicializa el clasificador LightGBM.
         
         Args:
-            n_classes: Número de clases (3 para P1/P2/P3)
-            num_leaves: Número máximo de hojas (controla complejidad)
-            max_depth: Profundidad máxima del árbol
+            n_classes: Numero de clases (3 para P1/P2/P3)
+            num_leaves: Numero maximo de hojas (controla complejidad)
+            max_depth: Profundidad maxima del arbol
             learning_rate: Tasa de aprendizaje
-            n_estimators: Número de árboles
-            min_child_samples: Muestras mínimas por hoja
-            reg_alpha: Regularización L1
-            reg_lambda: Regularización L2
+            n_estimators: Numero de arboles
+            min_child_samples: Muestras minimas por hoja
+            reg_alpha: Regularizacion L1
+            reg_lambda: Regularizacion L2
+            class_weight: 'balanced' para pesos automaticos, None para sin pesos
+            early_stopping_rounds: Rondas sin mejora para early stopping (0 = desactivado)
             random_state: Semilla
             verbose: -1 para silenciar salida
         """
         self.n_classes = n_classes
+        self.class_weight = None
+        self.early_stopping_rounds = early_stopping_rounds
         self.params = {
             'objective': 'multiclass',
             'num_class': n_classes,
@@ -58,33 +64,51 @@ class LightGBMClassifier(IClassifier):
             'min_child_samples': min_child_samples,
             'reg_alpha': reg_alpha,
             'reg_lambda': reg_lambda,
+            'class_weight': class_weight,
             'random_state': random_state,
             'verbose': verbose,
-            'force_row_wise': True,  # Reduce RAM usage
-            'n_jobs': -1  # Usa todos los cores CPU
+            'force_row_wise': True,
+            'n_jobs': -1
         }
         self.model = None
         self._is_fitted = False
     
-    def fit(self, X: np.ndarray, y: np.ndarray) -> None:
+    def fit(self, X: np.ndarray, y: np.ndarray, X_val: np.ndarray = None, y_val: np.ndarray = None) -> None:
         """
         Entrena el modelo LightGBM.
         
         Args:
             X: Features (n_samples, n_features)
             y: Labels (n_samples,) con valores 0, 1, 2
+            X_val: Features de validacion (para early stopping)
+            y_val: Labels de validacion (para early stopping)
         """
         logger.info("Entrenando LightGBM classifier...")
         logger.info(f"  Samples: {X.shape[0]}, Features: {X.shape[1]}")
         logger.info(f"  Classes: {self.n_classes}")
+        logger.info(f"  Class weight: {self.class_weight}")
         
         # Asegura float32 para eficiencia
         X = X.astype(np.float32)
         y = y.astype(np.int32)
         
         self.model = lgb.LGBMClassifier(**self.params)
-        self.model.fit(X, y)
+        
+        use_early_stopping = (self.early_stopping_rounds > 0 
+                              and X_val is not None and y_val is not None)
+        
+        if use_early_stopping:
+            X_val = X_val.astype(np.float32)
+            logger.info(f"  Early stopping: {self.early_stopping_rounds} rounds")
+            logger.info(f"  Validation samples: {X_val.shape[0]}")
+            self.model.fit(X, y, eval_set=[(X_val, y_val)])
+        else:
+            self.model.fit(X, y)
+        
         self._is_fitted = True
+        
+        if use_early_stopping and hasattr(self.model, 'best_iteration_'):
+            logger.info(f"  Best iteration: {self.model.best_iteration_}")
         
         logger.info("Entrenamiento completado")
     

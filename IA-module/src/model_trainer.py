@@ -103,7 +103,14 @@ class ModelTrainer:
         logger.info(f"  Features: {X_train.shape[1]}")
         logger.info(f"  Classes: {len(np.unique(y_train))}")
         
-        self.classifier.fit(X_train, y_train)
+        # Pasar datos de validacion para early stopping si esta disponible
+        has_val = X_val is not None and y_val is not None
+        if has_val:
+            logger.info(f"  Early stopping habilitado (val samples: {X_val.shape[0]})")
+            self.classifier.fit(X_train, y_train, X_val=X_val, y_val=y_val)
+        else:
+            self.classifier.fit(X_train, y_train)
+        
         logger.info("Entrenamiento completado")
     
     def evaluate(
@@ -438,9 +445,11 @@ class ModelFactory:
             max_depth=max_depth,
             learning_rate=learning_rate,
             n_estimators=Config.LGB_N_ESTIMATORS,
-            min_child_samples=20,
-            reg_alpha=0.0,
-            reg_lambda=0.0,
+            min_child_samples=Config.LGB_MIN_CHILD_SAMPLES,
+            reg_alpha=Config.LGB_REG_ALPHA,
+            reg_lambda=Config.LGB_REG_LAMBDA,
+            class_weight=None,
+            early_stopping_rounds=Config.LGB_EARLY_STOPPING_ROUNDS,
             random_state=Config.RANDOM_STATE,
             verbose=-1
         )

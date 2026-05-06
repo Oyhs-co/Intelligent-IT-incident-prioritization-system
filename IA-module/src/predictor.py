@@ -11,13 +11,34 @@ Principio OCP: Soporta múltiples backends (TF-IDF, MiniLM).
 """
 
 import json
+import pickle
+import re
 from pathlib import Path
 import warnings
 from typing import Tuple, List, Dict, Any, Optional
 import numpy as np
+import pandas as pd
 
 from .interfaces import IEncoder, IClassifier
 from .utils import logger, Config
+
+LLM_BOILERPLATE_PATTERNS = [
+    r"Dear Customer Support Team,?\s*",
+    r"I hope this message reaches you well\.?\s*",
+    r"I hope you are doing well\.?\s*",
+    r"I am reaching out to\s*",
+    r"I am writing to\s*",
+    r"Thank you for your time and assistance\.?\s*",
+    r"Thank you for your attention to this matter\.?\s*",
+    r"Best regards,?\s*",
+    r"Sincerely,?\s*",
+    r"Kind regards,?\s*",
+    r"Please let me know if you need any further information\.?\s*",
+    r"I would appreciate your prompt assistance\.?\s*",
+    r"Could you please provide an update on\s*",
+    r"I look forward to your response\.?\s*",
+    r"Your prompt assistance would be greatly appreciated\.?\s*",
+]
 
 
 
@@ -41,20 +62,12 @@ class PriorityPredictor:
         model_path: Optional[Path] = None,
         encoder_path: Optional[Path] = None
     ):
-        """
-        Inicializa el predictor.
-        
-        Args:
-            classifier: Clasificador entrenado. Si None, intenta cargar.
-            encoder: Encoder entrenado. Si None, intenta cargar.
-            model_path: Ruta al modelo guardado (si classifier no se pasa).
-            encoder_path: Ruta al encoder guardado (si encoder no se pasa).
-        """
         self.classifier = classifier
         self.encoder = encoder
         self._shap_explainer = None
+        self.meta_encoders: Dict[str, Any] = {}
+        self.meta_feature_columns: List[str] = []
         
-        # Cargar artefactos si no se pasan instancias
         if self.classifier is None or self.encoder is None:
             self._load_artifacts(model_path, encoder_path)
     
@@ -82,6 +95,18 @@ class PriorityPredictor:
         except Exception as e:
             logger.error(f"Error cargando artefactos: {e}")
             raise
+        
+        # Cargar meta-encoders si existen
+        meta_encoders_path = model_file.parent / "meta_encoders.pkl"
+        if meta_encoders_path.exists():
+            try:
+                with open(meta_encoders_path, 'rb') as f:
+                    meta_data = pickle.load(f)
+                self.meta_encoders = meta_data.get('encoders', {})
+                self.meta_feature_columns = meta_data.get('columns', [])
+                logger.info(f"Meta-encoders cargados ({len(self.meta_feature_columns)} features)")
+            except Exception as e:
+                logger.debug(f"No se pudieron cargar meta-encoders: {e}")
     
     def _ensure_encoder(self) -> None:
         """Verifica que el encoder esté disponible."""
@@ -93,48 +118,61 @@ class PriorityPredictor:
         if self.classifier is None:
             raise ValueError("Clasificador no disponible. Necesario para predicción.")
     
-    def _encode_text(self, text: str) -> np.ndarray:
-        """
-        Codifica un texto a features vectoriales.
-        
-        Args:
-            text: Texto del incidente
-            
-        Returns:
-            Features (1, n_features)
-        """
-        self._ensure_encoder()
-        return self.encoder.encode([text])
+    def _remove_boilerplate(self, text: str) -> str:
+        cleaned = text
+        for pattern in LLM_BOILERPLATE_PATTERNS:
+            cleaned = re.sub(pattern, "", cleaned, flags=re.IGNORECASE)
+        return re.sub(r"\s+", " ", cleaned).strip()
     
-    def predict(self, text: str) -> int:
-        """
-        Predice la prioridad para un texto de incidente.
+    def _encode_metadata(self, metadata: Dict[str, Any]) -> Optional[np.ndarray]:
+        if not self.meta_feature_columns or not metadata:
+            return None
         
-        Requisito RF-06: Generar prioridad sugerida (P1=Critical, P2=Medium, P3=Low)
+        row = {}
+        for col in self.meta_feature_columns:
+            row[col] = 0
         
-        Args:
-            text: Descripción del incidente
-            
-        Returns:
-            Prioridad predicha (0=P1, 1=P2, 2=P3)
-        """
+        dept = metadata.get("department", "Unknown")
+        type_val = metadata.get("type", "Unknown")
+        tags_str = metadata.get("tags", "")
+        row_tags = set()
+        if tags_str:
+            row_tags = set(t.strip() for t in str(tags_str).split(",") if t.strip())
+        
+        for col in self.meta_feature_columns:
+            if col.startswith("dept_"):
+                expected_val = col.replace("dept_", "")
+                row[col] = 1 if str(dept) == expected_val else 0
+            elif col.startswith("type_"):
+                expected_val = col.replace("type_", "")
+                row[col] = 1 if str(type_val) == expected_val else 0
+            elif col.startswith("tag_"):
+                tag_name = col.replace("tag_", "")
+                row[col] = 1 if tag_name in row_tags else 0
+        
+        return np.array([[float(row[col]) for col in self.meta_feature_columns]], dtype=np.float32)
+    
+    def _encode_text(self, text: str, metadata: Optional[Dict[str, Any]] = None) -> np.ndarray:
+        self._ensure_encoder()
+        text = self._remove_boilerplate(text)
+        X_text = self.encoder.encode([text])
+        
+        if self.meta_encoders and metadata:
+            X_meta = self._encode_metadata(metadata)
+            if X_meta is not None:
+                X_text = np.hstack([X_text, X_meta.astype(np.float32)])
+        
+        return X_text
+    
+    def predict(self, text: str, metadata: Optional[Dict[str, Any]] = None) -> int:
         self._ensure_classifier()
-        X = self._encode_text(text)
+        X = self._encode_text(text, metadata)
         prediction = self.classifier.predict(X)[0]
         return int(prediction)
     
-    def predict_with_confidence(self, text: str) -> Tuple[int, float]:
-        """
-        Predice la prioridad con nivel de confianza.
-        
-        Args:
-            text: Descripción del incidente
-            
-        Returns:
-            Tupla (prioridad, confianza) donde prioridad es 0-2
-        """
+    def predict_with_confidence(self, text: str, metadata: Optional[Dict[str, Any]] = None) -> Tuple[int, float]:
         self._ensure_classifier()
-        X = self._encode_text(text)
+        X = self._encode_text(text, metadata)
         prediction = self.classifier.predict(X)[0]
         probabilities = self.classifier.predict_proba(X)[0]
         confidence = probabilities.max()
@@ -143,27 +181,13 @@ class PriorityPredictor:
     def explain_prediction(
         self,
         text: str,
-        top_k: int = 5
+        top_k: int = 5,
+        metadata: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        """
-        Explica una predicción mostrando palabras/features clave contribuyentes.
-        
-        Requisito RF-23: Explicación con palabras clave o scores
-        
-        Usa SHAP para explicabilidad modelo-agnóstica.
-        
-        Args:
-            text: Descripción del incidente
-            top_k: Número de features clave a mostrar
-            
-        Returns:
-            Diccionario con explicación detallada
-        """
         self._ensure_classifier()
         self._ensure_encoder()
         
-        # Codificar
-        X = self._encode_text(text)
+        X = self._encode_text(text, metadata)
         
         # Predicción y probabilidades
         prediction = self.classifier.predict(X)[0]
@@ -395,56 +419,51 @@ class PriorityPredictor:
         
         return reasoning
     
-    def _encode_batch_texts(self, texts: List[str]) -> np.ndarray:
-        """Codifica una lista de textos en lotes para no saturar RAM."""
+    def _encode_batch_texts(self, texts: List[str], metadata_list: Optional[List[Dict[str, Any]]] = None) -> np.ndarray:
+        cleaned_texts = [self._remove_boilerplate(t) for t in texts]
         batch_size = 16 if 'MiniLM' in type(self.encoder).__name__ else 32
         all_encoded = []
-        for i in range(0, len(texts), batch_size):
-            batch = texts[i:i+batch_size]
+        for i in range(0, len(cleaned_texts), batch_size):
+            batch = cleaned_texts[i:i+batch_size]
             encoded = self.encoder.encode(batch)
             all_encoded.append(encoded)
-        return np.vstack(all_encoded)
-
-    def batch_predict(self, texts: List[str]) -> np.ndarray:
-        """
-        Realiza predicciones en lotes.
+        X = np.vstack(all_encoded)
         
-        Args:
-            texts: Lista de textos de incidentes
-            
-        Returns:
-            Array de predicciones (0-index)
-        """
+        if self.meta_encoders and metadata_list:
+            meta_parts = []
+            for meta in metadata_list:
+                X_meta = self._encode_metadata(meta)
+                if X_meta is not None:
+                    meta_parts.append(X_meta)
+            if meta_parts:
+                X_meta_all = np.vstack(meta_parts)
+                X = np.hstack([X, X_meta_all.astype(np.float32)])
+        
+        return X
+
+    def batch_predict(self, texts: List[str], metadata_list: Optional[List[Dict[str, Any]]] = None) -> np.ndarray:
         self._ensure_classifier()
         self._ensure_encoder()
         
         if not texts:
             return np.array([], dtype=np.int32)
         
-        X = self._encode_batch_texts(texts)
+        X = self._encode_batch_texts(texts, metadata_list)
         predictions = self.classifier.predict(X)
         return predictions.astype(np.int32)
     
     def batch_predict_with_confidence(
         self,
-        texts: List[str]
+        texts: List[str],
+        metadata_list: Optional[List[Dict[str, Any]]] = None
     ) -> List[Tuple[int, float]]:
-        """
-        Realiza predicciones en lotes con confianza.
-        
-        Args:
-            texts: Lista de textos de incidentes
-            
-        Returns:
-            Lista de tuplas (prioridad, confianza)
-        """
         self._ensure_classifier()
         self._ensure_encoder()
         
         if not texts:
             return []
         
-        X = self._encode_batch_texts(texts)
+        X = self._encode_batch_texts(texts, metadata_list)
         predictions = self.classifier.predict(X)
         probabilities = self.classifier.predict_proba(X)
         
