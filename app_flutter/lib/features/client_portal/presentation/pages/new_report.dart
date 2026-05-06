@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/providers/client_portal_providers.dart';
-
-// Formulario para reportar un incidente.
 class NewReportPage extends ConsumerWidget {
-  // Controladores para capturar el texto del formulario.
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-
   NewReportPage({super.key});
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
@@ -24,8 +19,6 @@ class NewReportPage extends ConsumerWidget {
               style: TextStyle(fontSize: 16, color: Colors.black54),
             ),
             const SizedBox(height: 20),
-
-            // Campo: titulo corto.
             TextFormField(
               controller: _titleController,
               decoration: const InputDecoration(
@@ -35,8 +28,6 @@ class NewReportPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Campo: descripcion detallada.
             TextFormField(
               controller: _descriptionController,
               maxLines: 5,
@@ -48,8 +39,6 @@ class NewReportPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 30),
-
-            // Envia el reporte y vuelve a la lista.
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -63,7 +52,6 @@ class NewReportPage extends ConsumerWidget {
                       _titleController.text,
                       _descriptionController.text,
                     );
-
                 Navigator.pop(context);
               },
               child: const Text(
@@ -77,3 +65,4 @@ class NewReportPage extends ConsumerWidget {
     );
   }
 }
+

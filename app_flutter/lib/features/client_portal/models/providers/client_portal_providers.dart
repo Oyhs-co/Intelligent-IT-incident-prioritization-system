@@ -1,39 +1,55 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/network/api_client.dart';
 import '../incident.dart';
 
-// Gestiona el estado en memoria de los incidentes.
+final apiClient = ApiClient();
+
 class IncidentNotifier extends Notifier<List<Incident>> {
-  // Estado inicial de ejemplo.
   @override
   List<Incident> build() => [
     Incident(
       id: 'INC-1001',
       title: 'Mi pantalla no enciende',
-      description: '',
-      status: 'Siendo atendido',
+      description: 'Ayuda',
+      status: 'Pendiente',
     ),
     Incident(
       id: 'INC-1002',
       title: 'No puedo entrar al correo',
-      description: '',
-      status: 'Recibido',
+      description: 'Clave rota',
+      status: 'En progreso',
     ),
   ];
-
-  // Agrega un nuevo incidente al estado.
-  void addIncident(String title, String description) {
+  Future<void> addIncident(String title, String description) async {
     final newIncident = Incident(
-      id: 'INC-${1000 + state.length + 1}', // ID simple para demo.
+      id: 'INC-${1000 + state.length + 1}',
       title: title,
       description: description,
-      status: 'Recibido',
+      status: 'Enviando...',
     );
-
     state = [...state, newIncident];
+    final enviadoConExito = await apiClient.enviarTicket(title, description);
+    if (enviadoConExito) {
+      print("El backend de FastAPI recibio el ticket.");
+      state = state.map((incident) {
+        if (incident.id == newIncident.id) {
+          return Incident(
+            id: incident.id,
+            title: incident.title,
+            description: incident.description,
+            status: 'Recibido',
+          );
+        }
+        return incident;
+      }).toList();
+    } else {
+      print(
+        " AVISO: El servidor Python está apagado. Se guardó solo en la memoria del celular.",
+      );
+    }
   }
 }
 
-// Provider que expone el estado a las vistas.
 final incidentProvider = NotifierProvider<IncidentNotifier, List<Incident>>(
   IncidentNotifier.new,
 );
