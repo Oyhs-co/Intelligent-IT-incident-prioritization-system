@@ -5,9 +5,10 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, DateTime, String
+from sqlalchemy import Boolean, DateTime, String  # fix: Column sin uso eliminado
 from sqlalchemy.dialects.sqlite import TEXT as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from ..session import Base
 
@@ -28,9 +29,11 @@ class UserModel(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False  # fix: server_default
+    )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        DateTime, server_default=func.now(), onupdate=func.now()  # fix: server_default
     )
 
     reported_incidents: Mapped[list["IncidentModel"]] = relationship(

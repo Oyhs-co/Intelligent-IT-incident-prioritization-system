@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Text  # fix: Column sin uso eliminado
 from sqlalchemy.dialects.sqlite import TEXT as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from ..session import Base
 
@@ -21,12 +21,16 @@ class CommentModel(Base):
     incident_id: Mapped[str] = mapped_column(
         UUID, ForeignKey("incidents.id"), nullable=False, index=True
     )
-    user_id: Mapped[str | None] = mapped_column(UUID, ForeignKey("users.id"), nullable=True)
+    user_id: Mapped[str | None] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="SET NULL"), nullable=True  # fix: ondelete explícito
+    )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     is_internal: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    created_at: Mapped[str] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False  # fix: server_default
+    )
+    updated_at: Mapped[str] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()  # fix: server_default
     )
 
     incident: Mapped["IncidentModel"] = relationship(

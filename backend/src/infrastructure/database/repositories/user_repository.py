@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -11,9 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.entities.user import User, UserRole
 from src.domain.repositories import IUserRepository
 from ..models.user_model import UserModel
-
-if TYPE_CHECKING:
-    pass
 
 
 class UserRepository(IUserRepository):
@@ -60,6 +57,8 @@ class UserRepository(IUserRepository):
 
     async def create(self, user: User) -> User:
         """Crea un nuevo usuario."""
+        user.email = user.email        # fix: dispara setter que normaliza a lowercase
+        user.username = user.username  # fix: dispara setter que normaliza a lowercase
         model = self._entity_to_model(user)
         self._session.add(model)
         await self._session.flush()
@@ -71,27 +70,21 @@ class UserRepository(IUserRepository):
         stmt = select(UserModel).where(UserModel.id == str(user_id))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
-        if model is None:
-            return None
-        return self._model_to_entity(model)
+        return self._model_to_entity(model) if model else None
 
     async def get_by_email(self, email: str) -> Optional[User]:
         """Obtiene un usuario por su email."""
         stmt = select(UserModel).where(UserModel.email == email.lower())
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
-        if model is None:
-            return None
-        return self._model_to_entity(model)
+        return self._model_to_entity(model) if model else None
 
     async def get_by_username(self, username: str) -> Optional[User]:
         """Obtiene un usuario por su username."""
         stmt = select(UserModel).where(UserModel.username == username.lower())
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
-        if model is None:
-            return None
-        return self._model_to_entity(model)
+        return self._model_to_entity(model) if model else None
 
     async def update(self, user: User) -> User:
         """Actualiza un usuario existente."""
@@ -142,8 +135,8 @@ class UserRepository(IUserRepository):
             stmt = stmt.where(UserModel.role == role)
             count_stmt = count_stmt.where(UserModel.role == role)
         if is_active is not None:
-            stmt = stmt.where(UserModel.is_active == is_active)
-            count_stmt = count_stmt.where(UserModel.is_active == is_active)
+            stmt = stmt.where(UserModel.is_active.is_(is_active))       # fix: is_() idiomático
+            count_stmt = count_stmt.where(UserModel.is_active.is_(is_active))
 
         stmt = stmt.order_by(UserModel.created_at.desc()).offset(skip).limit(limit)
 
@@ -152,6 +145,4 @@ class UserRepository(IUserRepository):
 
         result = await self._session.execute(stmt)
         models = result.scalars().all()
-
-        users = [self._model_to_entity(m) for m in models]
-        return users, total
+        return [self._model_to_entity(m) for m in models], total

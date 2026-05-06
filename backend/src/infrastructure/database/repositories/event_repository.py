@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -12,9 +12,6 @@ from src.domain.entities.incident_event import IncidentEvent
 from src.domain.repositories import IIncidentEventRepository
 from src.domain.value_objects import EventType
 from ..models.incident_event_model import IncidentEventModel
-
-if TYPE_CHECKING:
-    pass
 
 
 class EventRepository(IIncidentEventRepository):
@@ -78,6 +75,4 @@ class EventRepository(IIncidentEventRepository):
 
         result = await self._session.execute(stmt)
         models = result.scalars().all()
-
-        events = [self._model_to_entity(m) for m in models]
-        return events, total
+        return [self._model_to_entity(m) for m in models], total

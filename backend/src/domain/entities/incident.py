@@ -27,6 +27,9 @@ class Incident(BaseEntity):
     _subcategory: Optional[str] = field(default=None)
     _status: IncidentStatus = field(default=IncidentStatus.NEW)
     _priority: Optional[PriorityLevel] = field(default=None)
+    _suggested_priority: Optional[PriorityLevel] = field(default=None)
+    _ai_model_version: Optional[str] = field(default=None)
+    _ai_processed_at: Optional[datetime] = field(default=None)
     _urgency: int = field(default=3)
     _impact: int = field(default=3)
     _confidence_score: Optional[float] = field(default=None)
@@ -253,24 +256,64 @@ class Incident(BaseEntity):
             return False
         remaining = self._sla_deadline - datetime.utcnow()
         return timedelta(0) < remaining < timedelta(minutes=15)
+    
+    @property
+    def suggested_priority(self) -> Optional[PriorityLevel]:
+        return self._suggested_priority
+
+    @property
+    def ai_model_version(self) -> Optional[str]:
+        return self._ai_model_version
+
+    @property
+    def ai_processed_at(self) -> Optional[datetime]:
+        return self._ai_processed_at
 
     def assign_priority(
-        self,
-        priority: PriorityLevel,
-        confidence: float,
-        explanation: str,
-        similar: Optional[list[UUID]] = None,
+    self,
+    priority: PriorityLevel,
+    confidence: float,
+    explanation: str,
+    similar: Optional[list[UUID]] = None,
+    model_version: Optional[str] = None,
     ) -> None:
-        """Asigna la priorización al incidente."""
+        """Asigna la priorización automática (IA) al incidente."""
+        
         if not 0.0 <= confidence <= 1.0:
             raise ValueError("Confidence must be between 0.0 and 1.0")
 
-        object.__setattr__(self, "_priority", priority)
+        now = datetime.utcnow()
+
+        # Guardar sugerencia de IA
+        object.__setattr__(self, "_suggested_priority", priority)
+
+        # Solo asigna prioridad final si aún no existe
+        if self._priority is None:
+            object.__setattr__(self, "_priority", priority)
+
+            # SLA se calcula con la prioridad final
+            object.__setattr__(
+                self,
+                "_sla_deadline",
+                now + timedelta(minutes=priority.sla_minutes),
+            )
+
+        # Información del modelo
         object.__setattr__(self, "_confidence_score", confidence)
         object.__setattr__(self, "_explanation", explanation)
         object.__setattr__(self, "_similar_incidents", similar or [])
+        object.__setattr__(self, "_ai_model_version", model_version)
+        object.__setattr__(self, "_ai_processed_at", now)
+
+        self._mark_updated()
+
+    def set_priority(self, priority: PriorityLevel) -> None:
+        """Permite a un humano definir la prioridad final."""
+        object.__setattr__(self, "_priority", priority)
         object.__setattr__(
-            self, "_sla_deadline", datetime.utcnow() + timedelta(minutes=priority.sla_minutes)
+            self,
+            "_sla_deadline",
+            datetime.utcnow() + timedelta(minutes=priority.sla_minutes),
         )
         self._mark_updated()
 

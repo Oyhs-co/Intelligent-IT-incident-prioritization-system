@@ -5,9 +5,10 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text, JSON
+from sqlalchemy import DateTime, ForeignKey, String, Text, JSON  # fix: Column sin uso eliminado
 from sqlalchemy.dialects.sqlite import TEXT as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
 
 from ..session import Base
 
@@ -24,9 +25,14 @@ class IncidentEventModel(Base):
     event_type: Mapped[str] = mapped_column(String(50), nullable=False)
     old_value: Mapped[str | None] = mapped_column(Text, nullable=True)
     new_value: Mapped[str | None] = mapped_column(Text, nullable=True)
-    user_id: Mapped[str | None] = mapped_column(UUID, ForeignKey("users.id"), nullable=True)
-    custom_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    user_id: Mapped[str | None] = mapped_column(
+        UUID, ForeignKey("users.id", ondelete="SET NULL"), nullable=True  # fix: ondelete explícito
+    )
+    custom_metadata: Mapped[dict] = mapped_column(JSON, default=lambda: {})  # fix: lambda mutable
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False  # fix: server_default
+    )
+    # fix: updated_at eliminado — log de auditoría es inmutable, solo se crea
 
     incident: Mapped["IncidentModel"] = relationship(
         "IncidentModel",

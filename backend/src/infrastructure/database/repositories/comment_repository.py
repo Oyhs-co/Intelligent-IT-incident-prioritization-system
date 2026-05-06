@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -11,9 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.entities.comment import Comment
 from src.domain.repositories import ICommentRepository
 from ..models.comment_model import CommentModel
-
-if TYPE_CHECKING:
-    pass
 
 
 class CommentRepository(ICommentRepository):
@@ -59,9 +56,7 @@ class CommentRepository(ICommentRepository):
         stmt = select(CommentModel).where(CommentModel.id == str(comment_id))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
-        if model is None:
-            return None
-        return self._model_to_entity(model)
+        return self._model_to_entity(model) if model else None
 
     async def update(self, comment: Comment) -> Comment:
         """Actualiza un comentario existente."""
@@ -103,8 +98,8 @@ class CommentRepository(ICommentRepository):
         )
 
         if not include_internal:
-            stmt = stmt.where(CommentModel.is_internal == False)
-            count_stmt = count_stmt.where(CommentModel.is_internal == False)
+            stmt = stmt.where(CommentModel.is_internal.is_(False))          # fix: is_(False) idiomático
+            count_stmt = count_stmt.where(CommentModel.is_internal.is_(False))
 
         stmt = stmt.order_by(CommentModel.created_at.desc()).offset(skip).limit(limit)
 
@@ -113,6 +108,4 @@ class CommentRepository(ICommentRepository):
 
         result = await self._session.execute(stmt)
         models = result.scalars().all()
-
-        comments = [self._model_to_entity(m) for m in models]
-        return comments, total
+        return [self._model_to_entity(m) for m in models], total
