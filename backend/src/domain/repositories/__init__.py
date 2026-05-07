@@ -50,6 +50,22 @@ class IIncidentRepository(ABC):
     async def get_next_ticket_number(self) -> str:
         raise NotImplementedError
 
+    @abstractmethod
+    async def count_by_status(self) -> dict[str, int]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def count_by_priority(self) -> dict[int, int]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def count_by_category(self) -> dict[str, int]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def sla_breach_count(self) -> int:
+        raise NotImplementedError
+
 
 class IUserRepository(ABC):
     """Interfaz abstracta para el repositorio de usuarios."""

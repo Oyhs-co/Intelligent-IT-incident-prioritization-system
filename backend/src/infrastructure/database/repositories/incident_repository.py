@@ -7,6 +7,7 @@ from uuid import UUID
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from src.domain.entities.incident import Incident
 from src.domain.repositories import IIncidentRepository
@@ -17,12 +18,14 @@ from src.domain.value_objects import (
     PriorityLevel,
 )
 from ..models.incident_model import IncidentModel
+from ..models.incident_similarity_model import IncidentSimilarityModel
 
 
 class IncidentRepository(IIncidentRepository):
     """Implementación del repositorio de incidentes."""
 
     def __init__(self, session: AsyncSession):
+        """Inicializa el repositorio con una sesión de base de datos."""
         self._session = session
 
     def _model_to_entity(self, model: IncidentModel) -> Incident:
@@ -56,7 +59,7 @@ class IncidentRepository(IIncidentRepository):
         incident._assigned_to = UUID(model.assigned_to) if model.assigned_to else None
         incident._resolved_by = UUID(model.resolved_by) if model.resolved_by else None
         incident._closed_by = UUID(model.closed_by) if model.closed_by else None
-        incident._similar_incidents = []  # fix: migrado a tabla relacional incident_similarities
+        incident._similar_incidents = [UUID(m.id) for m in model.similar_incidents]
         incident._resolved_at = model.resolved_at
         incident._closed_at = model.closed_at
         incident._created_at = model.created_at
@@ -103,6 +106,11 @@ class IncidentRepository(IIncidentRepository):
     async def create(self, incident: Incident) -> Incident:
         """Crea un nuevo incidente."""
         model = self._entity_to_model(incident)
+        next_seq = (await self._session.execute(
+            select(func.max(IncidentModel.ticket_seq))
+        )).scalar_one_or_none() or 0
+        model.ticket_seq = next_seq + 1
+        model.ticket_number = f"INC-{next_seq + 1:05d}"
         self._session.add(model)
         await self._session.flush()
         await self._session.refresh(model)
@@ -110,21 +118,27 @@ class IncidentRepository(IIncidentRepository):
 
     async def get_by_id(self, incident_id: UUID) -> Optional[Incident]:
         """Obtiene un incidente por su ID."""
-        stmt = select(IncidentModel).where(IncidentModel.id == str(incident_id))
+        stmt = select(IncidentModel).options(
+            selectinload(IncidentModel.similar_incidents),
+        ).where(IncidentModel.id == str(incident_id))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
     async def get_by_ticket_number(self, ticket_number: str) -> Optional[Incident]:
         """Obtiene un incidente por su número de ticket."""
-        stmt = select(IncidentModel).where(IncidentModel.ticket_number == ticket_number)
+        stmt = select(IncidentModel).options(
+            selectinload(IncidentModel.similar_incidents),
+        ).where(IncidentModel.ticket_number == ticket_number)
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
     async def update(self, incident: Incident) -> Incident:
         """Actualiza un incidente existente."""
-        stmt = select(IncidentModel).where(IncidentModel.id == str(incident.id))
+        stmt = select(IncidentModel).options(
+            selectinload(IncidentModel.similar_incidents),
+        ).where(IncidentModel.id == str(incident.id))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         if model is None:
@@ -149,14 +163,35 @@ class IncidentRepository(IIncidentRepository):
         model.sla_deadline = incident.sla_deadline
         model.resolution = incident.resolution
         model.resolution_code = incident.resolution_code
-        model.tags = incident.tags                                      # fix: faltaba actualizar
-        model.source = incident.source.value                            # fix: faltaba actualizar
+        model.tags = incident.tags
+        model.source = incident.source.value
+        model.custom_metadata = incident.metadata
         model.assigned_to = str(incident.assigned_to) if incident.assigned_to else None
         model.resolved_by = str(incident.resolved_by) if incident.resolved_by else None
         model.closed_by = str(incident.closed_by) if incident.closed_by else None
         model.resolved_at = incident.resolved_at
         model.closed_at = incident.closed_at
-        # fix: similar_incidents eliminado — se gestiona via IncidentSimilarityModel
+
+        # Sincronizar incidentes similares (relación muchos a muchos)
+        stmt_sim = select(IncidentSimilarityModel.similar_id).where(
+            IncidentSimilarityModel.incident_id == str(incident.id),
+        )
+        result_sim = await self._session.execute(stmt_sim)
+        existing_sim_ids = {row[0] for row in result_sim}
+        new_sim_ids = {str(s) for s in incident.similar_incidents}
+        for sim_id in new_sim_ids - existing_sim_ids:
+            self._session.add(IncidentSimilarityModel(
+                incident_id=str(incident.id), similar_id=sim_id,
+            ))
+        for sim_id in existing_sim_ids - new_sim_ids:
+            stmt_del = select(IncidentSimilarityModel).where(
+                IncidentSimilarityModel.incident_id == str(incident.id),
+                IncidentSimilarityModel.similar_id == sim_id,
+            )
+            result_del = await self._session.execute(stmt_del)
+            sim_model = result_del.scalar_one_or_none()
+            if sim_model:
+                await self._session.delete(sim_model)
 
         await self._session.flush()
         await self._session.refresh(model)
@@ -184,7 +219,9 @@ class IncidentRepository(IIncidentRepository):
         created_by: Optional[UUID] = None,
     ) -> tuple[list[Incident], int]:
         """Lista incidentes con filtros."""
-        stmt = select(IncidentModel)
+        stmt = select(IncidentModel).options(
+            selectinload(IncidentModel.similar_incidents),
+        )
         count_stmt = select(func.count(IncidentModel.id))
 
         if status:
@@ -214,7 +251,46 @@ class IncidentRepository(IIncidentRepository):
 
     async def get_next_ticket_number(self) -> str:
         """Genera el siguiente número de ticket usando secuencia atómica."""
-        stmt = select(func.max(IncidentModel.ticket_seq))  # fix: secuencia entera atómica
+        stmt = select(func.max(IncidentModel.ticket_seq))
         result = await self._session.execute(stmt)
         last_seq = result.scalar_one_or_none() or 0
         return f"INC-{last_seq + 1:05d}"
+
+    async def count_by_status(self) -> dict[str, int]:
+        """Cuenta incidentes agrupados por estado."""
+        stmt = select(
+            IncidentModel.status, func.count(IncidentModel.id)
+        ).group_by(IncidentModel.status)
+        result = await self._session.execute(stmt)
+        return {row[0]: row[1] for row in result}
+
+    async def count_by_priority(self) -> dict[int, int]:
+        """Cuenta incidentes agrupados por prioridad."""
+        stmt = select(
+            IncidentModel.priority, func.count(IncidentModel.id)
+        ).where(
+            IncidentModel.priority.isnot(None)
+        ).group_by(IncidentModel.priority)
+        result = await self._session.execute(stmt)
+        return {row[0]: row[1] for row in result}
+
+    async def count_by_category(self) -> dict[str, int]:
+        """Cuenta incidentes agrupados por categoría."""
+        stmt = select(
+            IncidentModel.category, func.count(IncidentModel.id)
+        ).where(
+            IncidentModel.category.isnot(None)
+        ).group_by(IncidentModel.category)
+        result = await self._session.execute(stmt)
+        return {row[0]: row[1] for row in result}
+
+    async def sla_breach_count(self) -> int:
+        """Cuenta incidentes con SLA incumplido (deadline pasado y no resueltos)."""
+        from datetime import datetime, timezone
+        stmt = select(func.count(IncidentModel.id)).where(
+            IncidentModel.sla_deadline.isnot(None),
+            IncidentModel.sla_deadline < datetime.now(timezone.utc),
+            IncidentModel.status.notin_(["resolved", "closed", "rejected"]),
+        )
+        result = await self._session.execute(stmt)
+        return result.scalar() or 0

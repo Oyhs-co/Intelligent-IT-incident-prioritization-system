@@ -17,6 +17,7 @@ class UserRepository(IUserRepository):
     """Implementación del repositorio de usuarios."""
 
     def __init__(self, session: AsyncSession):
+        """Inicializa el repositorio con una sesión de base de datos."""
         self._session = session
 
     def _model_to_entity(self, model: UserModel) -> User:

@@ -17,6 +17,7 @@ class CommentRepository(ICommentRepository):
     """Implementación del repositorio de comentarios."""
 
     def __init__(self, session: AsyncSession):
+        """Inicializa el repositorio con una sesión de base de datos."""
         self._session = session
 
     def _model_to_entity(self, model: CommentModel) -> Comment:

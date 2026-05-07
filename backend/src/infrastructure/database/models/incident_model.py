@@ -30,7 +30,7 @@ class IncidentModel(Base):
     __tablename__ = "incidents"
 
     id: Mapped[str] = mapped_column(primary_key=True, default=lambda: str(uuid4()))
-    ticket_seq: Mapped[int] = mapped_column(Integer, autoincrement=True, unique=True, nullable=False)  # fix: secuencia atómica para ticket_number
+    ticket_seq: Mapped[int] = mapped_column(Integer, unique=True, nullable=False, default=0)
     ticket_number: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
@@ -79,11 +79,12 @@ class IncidentModel(Base):
     events: Mapped[list["IncidentEventModel"]] = relationship(
         "IncidentEventModel", back_populates="incident", cascade="all, delete-orphan",
     )
-    similar_incidents: Mapped[list["IncidentModel"]] = relationship(  # fix: relación real en lugar de JSON
+    similar_incidents: Mapped[list["IncidentModel"]] = relationship(
         "IncidentModel",
         secondary="incident_similarities",
         primaryjoin="IncidentModel.id == foreign(IncidentSimilarityModel.incident_id)",
         secondaryjoin="IncidentModel.id == foreign(IncidentSimilarityModel.similar_id)",
+        lazy="selectin",
     )
 
     __table_args__ = (

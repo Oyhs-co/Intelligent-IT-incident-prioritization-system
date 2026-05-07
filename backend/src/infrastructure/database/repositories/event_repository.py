@@ -18,6 +18,7 @@ class EventRepository(IIncidentEventRepository):
     """Implementación del repositorio de eventos."""
 
     def __init__(self, session: AsyncSession):
+        """Inicializa el repositorio con una sesión de base de datos."""
         self._session = session
 
     def _model_to_entity(self, model: IncidentEventModel) -> IncidentEvent:
