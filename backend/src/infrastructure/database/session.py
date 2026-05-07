@@ -35,16 +35,19 @@ def get_async_engine():
     """Obtiene el motor async de base de datos (compartido)."""
     global _async_engine
     if _async_engine is None:
-        pool_size = 5 if settings.is_development else 10
-        max_overflow = 10 if settings.is_development else 20
-
-        _async_engine = create_async_engine(
-            settings.database_url,
+        engine_kwargs = dict(
             echo=settings.debug,
             pool_pre_ping=True,
-            pool_size=pool_size,
-            max_overflow=max_overflow,
-            connect_args={"check_same_thread": False} if settings.is_development else {},
+        )
+
+        if settings.is_development:
+            engine_kwargs["connect_args"] = {"check_same_thread": False}
+        else:
+            engine_kwargs["pool_size"] = 10
+            engine_kwargs["max_overflow"] = 20
+
+        _async_engine = create_async_engine(
+            settings.database_url, **engine_kwargs,
         )
     return _async_engine
 

@@ -1,5 +1,6 @@
 """Integration tests configuration."""
 
+import os
 import pytest
 import asyncio
 from typing import AsyncGenerator
@@ -7,29 +8,60 @@ from datetime import datetime
 from uuid import UUID, uuid4
 
 
+# DATABASE_URL was already set by root conftest to a file-based SQLite
+# All engines (test + app) share the same file
+
+
 @pytest.fixture(autouse=True)
 def _patch_passlib():
     """Parchea passlib bcrypt para evitar error de compatibilidad."""
     from src.domain.entities.user import pwd_context
     original_hash = pwd_context.hash
+    original_verify = pwd_context.verify
     def _mock_hash(secret, **kwds):
         if isinstance(secret, str):
             secret = secret.encode("utf-8")
         return f"$2b$12${secret.hex()}$mockhash1234567890abc"
+    def _mock_verify(secret, hash, **kwds):
+        expected = _mock_hash(secret)
+        return hash == expected
     pwd_context.hash = _mock_hash
+    pwd_context.verify = _mock_verify
     yield
     pwd_context.hash = original_hash
+    pwd_context.verify = original_verify
+
+
+@pytest.fixture(autouse=True)
+def _patch_rate_limit(monkeypatch):
+    """Desactiva rate limiting en tests parcheando el método de verificación."""
+    from src.presentation.api.middleware.rate_limit_middleware import RateLimitMiddleware
+    async def _always_allowed(self, client_ip, now):
+        return (True, "")
+    monkeypatch.setattr(RateLimitMiddleware, "_check_limits", _always_allowed)
+    yield
+
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 from httpx import AsyncClient, ASGITransport
 
 from src.presentation.api.app import app
-from src.infrastructure.database import Base
+from src.infrastructure.database import Base, get_db_session
 from src.infrastructure.database.models import UserModel, IncidentModel
 from src.infrastructure.database.repositories import IncidentRepository, UserRepository
 
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+TEST_DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
+
+
+@pytest.fixture(scope="session", autouse=True)
+async def _init_app_db(event_loop):
+    """Ensure app's engine creates tables in the shared database."""
+    from src.infrastructure.database import init_db
+    try:
+        await init_db()
+    except Exception as e:
+        print(f"init_db warning: {e}")
 
 
 @pytest.fixture(scope="session")
@@ -61,11 +93,17 @@ async def session(engine) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture(scope="function")
-async def client() -> AsyncGenerator[AsyncClient, None]:
-    """Create a test client."""
+async def client(session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
+    """Create a test client with overridden DB session."""
+    async def _override_session():
+        yield session
+    app.dependency_overrides[get_db_session] = _override_session
+
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+    app.dependency_overrides.clear()
 
 
 _user_counter = 0
