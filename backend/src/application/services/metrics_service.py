@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Optional
-from uuid import UUID
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.shared.logging import get_logger
@@ -73,114 +72,194 @@ class AIMetrics:
 
 
 class MetricsService:
-    """Servicio para recolectar y calcular métricas."""
+    """Servicio para recolectar y calcular métricas usando consultas agregadas."""
 
     def __init__(self, session: AsyncSession):
         self._session = session
 
     async def get_overview_metrics(self) -> OverviewMetrics:
-        """Obtiene métricas generales del sistema."""
+        """Obtiene métricas generales del sistema usando consultas agregadas."""
         from src.infrastructure.database.models import IncidentModel, UserModel
 
         metrics = OverviewMetrics()
-        now = datetime.utcnow()
-
-        stmt_incidents = select(IncidentModel)
-        result = await self._session.execute(stmt_incidents)
-        incidents = result.scalars().all()
+        now = datetime.now(timezone.utc)
 
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        week_start = today_start - timedelta(days=7)
-        month_start = today_start - timedelta(days=30)
+        week_start = today_start - __import__("datetime").timedelta(days=7)
+        month_start = today_start - __import__("datetime").timedelta(days=30)
 
-        metrics.total_incidents_today = sum(1 for i in incidents if i.created_at >= today_start)
-        metrics.total_incidents_week = sum(1 for i in incidents if i.created_at >= week_start)
-        metrics.total_incidents_month = sum(1 for i in incidents if i.created_at >= month_start)
+        stmt_total = select(func.count(IncidentModel.id))
+        result = await self._session.execute(stmt_total)
+        total = result.scalar() or 0
 
-        metrics.incidents_open = sum(1 for i in incidents if i.status == "open")
-        metrics.incidents_in_progress = sum(1 for i in incidents if i.status == "in_progress")
-        metrics.incidents_resolved = sum(1 for i in incidents if i.status == "resolved")
-        metrics.incidents_closed = sum(1 for i in incidents if i.status == "closed")
+        counts = {
+            "today": 0, "week": 0, "month": 0,
+            "open": 0, "in_progress": 0, "resolved": 0, "closed": 0,
+            "sla_breach": 0, "ai_today": 0,
+        }
 
-        resolved_with_time = [
-            i for i in incidents
-            if i.status in ("resolved", "closed") and i.resolved_at and i.created_at
-        ]
-        if resolved_with_time:
-            total_time = sum(
-                (i.resolved_at - i.created_at).total_seconds() / 60
-                for i in resolved_with_time
-            )
-            metrics.avg_resolution_time_minutes = total_time / len(resolved_with_time)
+        stmt_counts = select(
+            func.sum(case((IncidentModel.created_at >= today_start, 1), else_=0)).label("today"),
+            func.sum(case((IncidentModel.created_at >= week_start, 1), else_=0)).label("week"),
+            func.sum(case((IncidentModel.created_at >= month_start, 1), else_=0)).label("month"),
+            func.sum(case((IncidentModel.status == "open", 1), else_=0)).label("open"),
+            func.sum(case((IncidentModel.status == "in_progress", 1), else_=0)).label("in_progress"),
+            func.sum(case((IncidentModel.status == "resolved", 1), else_=0)).label("resolved"),
+            func.sum(case((IncidentModel.status == "closed", 1), else_=0)).label("closed"),
+            func.sum(case(
+                (IncidentModel.sla_deadline.isnot(None), 1),
+                else_=0,
+            )).label("has_sla"),
+            func.sum(case(
+                (
+                    IncidentModel.sla_deadline.isnot(None),
+                    case((now > IncidentModel.sla_deadline, 1), else_=0),
+                ),
+                else_=0,
+            )).label("sla_breach"),
+            func.sum(case(
+                (
+                    IncidentModel.confidence_score.isnot(None),
+                    case((IncidentModel.created_at >= today_start, 1), else_=0),
+                ),
+                else_=0,
+            )).label("ai_today"),
+        ).select_from(IncidentModel)
 
-        breached = sum(1 for i in incidents if i.sla_deadline and now > i.sla_deadline and i.status not in ("resolved", "closed"))
-        metrics.sla_breach_count = breached
-        if incidents:
-            metrics.sla_compliance_rate = (len(incidents) - breached) / len(incidents) * 100
+        result = await self._session.execute(stmt_counts)
+        row = result.one()
 
-        priorities_with_confidence = [i for i in incidents if i.confidence_score]
-        if priorities_with_confidence:
-            metrics.model_confidence_avg = sum(i.confidence_score for i in priorities_with_confidence) / len(priorities_with_confidence)
+        metrics.total_incidents_today = row.today or 0
+        metrics.total_incidents_week = row.week or 0
+        metrics.total_incidents_month = row.month or 0
+        metrics.incidents_open = row.open or 0
+        metrics.incidents_in_progress = row.in_progress or 0
+        metrics.incidents_resolved = row.resolved or 0
+        metrics.incidents_closed = row.closed or 0
+        metrics.sla_breach_count = row.sla_breach or 0
 
-        metrics.ai_predictions_today = sum(
-            1 for i in incidents
-            if i.confidence_score and i.created_at >= today_start
+        if total:
+            metrics.sla_compliance_rate = (total - metrics.sla_breach_count) / total * 100
+
+        stmt_resolution = select(
+            IncidentModel.resolved_at,
+            IncidentModel.created_at,
+        ).where(
+            IncidentModel.status.in_(["resolved", "closed"]),
+            IncidentModel.resolved_at.isnot(None),
+            IncidentModel.created_at.isnot(None),
         )
+        result = await self._session.execute(stmt_resolution)
+        resolved_with_time = result.all()
 
-        stmt_users = select(UserModel).where(UserModel.is_active == True)
+        if resolved_with_time:
+            total_minutes = sum(
+                (r.resolved_at - r.created_at).total_seconds() / 60
+                for r in resolved_with_time
+            )
+            metrics.avg_resolution_time_minutes = total_minutes / len(resolved_with_time)
+
+        stmt_avg_conf = select(func.avg(IncidentModel.confidence_score)).where(
+            IncidentModel.confidence_score.isnot(None),
+        )
+        result = await self._session.execute(stmt_avg_conf)
+        avg_conf = result.scalar()
+        if avg_conf:
+            metrics.model_confidence_avg = float(avg_conf)
+
+        metrics.ai_predictions_today = row.ai_today or 0
+
+        stmt_users = select(func.count(UserModel.id)).where(UserModel.is_active == True)
         result = await self._session.execute(stmt_users)
-        users = result.scalars().all()
-        metrics.active_users = len(users)
-        metrics.active_technicians = len([u for u in users if u.role == "technician"])
+        metrics.active_users = result.scalar() or 0
 
-        logger.info("Overview metrics calculated", total_incidents=len(incidents))
+        stmt_techs = select(func.count(UserModel.id)).where(
+            UserModel.is_active == True,
+            UserModel.role == "technician",
+        )
+        result = await self._session.execute(stmt_techs)
+        metrics.active_technicians = result.scalar() or 0
+
+        logger.info("Métricas generales calculadas", total_incidentes=total)
 
         return metrics
 
     async def get_incident_metrics(self) -> IncidentMetrics:
-        """Obtiene métricas detalladas de incidentes."""
+        """Obtiene métricas detalladas de incidentes usando group_by."""
         from src.infrastructure.database.models import IncidentModel
 
         metrics = IncidentMetrics()
-        stmt = select(IncidentModel)
-        result = await self._session.execute(stmt)
-        incidents = result.scalars().all()
 
-        for incident in incidents:
-            metrics.by_status[incident.status] = metrics.by_status.get(incident.status, 0) + 1
-            if incident.category:
-                metrics.by_category[incident.category] = metrics.by_category.get(incident.category, 0) + 1
-            if incident.priority:
-                metrics.by_priority[incident.priority] = metrics.by_priority.get(incident.priority, 0) + 1
+        stmt_status = select(
+            IncidentModel.status,
+            func.count(IncidentModel.id),
+        ).group_by(IncidentModel.status)
+        result = await self._session.execute(stmt_status)
+        for status, count in result:
+            metrics.by_status[status] = count
 
-        logger.info("Incident metrics calculated")
+        stmt_priority = select(
+            IncidentModel.priority,
+            func.count(IncidentModel.id),
+        ).where(IncidentModel.priority.isnot(None)).group_by(IncidentModel.priority)
+        result = await self._session.execute(stmt_priority)
+        for priority, count in result:
+            metrics.by_priority[priority] = count
+
+        stmt_category = select(
+            IncidentModel.category,
+            func.count(IncidentModel.id),
+        ).where(IncidentModel.category.isnot(None)).group_by(IncidentModel.category)
+        result = await self._session.execute(stmt_category)
+        for category, count in result:
+            metrics.by_category[category] = count
+
+        logger.info("Métricas de incidentes calculadas")
 
         return metrics
 
     async def get_ai_metrics(self) -> AIMetrics:
-        """Obtiene métricas de IA/ML."""
+        """Obtiene métricas de IA/ML usando consultas agregadas."""
         from src.infrastructure.database.models import IncidentModel
 
         metrics = AIMetrics()
-        stmt = select(IncidentModel).where(IncidentModel.confidence_score.isnot(None))
-        result = await self._session.execute(stmt)
-        incidents = result.scalars().all()
 
-        metrics.total_predictions = len(incidents)
+        stmt_count = select(func.count(IncidentModel.id)).where(
+            IncidentModel.confidence_score.isnot(None),
+        )
+        result = await self._session.execute(stmt_count)
+        metrics.total_predictions = result.scalar() or 0
 
-        if incidents:
-            metrics.avg_confidence = sum(i.confidence_score for i in incidents) / len(incidents)
+        if metrics.total_predictions:
+            stmt_avg = select(func.avg(IncidentModel.confidence_score)).where(
+                IncidentModel.confidence_score.isnot(None),
+            )
+            result = await self._session.execute(stmt_avg)
+            avg = result.scalar()
+            if avg:
+                metrics.avg_confidence = float(avg)
 
-            high_conf = sum(1 for i in incidents if i.confidence_score >= 0.8)
-            med_conf = sum(1 for i in incidents if 0.5 <= i.confidence_score < 0.8)
-            low_conf = sum(1 for i in incidents if i.confidence_score < 0.5)
+            stmt_dist = select(
+                func.sum(case((IncidentModel.confidence_score >= 0.8, 1), else_=0)).label("high"),
+                func.sum(case(
+                    (IncidentModel.confidence_score >= 0.5, 1),
+                    else_=0,
+                )).label("med_raw"),
+                func.sum(case((IncidentModel.confidence_score < 0.5, 1), else_=0)).label("low"),
+            ).where(IncidentModel.confidence_score.isnot(None))
+            result = await self._session.execute(stmt_dist)
+            row = result.one()
+
+            high = row.high or 0
+            med = (row.med_raw or 0) - high
+            low = row.low or 0
 
             metrics.confidence_distribution = {
-                "high": high_conf,
-                "medium": med_conf,
-                "low": low_conf,
+                "high": max(0, high),
+                "medium": max(0, med),
+                "low": max(0, low),
             }
 
-        logger.info("AI metrics calculated", total_predictions=metrics.total_predictions)
+        logger.info("Métricas IA calculadas", total_predicciones=metrics.total_predictions)
 
         return metrics

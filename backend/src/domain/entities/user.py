@@ -159,6 +159,11 @@ class User(BaseEntity):
         """Obtiene la última fecha de login."""
         return self._last_login
 
+    @property
+    def hashed_password(self) -> str:
+        """Obtiene el hash de la contraseña."""
+        return self._hashed_password
+
     def set_password(self, password: str) -> None:
         """Establece la contraseña hasheada."""
         if len(password) < 8:
