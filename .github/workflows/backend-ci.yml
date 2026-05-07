@@ -36,14 +36,10 @@ jobs:
           poetry config virtualenvs.create true
           poetry install --no-interaction --no-root
 
-      - name: Lint (opcional)
+      - name: Lint (ruff)
         run: |
-          poetry run flake8 . || true
+          poetry run ruff check .
 
-      - name: Formato (opcional)
+      - name: Tests con cobertura
         run: |
-          poetry run black --check .
-
-      - name: Tests
-        run: |
-          poetry run pytest
+          poetry run pytest --cov --cov-report=term --cov-report=xml
