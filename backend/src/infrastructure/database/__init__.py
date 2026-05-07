@@ -1,5 +1,4 @@
 """Infraestructura de base de datos."""
-
 from .session import (
     Base,
     get_async_engine,

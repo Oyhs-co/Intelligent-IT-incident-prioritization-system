@@ -1,5 +1,11 @@
-"""Script para inicializar la base de datos."""
+"""Script para inicializar la base de datos.
 
+Uso:
+    python scripts/init_db.py
+
+Crea todas las tablas definidas en los modelos SQLAlchemy
+si aún no existen. Es idempotente: ejecutable múltiples veces.
+"""
 import asyncio
 import sys
 from pathlib import Path
@@ -12,15 +18,15 @@ from src.shared.logging import get_logger
 logger = get_logger("init_db")
 
 
-async def main():
-    """Inicializa la base de datos."""
-    logger.info("Initializing database...")
+async def main() -> int:
+    """Inicializa la base de datos creando tablas si no existen."""
+    logger.info("Inicializando base de datos...")
 
     try:
         await init_db()
-        logger.info("Database initialized successfully")
+        logger.info("Base de datos inicializada correctamente")
     except Exception as e:
-        logger.error(f"Failed to initialize database: {e}")
+        logger.error(f"Error al inicializar base de datos: {e}")
         return 1
     finally:
         await close_db()

@@ -1,5 +1,4 @@
 """Configuración centralizada del proyecto."""
-
 from __future__ import annotations
 
 from functools import lru_cache
@@ -9,7 +8,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """Configuración de la aplicación."""
+    """Configuración de la aplicación.
+
+    Variables de entorno (archivo .env):
+      DATABASE_URL: URL de conexión a BD (SQLite async para dev, PostgreSQL async para prod)
+      REDIS_URL: URL de conexión a Redis
+      SECRET_KEY: Clave secreta para JWT
+      MODEL_PATH: Ruta al directorio de modelos IA
+    """
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -20,7 +26,6 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = "sqlite+aiosqlite:///./data/incidents.db"
-    database_url_sync: str = "sqlite:///./data/incidents.db"
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
@@ -50,6 +55,20 @@ class Settings(BaseSettings):
     app_name: str = "Incident Prioritization System"
     app_version: str = "1.0.0"
     debug: bool = False
+
+    @property
+    def database_url_sync(self) -> str:
+        """Deriva la URL sync desde database_url.
+
+        Para PostgreSQL: postgresql+asyncpg:// → postgresql+psycopg2://
+        Para SQLite:     sqlite+aiosqlite:// → sqlite://
+        """
+        url = self.database_url
+        if "postgresql" in url.lower():
+            return url.replace("+asyncpg", "+psycopg2")
+        if "sqlite" in url.lower():
+            return url.replace("+aiosqlite", "")
+        return url
 
     @property
     def cors_origins_list(self) -> list[str]:

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from httpx import AsyncClient
 
 from src.presentation.api.app import app
-from src.infrastructure.database.models import Base
+from src.infrastructure.database import Base
 
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"

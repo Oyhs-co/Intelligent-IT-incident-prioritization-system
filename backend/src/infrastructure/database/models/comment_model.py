@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Text  # fix: Column sin uso eliminado
+from sqlalchemy import Boolean, DateTime, ForeignKey, Text
+from datetime import datetime
 from sqlalchemy.dialects.sqlite import TEXT as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -26,11 +27,11 @@ class CommentModel(Base):
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     is_internal: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[str] = mapped_column(
-        DateTime, server_default=func.now(), nullable=False  # fix: server_default
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False
     )
-    updated_at: Mapped[str] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now()  # fix: server_default
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), onupdate=func.now()
     )
 
     incident: Mapped["IncidentModel"] = relationship(

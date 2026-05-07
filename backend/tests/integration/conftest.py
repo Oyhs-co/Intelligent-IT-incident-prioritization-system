@@ -10,7 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from httpx import AsyncClient
 
 from src.presentation.api.app import app
-from src.infrastructure.database.models import Base, UserModel, IncidentModel
+from src.infrastructure.database import Base
+from src.infrastructure.database.models import UserModel, IncidentModel
 from src.infrastructure.database.repositories import IncidentRepository, UserRepository
 
 
@@ -56,10 +57,10 @@ async def client() -> AsyncGenerator[AsyncClient, None]:
 async def test_user(session: AsyncSession) -> UserModel:
     """Create a test user."""
     user = UserModel(
-        id=uuid4(),
+        id=str(uuid4()),
         username="testuser",
         email="test@example.com",
-        password_hash="$2b$12$test_hash",
+        hashed_password="$2b$12$test_hash",
         role="user",
         is_active=True,
     )
@@ -73,7 +74,8 @@ async def test_user(session: AsyncSession) -> UserModel:
 async def test_incident(session: AsyncSession, test_user) -> IncidentModel:
     """Create a test incident."""
     incident = IncidentModel(
-        id=uuid4(),
+        id=str(uuid4()),
+        ticket_seq=1,
         ticket_number="INC-001",
         title="Test Incident",
         description="Test description for integration testing",
