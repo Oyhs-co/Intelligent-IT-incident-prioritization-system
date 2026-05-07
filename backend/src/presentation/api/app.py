@@ -7,13 +7,28 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from fastapi import Request, status
+from fastapi.responses import JSONResponse
+
 from src.infrastructure.database import init_db, close_db
 from src.shared.config import get_settings
 from src.shared.logging import get_logger
+from src.shared.exceptions import (
+    AppException,
+    NotFoundException,
+    ValidationException,
+    AuthenticationException,
+    AuthorizationException,
+    ConflictException,
+    DatabaseException,
+    AIServiceException,
+)
 
 from .routes.incidents import router as incidents_router
 from .routes.metrics import router as metrics_router
 from .routes.auth import router as auth_router
+from .routes.users import router as users_router
+from .middleware import LoggingMiddleware, RateLimitMiddleware, TraceMiddleware
 
 settings = get_settings()
 logger = get_logger("app")
@@ -53,10 +68,16 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(LoggingMiddleware)
+    app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(TraceMiddleware)
 
     app.include_router(incidents_router)
     app.include_router(metrics_router)
     app.include_router(auth_router)
+    app.include_router(users_router)
+
+    _add_exception_handlers(app)
 
     @app.get("/")
     async def root():
@@ -74,6 +95,69 @@ def create_app() -> FastAPI:
 
     logger.info("Application configured successfully")
     return app
+
+
+def _add_exception_handlers(app: FastAPI) -> None:
+    """Registra los exception handlers globales."""
+
+    @app.exception_handler(NotFoundException)
+    async def not_found_handler(request: Request, exc: NotFoundException):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"error": exc.code, "detail": exc.message},
+        )
+
+    @app.exception_handler(ValidationException)
+    async def validation_handler(request: Request, exc: ValidationException):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"error": exc.code, "detail": exc.message},
+        )
+
+    @app.exception_handler(AuthenticationException)
+    async def auth_handler(request: Request, exc: AuthenticationException):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            content={"error": exc.code, "detail": exc.message},
+        )
+
+    @app.exception_handler(AuthorizationException)
+    async def authorization_handler(request: Request, exc: AuthorizationException):
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={"error": exc.code, "detail": exc.message},
+        )
+
+    @app.exception_handler(ConflictException)
+    async def conflict_handler(request: Request, exc: ConflictException):
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"error": exc.code, "detail": exc.message},
+        )
+
+    @app.exception_handler(DatabaseException)
+    async def database_handler(request: Request, exc: DatabaseException):
+        logger.error(f"Database error: {exc.message}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": exc.code, "detail": "A database error occurred"},
+        )
+
+    @app.exception_handler(AIServiceException)
+    async def ai_handler(request: Request, exc: AIServiceException):
+        logger.error(f"AI service error: {exc.message}")
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={"error": exc.code, "detail": exc.message},
+        )
+
+    @app.exception_handler(Exception)
+    async def global_handler(request: Request, exc: Exception):
+        logger.error(f"Unhandled exception: {exc}")
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={"error": "INTERNAL_ERROR", "detail": "An unexpected error occurred"},
+        )
 
 
 app = create_app()

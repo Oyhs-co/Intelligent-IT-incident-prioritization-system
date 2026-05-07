@@ -4,10 +4,24 @@ import pytest
 import asyncio
 from typing import AsyncGenerator
 from datetime import datetime
-from uuid import uuid4
+from uuid import UUID, uuid4
+
+
+@pytest.fixture(autouse=True)
+def _patch_passlib():
+    """Parchea passlib bcrypt para evitar error de compatibilidad."""
+    from src.domain.entities.user import pwd_context
+    original_hash = pwd_context.hash
+    def _mock_hash(secret, **kwds):
+        if isinstance(secret, str):
+            secret = secret.encode("utf-8")
+        return f"$2b$12${secret.hex()}$mockhash1234567890abc"
+    pwd_context.hash = _mock_hash
+    yield
+    pwd_context.hash = original_hash
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 
 from src.presentation.api.app import app
 from src.infrastructure.database import Base
@@ -49,46 +63,53 @@ async def session(engine) -> AsyncGenerator[AsyncSession, None]:
 @pytest.fixture(scope="function")
 async def client() -> AsyncGenerator[AsyncClient, None]:
     """Create a test client."""
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 
+_user_counter = 0
+
+
 @pytest.fixture
-async def test_user(session: AsyncSession) -> UserModel:
+async def test_user(session: AsyncSession):
     """Create a test user."""
-    user = UserModel(
-        id=str(uuid4()),
-        username="testuser",
-        email="test@example.com",
-        hashed_password="$2b$12$test_hash",
-        role="user",
-        is_active=True,
-    )
-    session.add(user)
+    global _user_counter
+    _user_counter += 1
+    from src.domain.entities.user import User
+    from src.infrastructure.database.repositories import UserRepository
+
+    repo = UserRepository(session)
+    entity = User()
+    entity.email = f"test{_user_counter}@example.com"
+    entity.username = f"testuser{_user_counter}"
+    entity.set_password("testpass123")
+
+    created = await repo.create(entity)
     await session.commit()
-    await session.refresh(user)
-    return user
+    return created
 
 
 @pytest.fixture
-async def test_incident(session: AsyncSession, test_user) -> IncidentModel:
+async def test_incident(session: AsyncSession, test_user):
     """Create a test incident."""
-    incident = IncidentModel(
-        id=str(uuid4()),
-        ticket_seq=1,
-        ticket_number="INC-001",
-        title="Test Incident",
-        description="Test description for integration testing",
-        status="open",
-        urgency=3,
-        impact=3,
-        source="web",
-        reporter_id=test_user.id,
-    )
-    session.add(incident)
+    from src.infrastructure.database.repositories import IncidentRepository
+    from src.domain.entities.incident import Incident
+    from src.domain.value_objects import IncidentStatus, IncidentSource
+
+    repo = IncidentRepository(session)
+    entity = Incident()
+    entity.title = "Test Incident"
+    entity.description = "Test description for integration testing"
+    entity.status = IncidentStatus.OPEN
+    entity.urgency = 3
+    entity.impact = 3
+    entity.source = IncidentSource.WEB
+    entity.reporter_id = test_user.id
+
+    created = await repo.create(entity)
     await session.commit()
-    await session.refresh(incident)
-    return incident
+    return created
 
 
 @pytest.fixture

@@ -59,3 +59,23 @@ class UserResponse(BaseModel):
     is_verified: bool
     last_login: Optional[datetime] = None
     created_at: datetime
+
+
+class UpdateUserRequest(BaseModel):
+    """Request para actualizar un usuario."""
+
+    email: Optional[EmailStr] = None
+    first_name: Optional[str] = Field(None, max_length=100)
+    last_name: Optional[str] = Field(None, max_length=100)
+    department: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
+
+
+class UserListResponse(BaseModel):
+    """Response de lista de usuarios."""
+
+    items: list[UserResponse]
+    total: int
+    skip: int
+    limit: int

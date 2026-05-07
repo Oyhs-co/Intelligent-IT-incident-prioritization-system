@@ -14,6 +14,7 @@ from src.presentation.schemas import (
     IncidentMetricsResponse,
     AIMetricsResponse,
     HealthResponse,
+    SLAMetricsResponse,
 )
 from .dependencies import get_ai_service
 
@@ -75,6 +76,39 @@ async def get_ai_metrics(session = Depends(get_db_session)):
         accuracy=metrics.accuracy,
         avg_confidence=metrics.avg_confidence,
         confidence_distribution=metrics.confidence_distribution,
+    )
+
+
+@router.get("/sla", response_model=SLAMetricsResponse)
+async def get_sla_metrics(session=Depends(get_db_session)):
+    """Obtiene métricas de SLA."""
+    from src.application.use_cases.metrics import GetSLAMetricsUseCase
+
+    use_case = GetSLAMetricsUseCase(session)
+
+    metrics = await use_case.execute()
+
+    return SLAMetricsResponse(
+        overall_compliance_rate=metrics.overall_compliance_rate,
+        total_incidents=metrics.total_incidents,
+        breached_count=metrics.breached_count,
+        met_count=metrics.met_count,
+        avg_resolution_time_minutes=metrics.avg_resolution_time_minutes,
+        by_priority=[
+            {
+                "priority": p.priority,
+                "priority_label": p.priority_label,
+                "total_incidents": p.total_incidents,
+                "breached": p.breached,
+                "met": p.met,
+                "compliance_rate": p.compliance_rate,
+                "avg_response_time_minutes": p.avg_response_time_minutes,
+                "avg_resolution_time_minutes": p.avg_resolution_time_minutes,
+            }
+            for p in metrics.by_priority
+        ],
+        at_risk_incidents=metrics.at_risk_incidents,
+        processing_time_ms=metrics.processing_time_ms,
     )
 
 

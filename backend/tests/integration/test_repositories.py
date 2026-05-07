@@ -2,10 +2,10 @@
 
 import pytest
 from uuid import uuid4
-from datetime import datetime
 
 from src.infrastructure.database.repositories import IncidentRepository
-from src.infrastructure.database.models import IncidentModel
+from src.domain.entities.incident import Incident
+from src.domain.value_objects import IncidentStatus, IncidentSource
 
 
 @pytest.mark.asyncio
@@ -14,61 +14,87 @@ async def test_incident_repository_create(
     session,
 ):
     """Test creating an incident via repository."""
-    incident = IncidentModel(
-        id=uuid4(),
-        ticket_number="TEST-001",
-        title="Repository Test",
-        description="Testing repository",
-        status="new",
-        urgency=2,
-        impact=2,
-        source="test",
-    )
+    incident = Incident()
+    incident.title = "Repository Test"
+    incident.description = "Testing repository"
+    incident.status = IncidentStatus.NEW
+    incident.urgency = 2
+    incident.impact = 2
+    incident.source = IncidentSource.WEB
 
     created = await incident_repository.create(incident)
-    assert created.id == incident.id
-    assert created.ticket_number == "TEST-001"
+    assert created.id is not None
+    assert created.ticket_number is not None
     await session.commit()
 
 
 @pytest.mark.asyncio
 async def test_incident_repository_get_by_id(
     incident_repository: IncidentRepository,
-    test_incident: IncidentModel,
+    session,
 ):
     """Test getting an incident by ID."""
-    result = await incident_repository.get_by_id(test_incident.id)
+    incident = Incident()
+    incident.title = "Get By ID Test"
+    incident.description = "Testing get by id"
+    incident.status = IncidentStatus.NEW
+    incident.urgency = 2
+    incident.impact = 2
+    incident.source = IncidentSource.WEB
+
+    created = await incident_repository.create(incident)
+    await session.flush()
+
+    result = await incident_repository.get_by_id(created.id)
     assert result is not None
-    assert result.id == test_incident.id
-    assert result.title == test_incident.title
+    assert result.title == "Get By ID Test"
+
+    not_found = await incident_repository.get_by_id(uuid4())
+    assert not_found is None
 
 
 @pytest.mark.asyncio
 async def test_incident_repository_update(
     incident_repository: IncidentRepository,
-    test_incident: IncidentModel,
     session,
 ):
     """Test updating an incident."""
-    test_incident.status = "in_progress"
-    test_incident.priority = 2
+    incident = Incident()
+    incident.title = "Original Title"
+    incident.description = "Original description"
+    incident.status = IncidentStatus.NEW
+    incident.urgency = 2
+    incident.impact = 2
+    incident.source = IncidentSource.WEB
 
-    updated = await incident_repository.update(test_incident)
-    assert updated.status == "in_progress"
-    assert updated.priority == 2
+    created = await incident_repository.create(incident)
+    await session.flush()
+
+    created.title = "Updated Title"
+    updated = await incident_repository.update(created)
+    assert updated.title == "Updated Title"
 
 
 @pytest.mark.asyncio
 async def test_incident_repository_delete(
     incident_repository: IncidentRepository,
-    test_incident: IncidentModel,
     session,
 ):
     """Test deleting an incident."""
-    incident_id = test_incident.id
+    incident = Incident()
+    incident.title = "To Delete"
+    incident.description = "Will be deleted"
+    incident.status = IncidentStatus.NEW
+    incident.urgency = 2
+    incident.impact = 2
+    incident.source = IncidentSource.WEB
 
-    await incident_repository.delete(incident_id)
-    await session.commit()
+    created = await incident_repository.create(incident)
+    await session.flush()
+
+    incident_id = created.id
+    deleted = await incident_repository.delete(incident_id)
+    assert deleted is True
 
     result = await incident_repository.get_by_id(incident_id)
     assert result is None
@@ -77,18 +103,18 @@ async def test_incident_repository_delete(
 @pytest.mark.asyncio
 async def test_incident_repository_list(
     incident_repository: IncidentRepository,
-    test_incident: IncidentModel,
+    test_incident,
 ):
     """Test listing incidents."""
-    result = await incident_repository.list(skip=0, limit=10)
-    assert result.total >= 1
-    assert len(result.items) >= 1
+    result, total = await incident_repository.list_all(skip=0, limit=10)
+    assert total >= 1
+    assert len(result) >= 1
 
 
 @pytest.mark.asyncio
 async def test_incident_repository_get_by_ticket_number(
     incident_repository: IncidentRepository,
-    test_incident: IncidentModel,
+    test_incident,
 ):
     """Test getting an incident by ticket number."""
     result = await incident_repository.get_by_ticket_number(test_incident.ticket_number)

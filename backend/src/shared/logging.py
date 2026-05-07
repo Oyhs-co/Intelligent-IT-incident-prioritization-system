@@ -215,3 +215,13 @@ def set_trace_context(
 def generate_trace_id() -> str:
     """Genera un nuevo ID de trazabilidad."""
     return str(uuid4())
+
+
+def set_trace_id(trace_id: str) -> None:
+    """Establece el trace ID en el context var."""
+    trace_id_var.set(trace_id)
+
+
+def get_trace_id() -> Optional[str]:
+    """Obtiene el trace ID del context var."""
+    return trace_id_var.get()

@@ -6,12 +6,18 @@ from .incident import (
     IncidentResponse,
     IncidentListResponse,
     ClassificationResponse,
+    AddCommentRequest,
+    SearchSimilarRequest,
+    EventResponse,
+    CommentResponse,
 )
 from .metrics import (
     OverviewMetricsResponse,
     IncidentMetricsResponse,
     AIMetricsResponse,
     HealthResponse,
+    SLAMetricsResponse,
+    SLAByPriorityResponse,
 )
 from .auth import (
     RegisterRequest,
@@ -19,6 +25,8 @@ from .auth import (
     RefreshTokenRequest,
     TokenResponse,
     UserResponse,
+    UpdateUserRequest,
+    UserListResponse,
 )
 
 __all__ = [
@@ -27,13 +35,21 @@ __all__ = [
     "IncidentResponse",
     "IncidentListResponse",
     "ClassificationResponse",
+    "AddCommentRequest",
+    "SearchSimilarRequest",
+    "EventResponse",
+    "CommentResponse",
     "OverviewMetricsResponse",
     "IncidentMetricsResponse",
     "AIMetricsResponse",
     "HealthResponse",
+    "SLAMetricsResponse",
+    "SLAByPriorityResponse",
     "RegisterRequest",
     "LoginRequest",
     "RefreshTokenRequest",
     "TokenResponse",
     "UserResponse",
+    "UpdateUserRequest",
+    "UserListResponse",
 ]

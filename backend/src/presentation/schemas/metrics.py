@@ -56,3 +56,29 @@ class HealthResponse(BaseModel):
     timestamp: datetime
     database: str
     ai_model: str
+
+
+class SLAByPriorityResponse(BaseModel):
+    """Métricas SLA por prioridad."""
+
+    priority: int
+    priority_label: str
+    total_incidents: int
+    breached: int
+    met: int
+    compliance_rate: float
+    avg_response_time_minutes: float
+    avg_resolution_time_minutes: float
+
+
+class SLAMetricsResponse(BaseModel):
+    """Response de métricas SLA."""
+
+    overall_compliance_rate: float
+    total_incidents: int
+    breached_count: int
+    met_count: int
+    avg_resolution_time_minutes: float
+    by_priority: list[SLAByPriorityResponse]
+    at_risk_incidents: list[dict]
+    processing_time_ms: float

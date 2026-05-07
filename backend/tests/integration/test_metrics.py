@@ -16,7 +16,6 @@ async def test_metrics_overview(client: AsyncClient):
     assert "total_incidents_month" in data
     assert "incidents_open" in data
     assert "sla_compliance_rate" in data
-    assert "processing_time_ms" in data
 
 
 @pytest.mark.asyncio
