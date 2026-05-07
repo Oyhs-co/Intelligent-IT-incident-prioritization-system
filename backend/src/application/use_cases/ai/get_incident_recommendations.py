@@ -121,7 +121,7 @@ class GetRecommendationsUseCase:
                     results.append(inc)
             return results
 
-        all_incidents = await self._incident_repo.list(skip=0, limit=100)
+        all_incidents, _ = await self._incident_repo.list_all(skip=0, limit=100)
         keywords = f"{incident.title} {incident.description}".lower().split()
         scored = []
 

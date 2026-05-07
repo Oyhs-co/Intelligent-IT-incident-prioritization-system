@@ -48,10 +48,22 @@ class IncidentEvent(BaseEntity):
         """Obtiene el valor anterior."""
         return self._old_value
 
+    @old_value.setter
+    def old_value(self, value: Optional[str]) -> None:
+        """Establece el valor anterior."""
+        object.__setattr__(self, "_old_value", value)
+        self._mark_updated()
+
     @property
     def new_value(self) -> Optional[str]:
         """Obtiene el nuevo valor."""
         return self._new_value
+
+    @new_value.setter
+    def new_value(self, value: Optional[str]) -> None:
+        """Establece el nuevo valor."""
+        object.__setattr__(self, "_new_value", value)
+        self._mark_updated()
 
     @property
     def user_id(self) -> Optional[UUID]:
@@ -68,6 +80,12 @@ class IncidentEvent(BaseEntity):
     def metadata(self) -> dict:
         """Obtiene los metadatos del evento."""
         return self._metadata.copy()
+
+    @metadata.setter
+    def metadata(self, value: dict) -> None:
+        """Establece los metadatos del evento."""
+        object.__setattr__(self, "_metadata", value)
+        self._mark_updated()
 
     def to_dict(self) -> dict[str, Any]:
         """Convierte la entidad a diccionario."""

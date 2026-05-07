@@ -156,6 +156,7 @@ class EventType(Enum):
     CLOSED = "closed"
     REOPENED = "reopened"
     COMMENT_ADDED = "comment_added"
+    DELETED = "deleted"
 
 
 def map_ia_to_backend(ia_priority: int) -> PriorityLevel:

@@ -84,6 +84,8 @@ class ClassifyIncidentUseCase:
 
         priority_level = PriorityLevel.from_int(prediction.priority)
 
+        old_priority_value = str(incident.priority.value) if incident.priority else None
+
         incident.assign_priority(
             priority=priority_level,
             confidence=prediction.confidence,
@@ -95,7 +97,7 @@ class ClassifyIncidentUseCase:
         event = IncidentEvent()
         event.incident_id = incident.id
         event.event_type = EventType.PRIORITY_CHANGED
-        event.old_value = str(incident.priority.value) if incident.priority else None
+        event.old_value = old_priority_value
         event.new_value = str(prediction.priority)
         event.user_id = user_id
         event.metadata = {

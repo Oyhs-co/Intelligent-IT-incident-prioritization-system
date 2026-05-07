@@ -51,15 +51,13 @@ class TestMetricsService:
         session = AsyncMock()
         service = MetricsService(session)
 
-        with patch("src.infrastructure.database.models.IncidentModel") as MockIncident:
-            with patch("src.infrastructure.database.models.UserModel") as MockUser:
-                mock_result = MagicMock()
-                mock_result.scalars.return_value.all.return_value = []
-                session.execute = AsyncMock(return_value=mock_result)
+        mock_result = MagicMock()
+        mock_result.scalars.return_value.all.return_value = []
+        session.execute.return_value = mock_result
 
-                metrics = await service.get_overview_metrics()
+        metrics = await service.get_overview_metrics()
 
-                assert isinstance(metrics, OverviewMetrics)
+        assert isinstance(metrics, OverviewMetrics)
 
 
 class TestAuthService:
@@ -67,5 +65,6 @@ class TestAuthService:
 
     def test_init_creates_service(self):
         """Test service initialization."""
-        service = AuthService()
+        user_repo = MagicMock()
+        service = AuthService(user_repository=user_repo)
         assert service is not None

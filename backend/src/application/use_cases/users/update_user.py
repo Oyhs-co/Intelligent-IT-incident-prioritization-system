@@ -8,7 +8,7 @@ from uuid import UUID
 
 from src.domain.entities.user import User
 from src.domain.repositories import IUserRepository
-from src.domain.value_objects.user_role import UserRole
+from src.domain.entities.user import UserRole
 from src.shared.logging import get_logger
 from src.shared.exceptions import NotFoundException
 

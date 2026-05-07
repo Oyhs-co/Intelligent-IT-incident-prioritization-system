@@ -108,7 +108,8 @@ class SearchSimilarIncidentsUseCase:
                 )
 
         processing_time = (time.time() - start_time) * 1000
-        logger.log_similarity_search(
+        logger.info(
+            "Similarity search completed",
             query_length=len(query),
             results_count=len(results),
             processing_time_ms=processing_time,
@@ -125,7 +126,7 @@ class SearchSimilarIncidentsUseCase:
     ) -> list[SimilarIncidentResult]:
         """Búsqueda simple por palabras clave."""
         keywords = query.lower().split()
-        all_incidents = await self._incident_repo.list(skip=0, limit=1000)
+        all_incidents, _ = await self._incident_repo.list_all(skip=0, limit=1000)
 
         scored = []
         for incident in all_incidents:
@@ -159,7 +160,8 @@ class SearchSimilarIncidentsUseCase:
             )
 
         processing_time = (time.time() - start_time) * 1000
-        logger.log_similarity_search(
+        logger.info(
+            "Similarity search completed (fallback)",
             query_length=len(query),
             results_count=len(results),
             processing_time_ms=processing_time,
