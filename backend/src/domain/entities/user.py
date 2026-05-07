@@ -40,7 +40,7 @@ class UserRole(Enum):
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-@dataclass
+@dataclass(eq=False)
 class User(BaseEntity):
     """Entidad User con encapsulamiento completo."""
 

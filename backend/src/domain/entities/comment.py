@@ -9,7 +9,7 @@ from uuid import UUID
 from .base import BaseEntity
 
 
-@dataclass
+@dataclass(eq=False)
 class Comment(BaseEntity):
     """Entidad que representa un comentario en un incidente."""
 

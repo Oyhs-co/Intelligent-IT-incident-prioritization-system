@@ -10,7 +10,7 @@ from .base import BaseEntity
 from ..value_objects.priority_level import EventType
 
 
-@dataclass
+@dataclass(eq=False)
 class IncidentEvent(BaseEntity):
     """Entidad para registrar eventos de auditoría de incidentes."""
 

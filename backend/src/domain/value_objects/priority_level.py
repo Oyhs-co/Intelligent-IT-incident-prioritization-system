@@ -1,4 +1,8 @@
-"""Value Objects para el dominio."""
+"""Value Objects para el dominio.
+
+Incluye las entidades de prioridad, estado, categoría, fuente y eventos,
+además de las funciones de mapeo entre prioridades de IA y del backend.
+"""
 
 from __future__ import annotations
 
@@ -152,3 +156,50 @@ class EventType(Enum):
     CLOSED = "closed"
     REOPENED = "reopened"
     COMMENT_ADDED = "comment_added"
+
+
+def map_ia_to_backend(ia_priority: int) -> PriorityLevel:
+    """Convierte una prioridad de IA (0-2) a PriorityLevel del backend.
+
+    La IA predice 3 niveles:
+        - 0 (P1 Crítico)  → P4_CRITICAL (SLA 15 min)
+        - 1 (P2 Medio)    → P2_MEDIUM   (SLA 4 h)
+        - 2 (P3 Bajo)     → P1_LOW      (SLA 8 h)
+
+    Args:
+        ia_priority: Prioridad devuelta por la IA (0, 1, o 2).
+
+    Returns:
+        PriorityLevel correspondiente en el backend.
+
+    Raises:
+        ValueError: Si ia_priority no está en [0, 1, 2].
+    """
+    mapping = {
+        0: 4,  # P4_CRITICAL
+        1: 2,  # P2_MEDIUM
+        2: 1,  # P1_LOW
+    }
+    if ia_priority not in mapping:
+        raise ValueError(
+            f"Prioridad de IA inválida: {ia_priority}. Debe ser 0, 1 o 2."
+        )
+    return PriorityLevel(mapping[ia_priority])
+
+
+def map_backend_to_ia(backend_priority: PriorityLevel) -> int:
+    """Convierte un PriorityLevel del backend a prioridad de IA (0-2).
+
+    Args:
+        backend_priority: Prioridad del backend (1-4).
+
+    Returns:
+        Prioridad de IA: 0 (crítico), 1 (medio) o 2 (bajo).
+    """
+    mapping = {
+        1: 2,  # P1_LOW → IA 2 (bajo)
+        2: 1,  # P2_MEDIUM → IA 1 (medio)
+        3: 0,  # P3_HIGH → IA 0 (crítico)
+        4: 0,  # P4_CRITICAL → IA 0 (crítico)
+    }
+    return mapping[backend_priority.value]

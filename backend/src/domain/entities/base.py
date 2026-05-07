@@ -1,21 +1,32 @@
-"""Clase base con getters y setters tipados."""
+"""Clase base para todas las entidades del dominio.
+
+Proporciona ID único, timestamps de creación/actualización, igualdad
+por identidad y conversión a diccionario.
+"""
 
 from __future__ import annotations
 
-from abc import ABC
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Optional
+from datetime import datetime, timezone
+from typing import Any
 from uuid import UUID, uuid4
 
 
-class BaseEntity(ABC):
-    """Clase base abstracta para todas las entidades del dominio."""
+@dataclass
+class BaseEntity:
+    """Clase base para todas las entidades del dominio."""
 
-    def __init__(self) -> None:
-        self._id: UUID = field(default_factory=uuid4)
-        self._created_at: datetime = field(default_factory=datetime.utcnow)
-        self._updated_at: datetime = field(default_factory=datetime.utcnow)
+    _id: UUID = field(default_factory=uuid4, init=False, repr=False)
+    _created_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        init=False,
+        repr=False,
+    )
+    _updated_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        init=False,
+        repr=False,
+    )
 
     @property
     def id(self) -> UUID:
@@ -34,7 +45,7 @@ class BaseEntity(ABC):
 
     def _mark_updated(self) -> None:
         """Marca la entidad como actualizada."""
-        object.__setattr__(self, "_updated_at", datetime.utcnow())
+        object.__setattr__(self, "_updated_at", datetime.now(timezone.utc))
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, BaseEntity):
