@@ -41,7 +41,10 @@ class SentenceTransformerEmbedding(IEmbeddingModel):
                 device=self._device,
                 cache_folder=self._cache_folder,
             )
-            self._dimension = self._model.get_sentence_embedding_dimension()
+            try:
+                self._dimension = self._model.get_embedding_dimension()
+            except AttributeError:
+                self._dimension = self._model.get_sentence_embedding_dimension()
             logger.info(
                 f"Embedding model loaded: {self._model_name}",
                 dimension=self._dimension,

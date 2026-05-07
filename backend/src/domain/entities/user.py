@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 from uuid import UUID
@@ -177,7 +177,7 @@ class User(BaseEntity):
 
     def record_login(self) -> None:
         """Registra un nuevo login."""
-        object.__setattr__(self, "_last_login", datetime.utcnow())
+        object.__setattr__(self, "_last_login", datetime.now(timezone.utc))
         self._mark_updated()
 
     def to_dict(self) -> dict[str, Any]:

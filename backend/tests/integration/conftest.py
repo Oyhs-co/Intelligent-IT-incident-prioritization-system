@@ -67,7 +67,7 @@ async def _init_app_db(event_loop):
 @pytest.fixture(scope="session")
 def event_loop():
     """Create an instance of the default event loop."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    loop = asyncio.new_event_loop()
     yield loop
     loop.close()
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING
 import time
 
@@ -61,7 +61,7 @@ class GetSLAMetricsUseCase:
         from src.infrastructure.database.models import IncidentModel
         from src.domain.value_objects import PriorityLevel
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
 
         stmt = select(IncidentModel)
         result = await self._session.execute(stmt)

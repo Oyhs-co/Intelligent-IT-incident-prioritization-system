@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from typing import Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 import redis.asyncio as redis
@@ -82,7 +82,7 @@ class RedisPublisher:
         message = {
             "event_id": event_id or self._generate_event_id(),
             "channel": channel.value,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "data": data,
         }
 
@@ -172,7 +172,7 @@ class RedisPublisher:
 
     def _generate_event_id(self) -> str:
         """Genera ID único para el evento."""
-        return f"{datetime.utcnow().timestamp()}"
+        return f"{datetime.now(timezone.utc).timestamp()}"
 
     async def is_connected(self) -> bool:
         """Verifica si está conectado."""

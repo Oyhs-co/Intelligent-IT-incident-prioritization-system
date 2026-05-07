@@ -25,7 +25,7 @@ class TestRedisSubscriber:
         with patch("redis.asyncio.Redis") as mock_redis_cls:
             mock_redis = AsyncMock()
             mock_pubsub = MagicMock()
-            mock_redis.pubsub.return_value = mock_pubsub
+            mock_redis.pubsub = MagicMock(return_value=mock_pubsub)
             mock_redis_cls.return_value = mock_redis
 
             await subscriber.connect()
@@ -38,7 +38,8 @@ class TestRedisSubscriber:
     async def test_connect_failure(self, subscriber):
         """Fallo de conexión debe lanzar excepción."""
         with patch("redis.asyncio.Redis") as mock_redis_cls:
-            mock_redis = AsyncMock()
+            mock_redis = MagicMock()
+            mock_redis.pubsub = MagicMock()
             mock_redis.ping.side_effect = Exception("Connection failed")
             mock_redis_cls.return_value = mock_redis
 

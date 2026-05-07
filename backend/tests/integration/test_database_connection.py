@@ -27,7 +27,7 @@ TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 def event_loop():
     """Create an instance of the default event loop for the test session."""
     import asyncio
-    loop = asyncio.get_event_loop_policy().new_event_loop()
+    loop = asyncio.new_event_loop()
     yield loop
     loop.close()
 

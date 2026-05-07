@@ -85,7 +85,7 @@ class TestIncidentVectorStore:
     @pytest.mark.asyncio
     async def test_add_incident_error(self, store):
         """add_incident con error debe retornar False."""
-        store._client = AsyncMock()
+        store._client = MagicMock()
         store._client.pipeline.side_effect = Exception("Redis error")
 
         result = await store.add_incident(uuid4(), [0.1], {})
@@ -231,7 +231,7 @@ class TestIncidentVectorStore:
     @pytest.mark.asyncio
     async def test_delete_incident_error(self, store):
         """delete_incident con error debe retornar False."""
-        store._client = AsyncMock()
+        store._client = MagicMock()
         store._client.pipeline.side_effect = Exception("Error")
 
         result = await store.delete_incident(uuid4())
