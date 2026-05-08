@@ -2,18 +2,18 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
-import time
 
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.shared.logging import get_logger
 
 if TYPE_CHECKING:
-    from src.infrastructure.database.models import IncidentModel, UserModel, MetricModel
+    pass
 
 logger = get_logger("use_cases.overview_metrics")
 

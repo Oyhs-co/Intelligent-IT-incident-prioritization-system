@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Callable
-from uuid import uuid4
 import time
+from collections.abc import Callable
+from uuid import uuid4
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from src.shared.logging import get_logger, set_trace_id, get_trace_id
+from src.shared.logging import get_logger, set_trace_id
 
 logger = get_logger("middleware.trace")
 
@@ -94,7 +94,7 @@ class SpanContext:
         self,
         trace_id: str,
         span_id: str,
-        parent_span_id: Optional[str] = None,
+        parent_span_id: str | None = None,
     ):
         self.trace_id = trace_id
         self.span_id = span_id
@@ -131,4 +131,3 @@ class SpanContext:
             logger.debug("Span finished", **span_data)
 
 
-from typing import Optional

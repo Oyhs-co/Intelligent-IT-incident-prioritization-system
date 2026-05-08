@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.infrastructure.messaging.redis_publisher import RedisPublisher, EventChannel
+from src.infrastructure.messaging.redis_publisher import EventChannel, RedisPublisher
 
 
 @pytest.fixture

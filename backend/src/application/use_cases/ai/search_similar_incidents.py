@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
-from uuid import UUID
 import time
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+from uuid import UUID
 
 from src.domain.repositories import IIncidentRepository
 from src.shared.logging import get_logger
@@ -31,9 +31,9 @@ class SimilarIncidentResult:
     priority_label: str
     status: str
     similarity_score: float
-    category: Optional[str] = None
-    resolution_time_hours: Optional[float] = None
-    resolution: Optional[str] = None
+    category: str | None = None
+    resolution_time_hours: float | None = None
+    resolution: str | None = None
 
 
 class SearchSimilarIncidentsUseCase:
@@ -42,8 +42,8 @@ class SearchSimilarIncidentsUseCase:
     def __init__(
         self,
         incident_repository: IIncidentRepository,
-        embedding_model: Optional[IEmbeddingModel] = None,
-        vector_store: Optional[IncidentVectorStore] = None,
+        embedding_model: IEmbeddingModel | None = None,
+        vector_store: IncidentVectorStore | None = None,
     ):
         self._incident_repo = incident_repository
         self._embedding_model = embedding_model
@@ -52,7 +52,7 @@ class SearchSimilarIncidentsUseCase:
     async def execute(
         self,
         query: str,
-        incident_id: Optional[UUID] = None,
+        incident_id: UUID | None = None,
         limit: int = 5,
         min_similarity: float = SIMILARITY_THRESHOLD,
     ) -> list[SimilarIncidentResult]:
@@ -71,7 +71,7 @@ class SearchSimilarIncidentsUseCase:
     async def _search_with_embeddings(
         self,
         query: str,
-        incident_id: Optional[UUID],
+        incident_id: UUID | None,
         limit: int,
         min_similarity: float,
         start_time: float,
@@ -120,7 +120,7 @@ class SearchSimilarIncidentsUseCase:
     async def _search_fallback(
         self,
         query: str,
-        incident_id: Optional[UUID],
+        incident_id: UUID | None,
         limit: int,
         start_time: float,
     ) -> list[SimilarIncidentResult]:
@@ -176,6 +176,6 @@ class SearchSimilarIncidentsRequest:
     """Request para búsqueda de incidentes similares."""
 
     query: str
-    incident_id: Optional[UUID] = None
+    incident_id: UUID | None = None
     limit: int = 5
     min_similarity: float = SIMILARITY_THRESHOLD

@@ -1,18 +1,17 @@
 """Tests de integración para exception handlers globales."""
 
 import pytest
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from httpx import AsyncClient, ASGITransport
+from fastapi import FastAPI
+from httpx import ASGITransport, AsyncClient
 
 from src.shared.exceptions import (
-    NotFoundException,
-    ValidationException,
+    AIServiceException,
     AuthenticationException,
     AuthorizationException,
     ConflictException,
     DatabaseException,
-    AIServiceException,
+    NotFoundException,
+    ValidationException,
 )
 
 
@@ -95,8 +94,13 @@ def test_exception_handlers_registered():
     """Verifica que todos los exception handlers estén registrados en el app real."""
     from src.presentation.api.app import app
     from src.shared.exceptions import (
-        NotFoundException, ValidationException, AuthenticationException,
-        AuthorizationException, ConflictException, DatabaseException, AIServiceException,
+        AIServiceException,
+        AuthenticationException,
+        AuthorizationException,
+        ConflictException,
+        DatabaseException,
+        NotFoundException,
+        ValidationException,
     )
 
     for exc_cls in [NotFoundException, ValidationException, AuthenticationException,

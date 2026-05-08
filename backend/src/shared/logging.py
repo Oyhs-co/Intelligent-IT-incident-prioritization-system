@@ -3,18 +3,16 @@
 from __future__ import annotations
 
 import sys
-from datetime import datetime
-from typing import Any, Optional
-from uuid import UUID, uuid4
 from contextvars import ContextVar
 from functools import lru_cache
+from typing import Any
+from uuid import uuid4
 
 from loguru import logger as loguru_logger
 
-
-trace_id_var: ContextVar[Optional[str]] = ContextVar("trace_id", default=None)
-span_id_var: ContextVar[Optional[str]] = ContextVar("span_id", default=None)
-request_id_var: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
+trace_id_var: ContextVar[str | None] = ContextVar("trace_id", default=None)
+span_id_var: ContextVar[str | None] = ContextVar("span_id", default=None)
+request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
 
 
 class Logger:
@@ -180,7 +178,7 @@ class Logger:
         path: str,
         status_code: int,
         duration_ms: float,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
     ) -> None:
         """Registra una petición API."""
         loguru_logger.info(
@@ -196,15 +194,15 @@ class Logger:
 
 
 @lru_cache
-def get_logger(service: Optional[str] = None) -> Logger:
+def get_logger(service: str | None = None) -> Logger:
     """Obtiene una instancia del logger."""
     name = service or "incident-service"
     return Logger(name)
 
 
 def set_trace_context(
-    trace_id: Optional[str] = None,
-    request_id: Optional[str] = None,
+    trace_id: str | None = None,
+    request_id: str | None = None,
 ) -> None:
     """Establece contexto de trazabilidad."""
     trace_id_var.set(trace_id or str(uuid4()))
@@ -222,6 +220,6 @@ def set_trace_id(trace_id: str) -> None:
     trace_id_var.set(trace_id)
 
 
-def get_trace_id() -> Optional[str]:
+def get_trace_id() -> str | None:
     """Obtiene el trace ID del context var."""
     return trace_id_var.get()

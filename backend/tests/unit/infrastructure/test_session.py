@@ -7,17 +7,17 @@ Verifica:
   - Sesión NO hace commit automático (bugfix C5)
 """
 
-import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import patch
 
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
+import pytest
 from sqlalchemy import Engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from src.infrastructure.database.session import (
     get_async_engine,
-    get_sync_engine,
     get_async_session_factory,
     get_db_session,
+    get_sync_engine,
 )
 
 
@@ -136,7 +136,8 @@ class TestGetDbSession:
         ahora los routes son responsables del commit explícito.
         """
         # Creamos un engine en memoria para aislar el test
-        from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+        from sqlalchemy.ext.asyncio import create_async_engine
+
         from src.infrastructure.database import Base
 
         test_engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
@@ -172,7 +173,8 @@ class TestGetDbSession:
     @pytest.mark.asyncio
     async def test_rollback_on_exception(self):
         """Si ocurre una excepción, la sesión debe hacer rollback."""
-        from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+        from sqlalchemy.ext.asyncio import create_async_engine
+
         from src.infrastructure.database import Base
 
         test_engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)

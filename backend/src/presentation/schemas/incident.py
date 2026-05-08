@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -14,8 +13,8 @@ class CreateIncidentRequest(BaseModel):
 
     title: str = Field(..., min_length=1, max_length=200)
     description: str = Field(..., min_length=1, max_length=5000)
-    category: Optional[str] = None
-    subcategory: Optional[str] = None
+    category: str | None = None
+    subcategory: str | None = None
     urgency: int = Field(default=3, ge=1, le=5)
     impact: int = Field(default=3, ge=1, le=5)
 
@@ -23,18 +22,18 @@ class CreateIncidentRequest(BaseModel):
 class UpdateIncidentRequest(BaseModel):
     """Request para actualizar un incidente."""
 
-    title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = Field(None, min_length=1, max_length=5000)
-    status: Optional[str] = None
-    priority: Optional[int] = Field(None, ge=1, le=4)
-    category: Optional[str] = None
-    subcategory: Optional[str] = None
-    urgency: Optional[int] = Field(None, ge=1, le=5)
-    impact: Optional[int] = Field(None, ge=1, le=5)
-    resolution: Optional[str] = None
-    resolution_code: Optional[str] = None
-    tags: Optional[list[str]] = None
-    assigned_to: Optional[UUID] = None
+    title: str | None = Field(None, min_length=1, max_length=200)
+    description: str | None = Field(None, min_length=1, max_length=5000)
+    status: str | None = None
+    priority: int | None = Field(None, ge=1, le=4)
+    category: str | None = None
+    subcategory: str | None = None
+    urgency: int | None = Field(None, ge=1, le=5)
+    impact: int | None = Field(None, ge=1, le=5)
+    resolution: str | None = None
+    resolution_code: str | None = None
+    tags: list[str] | None = None
+    assigned_to: UUID | None = None
 
 
 class AddCommentRequest(BaseModel):
@@ -60,9 +59,9 @@ class EventResponse(BaseModel):
     id: UUID
     incident_id: UUID
     event_type: str
-    old_value: Optional[str] = None
-    new_value: Optional[str] = None
-    user_id: Optional[UUID] = None
+    old_value: str | None = None
+    new_value: str | None = None
+    user_id: UUID | None = None
     custom_metadata: dict = {}
     created_at: datetime
 
@@ -74,7 +73,7 @@ class CommentResponse(BaseModel):
 
     id: UUID
     incident_id: UUID
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
     content: str
     is_internal: bool
     created_at: datetime
@@ -90,20 +89,20 @@ class IncidentResponse(BaseModel):
     ticket_number: str
     title: str
     description: str
-    category: Optional[str] = None
-    subcategory: Optional[str] = None
+    category: str | None = None
+    subcategory: str | None = None
     status: str
-    priority: Optional[int] = None
-    priority_label: Optional[str] = None
+    priority: int | None = None
+    priority_label: str | None = None
     urgency: int
     impact: int
-    confidence_score: Optional[float] = None
-    explanation: Optional[str] = None
-    sla_deadline: Optional[datetime] = None
+    confidence_score: float | None = None
+    explanation: str | None = None
+    sla_deadline: datetime | None = None
     source: str
     tags: list[str] = []
-    reporter_id: Optional[UUID] = None
-    assigned_to: Optional[UUID] = None
+    reporter_id: UUID | None = None
+    assigned_to: UUID | None = None
     created_at: datetime
     updated_at: datetime
     is_sla_breached: bool = False

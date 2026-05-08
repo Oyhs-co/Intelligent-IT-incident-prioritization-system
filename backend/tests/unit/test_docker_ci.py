@@ -9,7 +9,6 @@ Verifica:
 
 from pathlib import Path
 
-import pytest
 import yaml
 
 BACKEND_DIR = Path(__file__).parent.parent.parent

@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import func, select, case
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.shared.logging import get_logger
 
 if TYPE_CHECKING:
-    from src.infrastructure.database.models import IncidentModel, UserModel, MetricModel
+    pass
 
 logger = get_logger("metrics_service")
 
@@ -49,7 +49,7 @@ class IncidentMetrics:
     avg_age_by_priority: dict = None
     resolution_rate_by_priority: dict = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.by_status = {}
         self.by_priority = {}
         self.by_category = {}
@@ -67,14 +67,14 @@ class AIMetrics:
     avg_latency_ms: float = 0.0
     confidence_distribution: dict = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.confidence_distribution = {}
 
 
 class MetricsService:
     """Servicio para recolectar y calcular métricas usando consultas agregadas."""
 
-    def __init__(self, session: AsyncSession):
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def get_overview_metrics(self) -> OverviewMetrics:
@@ -82,7 +82,7 @@ class MetricsService:
         from src.infrastructure.database.models import IncidentModel, UserModel
 
         metrics = OverviewMetrics()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         week_start = today_start - __import__("datetime").timedelta(days=7)
@@ -91,13 +91,6 @@ class MetricsService:
         stmt_total = select(func.count(IncidentModel.id))
         result = await self._session.execute(stmt_total)
         total = result.scalar() or 0
-
-        counts = {
-            "today": 0, "week": 0, "month": 0,
-            "open": 0, "in_progress": 0, "resolved": 0, "closed": 0,
-            "sla_breach": 0, "ai_today": 0,
-        }
-
         stmt_counts = select(
             func.sum(case((IncidentModel.created_at >= today_start, 1), else_=0)).label("today"),
             func.sum(case((IncidentModel.created_at >= week_start, 1), else_=0)).label("week"),
@@ -169,7 +162,7 @@ class MetricsService:
 
         metrics.ai_predictions_today = row.ai_today or 0
 
-        stmt_users = select(func.count(UserModel.id)).where(UserModel.is_active == True)
+        stmt_users = select(func.count(UserModel.id)).where(UserModel.is_active)
         result = await self._session.execute(stmt_users)
         metrics.active_users = result.scalar() or 0
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
@@ -17,7 +16,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(..., min_length=8, max_length=100)
     first_name: str = Field(default="", max_length=100)
     last_name: str = Field(default="", max_length=100)
-    department: Optional[str] = None
+    department: str | None = None
 
 
 class LoginRequest(BaseModel):
@@ -54,22 +53,22 @@ class UserResponse(BaseModel):
     first_name: str
     last_name: str
     full_name: str
-    department: Optional[str] = None
+    department: str | None = None
     is_active: bool
     is_verified: bool
-    last_login: Optional[datetime] = None
+    last_login: datetime | None = None
     created_at: datetime
 
 
 class UpdateUserRequest(BaseModel):
     """Request para actualizar un usuario."""
 
-    email: Optional[EmailStr] = None
-    first_name: Optional[str] = Field(None, max_length=100)
-    last_name: Optional[str] = Field(None, max_length=100)
-    department: Optional[str] = None
-    role: Optional[str] = None
-    is_active: Optional[bool] = None
+    email: EmailStr | None = None
+    first_name: str | None = Field(None, max_length=100)
+    last_name: str | None = Field(None, max_length=100)
+    department: str | None = None
+    role: str | None = None
+    is_active: bool | None = None
 
 
 class UserListResponse(BaseModel):

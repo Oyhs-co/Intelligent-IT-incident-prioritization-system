@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import time
-from typing import Callable, Optional
-from collections import defaultdict
 from asyncio import Lock
+from collections import defaultdict
+from collections.abc import Callable
 
 from fastapi import Request, Response, status
 from fastapi.responses import JSONResponse

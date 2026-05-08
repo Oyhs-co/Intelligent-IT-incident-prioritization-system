@@ -244,14 +244,14 @@ def main():
             logger.warning(f"  Accuracy alcanzado: {test_metrics['accuracy']:.4f} ({test_metrics['accuracy']:.1%})")
             training_logger.warning(f"RNF-08: NO CUMPLIDO - Accuracy: {test_metrics['accuracy']:.4f}")
         
-        logger.info(f"[OK] RNF-09: Manejo de datos incompletos - IMPLEMENTADO")
-        logger.info(f"[OK] RNF-10: Capacidad de generalización - VALIDADO CON TEST")
-        logger.info(f"[OK] RF-05 a RF-09: Pipeline de análisis y predicción - COMPLETADO")
-        logger.info(f"[OK] RF-23: Explicabilidad con SHAP/coeficientes - IMPLEMENTADA")
+        logger.info("[OK] RNF-09: Manejo de datos incompletos - IMPLEMENTADO")
+        logger.info("[OK] RNF-10: Capacidad de generalización - VALIDADO CON TEST")
+        logger.info("[OK] RF-05 a RF-09: Pipeline de análisis y predicción - COMPLETADO")
+        logger.info("[OK] RF-23: Explicabilidad con SHAP/coeficientes - IMPLEMENTADA")
         
         # Meta aspiracional
         if test_metrics["accuracy"] >= 0.85:
-            logger.info(f"\n META ASPIRACIONAL ALCANZADA: Accuracy >= 85%")
+            logger.info("\n META ASPIRACIONAL ALCANZADA: Accuracy >= 85%")
             training_logger.info(f"META ALCANZADA: Accuracy >= 85% ({test_metrics['accuracy']:.4f})")
         
         # Log tiempo total

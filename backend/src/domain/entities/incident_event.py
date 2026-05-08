@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
-from .base import BaseEntity
 from ..value_objects.priority_level import EventType
+from .base import BaseEntity
 
 
 @dataclass(eq=False)
@@ -16,9 +16,9 @@ class IncidentEvent(BaseEntity):
 
     _incident_id: UUID = field(default=None)
     _event_type: EventType = field(default=EventType.CREATED)
-    _old_value: Optional[str] = field(default=None)
-    _new_value: Optional[str] = field(default=None)
-    _user_id: Optional[UUID] = field(default=None)
+    _old_value: str | None = field(default=None)
+    _new_value: str | None = field(default=None)
+    _user_id: UUID | None = field(default=None)
     _metadata: dict = field(default_factory=dict)
 
     @property
@@ -44,34 +44,34 @@ class IncidentEvent(BaseEntity):
         self._mark_updated()
 
     @property
-    def old_value(self) -> Optional[str]:
+    def old_value(self) -> str | None:
         """Obtiene el valor anterior."""
         return self._old_value
 
     @old_value.setter
-    def old_value(self, value: Optional[str]) -> None:
+    def old_value(self, value: str | None) -> None:
         """Establece el valor anterior."""
         object.__setattr__(self, "_old_value", value)
         self._mark_updated()
 
     @property
-    def new_value(self) -> Optional[str]:
+    def new_value(self) -> str | None:
         """Obtiene el nuevo valor."""
         return self._new_value
 
     @new_value.setter
-    def new_value(self, value: Optional[str]) -> None:
+    def new_value(self, value: str | None) -> None:
         """Establece el nuevo valor."""
         object.__setattr__(self, "_new_value", value)
         self._mark_updated()
 
     @property
-    def user_id(self) -> Optional[UUID]:
+    def user_id(self) -> UUID | None:
         """Obtiene el ID del usuario que realizó el cambio."""
         return self._user_id
 
     @user_id.setter
-    def user_id(self, value: Optional[UUID]) -> None:
+    def user_id(self, value: UUID | None) -> None:
         """Establece el ID del usuario."""
         object.__setattr__(self, "_user_id", value)
         self._mark_updated()

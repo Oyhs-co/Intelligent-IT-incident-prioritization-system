@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Optional
 from enum import Enum
+from typing import Any
 
 from src.shared.logging import get_logger
 
@@ -38,13 +38,13 @@ class ExternalTicket:
     title: str
     description: str
     status: str
-    priority: Optional[int] = None
-    category: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
-    assignee: Optional[str] = None
-    reporter: Optional[str] = None
-    metadata: Optional[dict[str, Any]] = None
+    priority: int | None = None
+    category: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    assignee: str | None = None
+    reporter: str | None = None
+    metadata: dict[str, Any] | None = None
 
 
 class BaseTicketConnector(ABC):
@@ -54,7 +54,7 @@ class BaseTicketConnector(ABC):
         self,
         base_url: str,
         api_token: str,
-        username: Optional[str] = None,
+        username: str | None = None,
         timeout: int = 30,
     ):
         self._base_url = base_url.rstrip("/")
@@ -81,7 +81,7 @@ class BaseTicketConnector(ABC):
     @abstractmethod
     async def list_tickets(
         self,
-        status: Optional[str] = None,
+        status: str | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[ExternalTicket]:
@@ -93,8 +93,8 @@ class BaseTicketConnector(ABC):
         self,
         title: str,
         description: str,
-        priority: Optional[int] = None,
-        category: Optional[str] = None,
+        priority: int | None = None,
+        category: str | None = None,
         **kwargs,
     ) -> ExternalTicket:
         """Crea un nuevo ticket."""

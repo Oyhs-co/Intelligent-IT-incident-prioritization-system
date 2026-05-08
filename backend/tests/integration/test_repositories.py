@@ -1,11 +1,12 @@
 """Integration tests for repositories."""
 
-import pytest
 from uuid import uuid4
 
-from src.infrastructure.database.repositories import IncidentRepository
+import pytest
+
 from src.domain.entities.incident import Incident
-from src.domain.value_objects import IncidentStatus, IncidentSource
+from src.domain.value_objects import IncidentSource, IncidentStatus
+from src.infrastructure.database.repositories import IncidentRepository
 
 
 @pytest.mark.asyncio

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from src.domain.entities.incident import Incident
@@ -36,15 +36,15 @@ class ListIncidentsUseCase:
         self,
         skip: int = 0,
         limit: int = 100,
-        status: Optional[str] = None,
-        priority: Optional[int] = None,
-        category: Optional[str] = None,
-        assigned_to: Optional[UUID] = None,
-        created_by: Optional[UUID] = None,
+        status: str | None = None,
+        priority: int | None = None,
+        category: str | None = None,
+        assigned_to: UUID | None = None,
+        created_by: UUID | None = None,
     ) -> ListIncidentsResult:
         """Ejecuta el listado de incidentes."""
         logger.info(
-            f"Listing incidents",
+            "Listing incidents",
             skip=skip,
             limit=limit,
             status=status,
@@ -62,7 +62,7 @@ class ListIncidentsUseCase:
         )
 
         logger.info(
-            f"Incidents listed",
+            "Incidents listed",
             total=total,
             returned=len(incidents),
         )

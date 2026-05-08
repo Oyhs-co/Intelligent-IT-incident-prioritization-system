@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
-from uuid import UUID
 import json
-import numpy as np
+from typing import Any
+from uuid import UUID
 
+import numpy as np
 import redis.asyncio as redis
 
 from src.shared.logging import get_logger
@@ -26,14 +26,14 @@ class IncidentVectorStore:
         host: str = "localhost",
         port: int = 6379,
         db: int = 1,
-        password: Optional[str] = None,
+        password: str | None = None,
     ):
         self._embedding_dim = embedding_dim
         self._host = host
         self._port = port
         self._db = db
         self._password = password
-        self._client: Optional[redis.Redis] = None
+        self._client: redis.Redis | None = None
         self._connected = False
 
     async def connect(self) -> None:
@@ -90,7 +90,7 @@ class IncidentVectorStore:
     async def search_similar(
         self,
         embedding: list[float],
-        exclude_id: Optional[UUID] = None,
+        exclude_id: UUID | None = None,
         limit: int = 5,
         min_score: float = 0.0,
     ) -> list[dict[str, Any]]:
@@ -145,8 +145,8 @@ class IncidentVectorStore:
     async def update_incident(
         self,
         incident_id: UUID,
-        embedding: Optional[list[float]] = None,
-        metadata: Optional[dict[str, Any]] = None,
+        embedding: list[float] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> bool:
         """Actualiza un incidente en el vector store."""
         if not self._client:
@@ -174,7 +174,7 @@ class IncidentVectorStore:
             logger.error(f"Failed to update incident: {e}")
             return False
 
-    async def get_incident(self, incident_id: UUID) -> Optional[dict[str, Any]]:
+    async def get_incident(self, incident_id: UUID) -> dict[str, Any] | None:
         """Obtiene un incidente del vector store."""
         if not self._client:
             return None

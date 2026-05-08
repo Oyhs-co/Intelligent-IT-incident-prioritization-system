@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
+from typing import Any
 
 import redis.asyncio as redis
 
@@ -34,13 +34,13 @@ class RedisPublisher:
         host: str = "localhost",
         port: int = 6379,
         db: int = 0,
-        password: Optional[str] = None,
+        password: str | None = None,
     ):
         self._host = host
         self._port = port
         self._db = db
         self._password = password
-        self._client: Optional[redis.Redis] = None
+        self._client: redis.Redis | None = None
         self._connected = False
 
     async def connect(self) -> None:
@@ -72,7 +72,7 @@ class RedisPublisher:
         self,
         channel: EventChannel,
         data: dict[str, Any],
-        event_id: Optional[str] = None,
+        event_id: str | None = None,
     ) -> int:
         """Publica un evento en un canal."""
         if not self._client:
@@ -82,7 +82,7 @@ class RedisPublisher:
         message = {
             "event_id": event_id or self._generate_event_id(),
             "channel": channel.value,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "data": data,
         }
 
@@ -104,7 +104,7 @@ class RedisPublisher:
         incident_id: str,
         ticket_number: str,
         title: str,
-        priority: Optional[int] = None,
+        priority: int | None = None,
     ) -> int:
         """Publica evento de incidente creado."""
         return await self.publish(
@@ -172,7 +172,7 @@ class RedisPublisher:
 
     def _generate_event_id(self) -> str:
         """Genera ID único para el evento."""
-        return f"{datetime.now(timezone.utc).timestamp()}"
+        return f"{datetime.now(UTC).timestamp()}"
 
     async def is_connected(self) -> bool:
         """Verifica si está conectado."""

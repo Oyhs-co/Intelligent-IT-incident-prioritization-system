@@ -2,17 +2,19 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
+
 import aiohttp
+
+from src.shared.logging import get_logger
 
 from .base_connector import (
     BaseTicketConnector,
     ExternalTicket,
+    SyncDirection,
     TicketConnectionError,
     TicketSyncError,
-    SyncDirection,
 )
-from src.shared.logging import get_logger
 
 logger = get_logger("connectors.jira")
 
@@ -29,7 +31,7 @@ class JiraConnector(BaseTicketConnector):
     ):
         super().__init__(base_url, api_token, username)
         self._project_key = project_key
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession | None = None
         self._headers = {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -94,7 +96,7 @@ class JiraConnector(BaseTicketConnector):
 
     async def list_tickets(
         self,
-        status: Optional[str] = None,
+        status: str | None = None,
         limit: int = 100,
         offset: int = 0,
     ) -> list[ExternalTicket]:
@@ -130,8 +132,8 @@ class JiraConnector(BaseTicketConnector):
         self,
         title: str,
         description: str,
-        priority: Optional[int] = None,
-        category: Optional[str] = None,
+        priority: int | None = None,
+        category: str | None = None,
         **kwargs,
     ) -> ExternalTicket:
         """Crea un ticket en Jira."""
@@ -280,7 +282,7 @@ class JiraConnector(BaseTicketConnector):
             return " ".join(parts)
         return str(description)
 
-    def _map_priority(self, priority: Any) -> Optional[int]:
+    def _map_priority(self, priority: Any) -> int | None:
         """Mapea la prioridad de Jira a número."""
         if not priority:
             return None

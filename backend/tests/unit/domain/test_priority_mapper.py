@@ -4,8 +4,8 @@ import pytest
 
 from src.domain.value_objects.priority_level import (
     PriorityLevel,
-    map_ia_to_backend,
     map_backend_to_ia,
+    map_ia_to_backend,
 )
 
 

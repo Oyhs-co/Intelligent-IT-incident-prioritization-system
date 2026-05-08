@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Optional
-from uuid import UUID
 import time
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+from uuid import UUID
 
 from src.shared.logging import get_logger
 
 if TYPE_CHECKING:
-    from src.domain.repositories import IIncidentRepository
     from src.application.ports import IEmbeddingModel, ILLMClient
+    from src.domain.repositories import IIncidentRepository
     from src.infrastructure.ml.vector_store import IncidentVectorStore
 
 logger = get_logger("use_cases.recommendations")
@@ -46,10 +46,10 @@ class GetRecommendationsUseCase:
     def __init__(
         self,
         incident_repository: IIncidentRepository,
-        embedding_model: Optional[IEmbeddingModel] = None,
-        vector_store: Optional[IncidentVectorStore] = None,
-        llm_client: Optional[ILLMClient] = None,
-    ):
+        embedding_model: IEmbeddingModel | None = None,
+        vector_store: IncidentVectorStore | None = None,
+        llm_client: ILLMClient | None = None,
+    ) -> None:
         self._incident_repo = incident_repository
         self._embedding_model = embedding_model
         self._vector_store = vector_store

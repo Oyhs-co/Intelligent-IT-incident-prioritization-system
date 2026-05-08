@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer, ModelFactory
 from src.predictor import PriorityPredictor
-from src.utils import Config, logger, validate_priority
+from src.utils import Config, validate_priority
 
 
 class TestDataProcessor(unittest.TestCase):

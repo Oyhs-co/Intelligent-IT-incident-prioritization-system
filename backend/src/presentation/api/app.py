@@ -4,31 +4,28 @@ from __future__ import annotations
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-
-from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
-from src.infrastructure.database import init_db, close_db
+from src.infrastructure.database import close_db, init_db
 from src.shared.config import get_settings
-from src.shared.logging import get_logger
 from src.shared.exceptions import (
-    AppException,
-    NotFoundException,
-    ValidationException,
+    AIServiceException,
     AuthenticationException,
     AuthorizationException,
     ConflictException,
     DatabaseException,
-    AIServiceException,
+    NotFoundException,
+    ValidationException,
 )
+from src.shared.logging import get_logger
 
+from .middleware import LoggingMiddleware, RateLimitMiddleware, TraceMiddleware
+from .routes.auth import router as auth_router
 from .routes.incidents import router as incidents_router
 from .routes.metrics import router as metrics_router
-from .routes.auth import router as auth_router
 from .routes.users import router as users_router
-from .middleware import LoggingMiddleware, RateLimitMiddleware, TraceMiddleware
 
 settings = get_settings()
 logger = get_logger("app")

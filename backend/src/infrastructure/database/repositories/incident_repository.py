@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from datetime import UTC
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -17,6 +17,7 @@ from src.domain.value_objects import (
     IncidentStatus,
     PriorityLevel,
 )
+
 from ..models.incident_model import IncidentModel
 from ..models.incident_similarity_model import IncidentSimilarityModel
 
@@ -116,7 +117,7 @@ class IncidentRepository(IIncidentRepository):
         await self._session.refresh(model)
         return self._model_to_entity(model)
 
-    async def get_by_id(self, incident_id: UUID) -> Optional[Incident]:
+    async def get_by_id(self, incident_id: UUID) -> Incident | None:
         """Obtiene un incidente por su ID."""
         stmt = select(IncidentModel).options(
             selectinload(IncidentModel.similar_incidents),
@@ -125,7 +126,7 @@ class IncidentRepository(IIncidentRepository):
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
-    async def get_by_ticket_number(self, ticket_number: str) -> Optional[Incident]:
+    async def get_by_ticket_number(self, ticket_number: str) -> Incident | None:
         """Obtiene un incidente por su número de ticket."""
         stmt = select(IncidentModel).options(
             selectinload(IncidentModel.similar_incidents),
@@ -212,11 +213,11 @@ class IncidentRepository(IIncidentRepository):
         self,
         skip: int = 0,
         limit: int = 100,
-        status: Optional[str] = None,
-        priority: Optional[int] = None,
-        category: Optional[str] = None,
-        assigned_to: Optional[UUID] = None,
-        created_by: Optional[UUID] = None,
+        status: str | None = None,
+        priority: int | None = None,
+        category: str | None = None,
+        assigned_to: UUID | None = None,
+        created_by: UUID | None = None,
     ) -> tuple[list[Incident], int]:
         """Lista incidentes con filtros."""
         stmt = select(IncidentModel).options(
@@ -286,10 +287,10 @@ class IncidentRepository(IIncidentRepository):
 
     async def sla_breach_count(self) -> int:
         """Cuenta incidentes con SLA incumplido (deadline pasado y no resueltos)."""
-        from datetime import datetime, timezone
+        from datetime import datetime
         stmt = select(func.count(IncidentModel.id)).where(
             IncidentModel.sla_deadline.isnot(None),
-            IncidentModel.sla_deadline < datetime.now(timezone.utc),
+            IncidentModel.sla_deadline < datetime.now(UTC),
             IncidentModel.status.notin_(["resolved", "closed", "rejected"]),
         )
         result = await self._session.execute(stmt)

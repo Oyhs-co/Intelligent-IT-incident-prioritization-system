@@ -7,13 +7,11 @@ Verifica:
 """
 
 import pytest
-
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from src.infrastructure.database import Base
 from src.infrastructure.database.models.user_model import UserModel
-
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
@@ -94,7 +92,11 @@ class TestCloseDb:
     @pytest.mark.asyncio
     async def test_close_db_disposes_engines(self):
         """close_db() debe liberar los motores de BD."""
-        from src.infrastructure.database.session import get_async_engine, get_sync_engine, close_db
+        from src.infrastructure.database.session import (
+            close_db,
+            get_async_engine,
+            get_sync_engine,
+        )
 
         engine_async = get_async_engine()
         engine_sync = get_sync_engine()

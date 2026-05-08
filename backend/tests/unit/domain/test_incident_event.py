@@ -2,8 +2,6 @@
 
 from uuid import uuid4
 
-import pytest
-
 from src.domain.entities.incident_event import IncidentEvent
 from src.domain.value_objects.priority_level import EventType
 

@@ -5,18 +5,18 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
 
 from src.application.services import AuthService
-from src.infrastructure.database.repositories import UserRepository
 from src.infrastructure.database import get_db_session
+from src.infrastructure.database.repositories import UserRepository
 from src.presentation.schemas import (
-    RegisterRequest,
     LoginRequest,
     RefreshTokenRequest,
+    RegisterRequest,
     TokenResponse,
     UserResponse,
 )
+
 from .dependencies import get_current_user
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
@@ -84,7 +84,7 @@ async def login(
             expires_in=result.tokens.expires_in,
         )
 
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",

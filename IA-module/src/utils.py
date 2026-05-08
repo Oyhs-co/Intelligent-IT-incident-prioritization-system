@@ -142,8 +142,8 @@ def save_training_report(
     content.append("")
     
     if training_time:
-        content.append(f"| Métrica | Valor |")
-        content.append(f"|---------|-------|")
+        content.append("| Métrica | Valor |")
+        content.append("|---------|-------|")
         content.append(f"| Tiempo de entrenamiento | {training_time:.2f} segundos |")
     
     if val_metrics.get("accuracy"):
@@ -154,9 +154,9 @@ def save_training_report(
         
         # Verificar RNF-08
         if test_metrics['accuracy'] >= 0.70:
-            content.append(f"| **RNF-08** | CUMPLIDO (>=70%) |")
+            content.append("| **RNF-08** | CUMPLIDO (>=70%) |")
         else:
-            content.append(f"| **RNF-08** | NO CUMPLIDO (>=70%) |")
+            content.append("| **RNF-08** | NO CUMPLIDO (>=70%) |")
     
     content.append("")
     

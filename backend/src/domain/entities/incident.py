@@ -3,17 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
-from .base import BaseEntity
 from ..value_objects.priority_level import (
     IncidentCategory,
     IncidentSource,
     IncidentStatus,
     PriorityLevel,
 )
+from .base import BaseEntity
 
 
 @dataclass(eq=False)
@@ -23,30 +23,30 @@ class Incident(BaseEntity):
     _ticket_number: str = field(default="")
     _title: str = field(default="")
     _description: str = field(default="")
-    _category: Optional[IncidentCategory] = field(default=None)
-    _subcategory: Optional[str] = field(default=None)
+    _category: IncidentCategory | None = field(default=None)
+    _subcategory: str | None = field(default=None)
     _status: IncidentStatus = field(default=IncidentStatus.NEW)
-    _priority: Optional[PriorityLevel] = field(default=None)
-    _suggested_priority: Optional[PriorityLevel] = field(default=None)
-    _ai_model_version: Optional[str] = field(default=None)
-    _ai_processed_at: Optional[datetime] = field(default=None)
+    _priority: PriorityLevel | None = field(default=None)
+    _suggested_priority: PriorityLevel | None = field(default=None)
+    _ai_model_version: str | None = field(default=None)
+    _ai_processed_at: datetime | None = field(default=None)
     _urgency: int = field(default=3)
     _impact: int = field(default=3)
-    _confidence_score: Optional[float] = field(default=None)
-    _explanation: Optional[str] = field(default=None)
-    _sla_deadline: Optional[datetime] = field(default=None)
-    _resolution: Optional[str] = field(default=None)
-    _resolution_code: Optional[str] = field(default=None)
+    _confidence_score: float | None = field(default=None)
+    _explanation: str | None = field(default=None)
+    _sla_deadline: datetime | None = field(default=None)
+    _resolution: str | None = field(default=None)
+    _resolution_code: str | None = field(default=None)
     _source: IncidentSource = field(default=IncidentSource.WEB)
     _tags: list[str] = field(default_factory=list)
     _metadata: dict = field(default_factory=dict)
-    _reporter_id: Optional[UUID] = field(default=None)
-    _assigned_to: Optional[UUID] = field(default=None)
-    _resolved_by: Optional[UUID] = field(default=None)
-    _closed_by: Optional[UUID] = field(default=None)
+    _reporter_id: UUID | None = field(default=None)
+    _assigned_to: UUID | None = field(default=None)
+    _resolved_by: UUID | None = field(default=None)
+    _closed_by: UUID | None = field(default=None)
     _similar_incidents: list[UUID] = field(default_factory=list)
-    _resolved_at: Optional[datetime] = field(default=None)
-    _closed_at: Optional[datetime] = field(default=None)
+    _resolved_at: datetime | None = field(default=None)
+    _closed_at: datetime | None = field(default=None)
 
     @property
     def ticket_number(self) -> str:
@@ -92,23 +92,23 @@ class Incident(BaseEntity):
         self._mark_updated()
 
     @property
-    def category(self) -> Optional[IncidentCategory]:
+    def category(self) -> IncidentCategory | None:
         """Obtiene la categoría del incidente."""
         return self._category
 
     @category.setter
-    def category(self, value: Optional[IncidentCategory]) -> None:
+    def category(self, value: IncidentCategory | None) -> None:
         """Establece la categoría del incidente."""
         object.__setattr__(self, "_category", value)
         self._mark_updated()
 
     @property
-    def subcategory(self) -> Optional[str]:
+    def subcategory(self) -> str | None:
         """Obtiene la subcategoría del incidente."""
         return self._subcategory
 
     @subcategory.setter
-    def subcategory(self, value: Optional[str]) -> None:
+    def subcategory(self, value: str | None) -> None:
         """Establece la subcategoría del incidente."""
         object.__setattr__(self, "_subcategory", value)
         self._mark_updated()
@@ -125,17 +125,17 @@ class Incident(BaseEntity):
         self._mark_updated()
 
     @property
-    def priority(self) -> Optional[PriorityLevel]:
+    def priority(self) -> PriorityLevel | None:
         """Obtiene la prioridad asignada."""
         return self._priority
 
     @property
-    def priority_label(self) -> Optional[str]:
+    def priority_label(self) -> str | None:
         """Obtiene la etiqueta de prioridad."""
         return self._priority.label if self._priority else None
 
     @priority.setter
-    def priority(self, value: Optional[PriorityLevel]) -> None:
+    def priority(self, value: PriorityLevel | None) -> None:
         """Establece la prioridad del incidente."""
         object.__setattr__(self, "_priority", value)
         self._mark_updated()
@@ -167,43 +167,43 @@ class Incident(BaseEntity):
         self._mark_updated()
 
     @property
-    def confidence_score(self) -> Optional[float]:
+    def confidence_score(self) -> float | None:
         """Obtiene el score de confianza."""
         return self._confidence_score
 
     @property
-    def explanation(self) -> Optional[str]:
+    def explanation(self) -> str | None:
         """Obtiene la explicación de priorización."""
         return self._explanation
 
     @property
-    def sla_deadline(self) -> Optional[datetime]:
+    def sla_deadline(self) -> datetime | None:
         """Obtiene la fecha límite de SLA."""
         return self._sla_deadline
 
     @property
-    def reporter_id(self) -> Optional[UUID]:
+    def reporter_id(self) -> UUID | None:
         """Obtiene el ID del reporter."""
         return self._reporter_id
 
     @reporter_id.setter
-    def reporter_id(self, value: Optional[UUID]) -> None:
+    def reporter_id(self, value: UUID | None) -> None:
         """Establece el ID del reporter."""
         object.__setattr__(self, "_reporter_id", value)
         self._mark_updated()
 
     @property
-    def assigned_to(self) -> Optional[UUID]:
+    def assigned_to(self) -> UUID | None:
         """Obtiene el ID del técnico asignado."""
         return self._assigned_to
 
     @property
-    def resolved_by(self) -> Optional[UUID]:
+    def resolved_by(self) -> UUID | None:
         """Obtiene el ID de quien resolvió."""
         return self._resolved_by
 
     @property
-    def closed_by(self) -> Optional[UUID]:
+    def closed_by(self) -> UUID | None:
         """Obtiene el ID de quien cerró."""
         return self._closed_by
 
@@ -252,65 +252,65 @@ class Incident(BaseEntity):
         self._mark_updated()
 
     @property
-    def resolved_at(self) -> Optional[datetime]:
+    def resolved_at(self) -> datetime | None:
         """Obtiene la fecha de resolución."""
         return self._resolved_at
 
     @property
-    def closed_at(self) -> Optional[datetime]:
+    def closed_at(self) -> datetime | None:
         """Obtiene la fecha de cierre."""
         return self._closed_at
 
     @property
-    def resolution(self) -> Optional[str]:
+    def resolution(self) -> str | None:
         """Obtiene la resolución."""
         return self._resolution
 
     @property
-    def resolution_code(self) -> Optional[str]:
+    def resolution_code(self) -> str | None:
         """Obtiene el código de resolución."""
         return self._resolution_code
 
     @property
-    def resolved_by(self) -> Optional[UUID]:
+    def resolved_by(self) -> UUID | None:
         """Obtiene el ID de quien resolvió."""
         return self._resolved_by
 
     @property
-    def closed_by(self) -> Optional[UUID]:
+    def closed_by(self) -> UUID | None:
         """Obtiene el ID de quien cerró."""
         return self._closed_by
 
     @property
     def age(self) -> timedelta:
         """Obtiene la edad del incidente."""
-        return datetime.now(timezone.utc) - self._created_at
+        return datetime.now(UTC) - self._created_at
 
     @property
     def is_sla_breached(self) -> bool:
         """Verifica si se ha superado el SLA."""
         if self._sla_deadline is None:
             return False
-        return datetime.now(timezone.utc) > self._sla_deadline
+        return datetime.now(UTC) > self._sla_deadline
 
     @property
     def is_sla_at_risk(self) -> bool:
         """Verifica si el SLA está en riesgo (menos de 15 min)."""
         if self._sla_deadline is None:
             return False
-        remaining = self._sla_deadline - datetime.now(timezone.utc)
+        remaining = self._sla_deadline - datetime.now(UTC)
         return timedelta(0) < remaining < timedelta(minutes=15)
-    
+
     @property
-    def suggested_priority(self) -> Optional[PriorityLevel]:
+    def suggested_priority(self) -> PriorityLevel | None:
         return self._suggested_priority
 
     @property
-    def ai_model_version(self) -> Optional[str]:
+    def ai_model_version(self) -> str | None:
         return self._ai_model_version
 
     @property
-    def ai_processed_at(self) -> Optional[datetime]:
+    def ai_processed_at(self) -> datetime | None:
         return self._ai_processed_at
 
     def assign_priority(
@@ -318,15 +318,15 @@ class Incident(BaseEntity):
     priority: PriorityLevel,
     confidence: float,
     explanation: str,
-    similar: Optional[list[UUID]] = None,
-    model_version: Optional[str] = None,
+    similar: list[UUID] | None = None,
+    model_version: str | None = None,
     ) -> None:
         """Asigna la priorización automática (IA) al incidente."""
-        
+
         if not 0.0 <= confidence <= 1.0:
             raise ValueError("Confidence must be between 0.0 and 1.0")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Guardar sugerencia de IA
         object.__setattr__(self, "_suggested_priority", priority)
@@ -357,7 +357,7 @@ class Incident(BaseEntity):
         object.__setattr__(
             self,
             "_sla_deadline",
-            datetime.now(timezone.utc) + timedelta(minutes=priority.sla_minutes),
+            datetime.now(UTC) + timedelta(minutes=priority.sla_minutes),
         )
         self._mark_updated()
 
@@ -380,7 +380,7 @@ class Incident(BaseEntity):
             object.__setattr__(
                 self,
                 "_sla_deadline",
-                datetime.now(timezone.utc) + timedelta(minutes=new_priority.sla_minutes),
+                datetime.now(UTC) + timedelta(minutes=new_priority.sla_minutes),
             )
         self._mark_updated()
 
@@ -401,20 +401,20 @@ class Incident(BaseEntity):
             object.__setattr__(self, "_status", IncidentStatus.IN_PROGRESS)
         self._mark_updated()
 
-    def resolve(self, resolution: str, resolved_by: UUID, resolution_code: Optional[str] = None) -> None:
+    def resolve(self, resolution: str, resolved_by: UUID, resolution_code: str | None = None) -> None:
         """Marca el incidente como resuelto."""
         object.__setattr__(self, "_status", IncidentStatus.RESOLVED)
         object.__setattr__(self, "_resolution", resolution)
         object.__setattr__(self, "_resolved_by", resolved_by)
         object.__setattr__(self, "_resolution_code", resolution_code)
-        object.__setattr__(self, "_resolved_at", datetime.now(timezone.utc))
+        object.__setattr__(self, "_resolved_at", datetime.now(UTC))
         self._mark_updated()
 
     def close(self, closed_by: UUID) -> None:
         """Cierra el incidente."""
         object.__setattr__(self, "_status", IncidentStatus.CLOSED)
         object.__setattr__(self, "_closed_by", closed_by)
-        object.__setattr__(self, "_closed_at", datetime.now(timezone.utc))
+        object.__setattr__(self, "_closed_at", datetime.now(UTC))
         self._mark_updated()
 
     def reopen(self, reason: str) -> None:

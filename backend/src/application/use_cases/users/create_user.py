@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
-from uuid import UUID
+from typing import TYPE_CHECKING
 
 from src.domain.entities.user import User, UserRole
 from src.domain.repositories import IUserRepository
@@ -25,7 +24,7 @@ class CreateUserRequest:
     password: str
     first_name: str = ""
     last_name: str = ""
-    department: Optional[str] = None
+    department: str | None = None
     role: UserRole = UserRole.USER
 
 
@@ -37,16 +36,16 @@ class CreateUserUseCase:
 
     async def execute(self, request: CreateUserRequest) -> User:
         """Ejecuta la creación de un usuario."""
-        logger.info(f"Creating user", email=request.email)
+        logger.info("Creating user", email=request.email)
 
         existing_email = await self._user_repo.get_by_email(request.email)
         if existing_email:
-            logger.warning(f"Email already registered", email=request.email)
+            logger.warning("Email already registered", email=request.email)
             raise ValueError("Email already registered")
 
         existing_username = await self._user_repo.get_by_username(request.username)
         if existing_username:
-            logger.warning(f"Username already taken", username=request.username)
+            logger.warning("Username already taken", username=request.username)
             raise ValueError("Username already taken")
 
         user = User()
@@ -61,6 +60,6 @@ class CreateUserUseCase:
 
         created_user = await self._user_repo.create(user)
 
-        logger.info(f"User created successfully", user_id=str(created_user.id))
+        logger.info("User created successfully", user_id=str(created_user.id))
 
         return created_user

@@ -17,7 +17,6 @@ from pathlib import Path
 import warnings
 from typing import Tuple, List, Dict, Any, Optional
 import numpy as np
-import pandas as pd
 
 from .interfaces import IEncoder, IClassifier
 from .utils import logger, Config
@@ -404,7 +403,7 @@ class PriorityPredictor:
         )
         
         if top_features:
-            reasoning += f"\nFactores clave detectados en el incidente:\n"
+            reasoning += "\nFactores clave detectados en el incidente:\n"
             for i, feat in enumerate(top_features[:3], 1):
                 direction = "(+)" if feat["importance"] == "positive" else "(-)"
                 feature_display = feat.get('feature_name', f"Feature {feat['feature_index']}")

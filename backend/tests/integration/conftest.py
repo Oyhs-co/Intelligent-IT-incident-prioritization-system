@@ -1,12 +1,10 @@
 """Integration tests configuration."""
 
-import os
-import pytest
 import asyncio
-from typing import AsyncGenerator
-from datetime import datetime
-from uuid import UUID, uuid4
+import os
+from collections.abc import AsyncGenerator
 
+import pytest
 
 # DATABASE_URL was already set by root conftest to a file-based SQLite
 # All engines (test + app) share the same file
@@ -35,21 +33,21 @@ def _patch_passlib():
 @pytest.fixture(autouse=True)
 def _patch_rate_limit(monkeypatch):
     """Desactiva rate limiting en tests parcheando el método de verificación."""
-    from src.presentation.api.middleware.rate_limit_middleware import RateLimitMiddleware
+    from src.presentation.api.middleware.rate_limit_middleware import (
+        RateLimitMiddleware,
+    )
     async def _always_allowed(self, client_ip, now):
         return (True, "")
     monkeypatch.setattr(RateLimitMiddleware, "_check_limits", _always_allowed)
     yield
 
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.presentation.api.app import app
 from src.infrastructure.database import Base, get_db_session
-from src.infrastructure.database.models import UserModel, IncidentModel
 from src.infrastructure.database.repositories import IncidentRepository, UserRepository
-
+from src.presentation.api.app import app
 
 TEST_DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 
@@ -131,9 +129,9 @@ async def test_user(session: AsyncSession):
 @pytest.fixture
 async def test_incident(session: AsyncSession, test_user):
     """Create a test incident."""
-    from src.infrastructure.database.repositories import IncidentRepository
     from src.domain.entities.incident import Incident
-    from src.domain.value_objects import IncidentStatus, IncidentSource
+    from src.domain.value_objects import IncidentSource, IncidentStatus
+    from src.infrastructure.database.repositories import IncidentRepository
 
     repo = IncidentRepository(session)
     entity = Incident()

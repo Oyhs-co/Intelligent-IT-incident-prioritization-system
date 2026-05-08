@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from src.infrastructure.ml.ia_adapter import IAIntegrationAdapter
-from src.domain.value_objects import PriorityLevel
 
 
 class TestIAIntegrationAdapter:

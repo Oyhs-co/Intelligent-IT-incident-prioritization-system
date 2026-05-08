@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
-from uuid import UUID
+from typing import TYPE_CHECKING
 
 from src.domain.entities.user import User
 from src.domain.repositories import IUserRepository
@@ -36,11 +35,11 @@ class ListUsersUseCase:
         self,
         skip: int = 0,
         limit: int = 100,
-        role: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        role: str | None = None,
+        is_active: bool | None = None,
     ) -> ListUsersResult:
         """Ejecuta el listado de usuarios."""
-        logger.info(f"Listing users", skip=skip, limit=limit)
+        logger.info("Listing users", skip=skip, limit=limit)
 
         users, total = await self._user_repo.list_all(
             skip=skip,
@@ -49,7 +48,7 @@ class ListUsersUseCase:
             is_active=is_active,
         )
 
-        logger.info(f"Users listed", total=total, returned=len(users))
+        logger.info("Users listed", total=total, returned=len(users))
 
         return ListUsersResult(
             items=users,

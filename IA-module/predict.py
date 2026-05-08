@@ -33,7 +33,7 @@ def format_explanation(explanation: dict) -> str:
     output.append(f"  Descripción: {explanation['priority_description']}")
     output.append(f"  Confianza: {explanation['confidence'] * 100:.1f}%")
     
-    output.append(f"\n  Probabilidades por clase:")
+    output.append("\n  Probabilidades por clase:")
     for label, prob in explanation['all_probabilities'].items():
         # Generar barra de progreso con tqdm
         bar = tqdm.format_meter(
@@ -59,7 +59,7 @@ def format_explanation(explanation: dict) -> str:
             )
     
     # Razonamiento
-    output.append(f"\n  Razonamiento:")
+    output.append("\n  Razonamiento:")
     output.append(f"    {explanation['reasoning']}")
     
     output.append("\n" + "=" * 70 + "\n")

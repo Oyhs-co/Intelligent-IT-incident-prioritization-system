@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -10,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.entities.comment import Comment
 from src.domain.repositories import ICommentRepository
+
 from ..models.comment_model import CommentModel
 
 
@@ -52,7 +52,7 @@ class CommentRepository(ICommentRepository):
         await self._session.refresh(model)
         return self._model_to_entity(model)
 
-    async def get_by_id(self, comment_id: UUID) -> Optional[Comment]:
+    async def get_by_id(self, comment_id: UUID) -> Comment | None:
         """Obtiene un comentario por su ID."""
         stmt = select(CommentModel).where(CommentModel.id == str(comment_id))
         result = await self._session.execute(stmt)

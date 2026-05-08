@@ -4,10 +4,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Optional
 from uuid import UUID
 
-from ..entities.incident import Incident
-from ..entities.user import User
 from ..entities.comment import Comment
+from ..entities.incident import Incident
 from ..entities.incident_event import IncidentEvent
+from ..entities.user import User
 
 
 class IIncidentRepository(ABC):
@@ -18,11 +18,11 @@ class IIncidentRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, incident_id: UUID) -> Optional[Incident]:
+    async def get_by_id(self, incident_id: UUID) -> Incident | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_ticket_number(self, ticket_number: str) -> Optional[Incident]:
+    async def get_by_ticket_number(self, ticket_number: str) -> Incident | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -38,11 +38,11 @@ class IIncidentRepository(ABC):
         self,
         skip: int = 0,
         limit: int = 100,
-        status: Optional[str] = None,
-        priority: Optional[int] = None,
-        category: Optional[str] = None,
-        assigned_to: Optional[UUID] = None,
-        created_by: Optional[UUID] = None,
+        status: str | None = None,
+        priority: int | None = None,
+        category: str | None = None,
+        assigned_to: UUID | None = None,
+        created_by: UUID | None = None,
     ) -> tuple[list[Incident], int]:
         raise NotImplementedError
 
@@ -75,15 +75,15 @@ class IUserRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, user_id: UUID) -> Optional[User]:
+    async def get_by_id(self, user_id: UUID) -> User | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_email(self, email: str) -> Optional[User]:
+    async def get_by_email(self, email: str) -> User | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_username(self, username: str) -> Optional[User]:
+    async def get_by_username(self, username: str) -> User | None:
         raise NotImplementedError
 
     @abstractmethod
@@ -99,8 +99,8 @@ class IUserRepository(ABC):
         self,
         skip: int = 0,
         limit: int = 100,
-        role: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        role: str | None = None,
+        is_active: bool | None = None,
     ) -> tuple[list[User], int]:
         raise NotImplementedError
 
@@ -113,7 +113,7 @@ class ICommentRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_id(self, comment_id: UUID) -> Optional[Comment]:
+    async def get_by_id(self, comment_id: UUID) -> Comment | None:
         raise NotImplementedError
 
     @abstractmethod

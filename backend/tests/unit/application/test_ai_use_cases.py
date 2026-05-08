@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
 
-from src.application.use_cases.ai.search_similar_incidents import (
-    SearchSimilarIncidentsUseCase,
-    SearchSimilarIncidentsRequest,
-)
 from src.application.use_cases.ai.get_incident_recommendations import (
-    GetRecommendationsUseCase,
     GetRecommendationsRequest,
+    GetRecommendationsUseCase,
+)
+from src.application.use_cases.ai.search_similar_incidents import (
+    SearchSimilarIncidentsRequest,
+    SearchSimilarIncidentsUseCase,
 )
 from src.domain.value_objects import IncidentCategory
 
@@ -417,7 +417,7 @@ class TestGetRecommendationsUseCase:
     async def test_with_resolved_time_calculation(self, mock_incident_repository):
         """Similares resueltos con fechas deben calcular tiempo promedio."""
         incident_id = uuid4()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         mock_incident = MagicMock(
             id=incident_id, title="Test", description="Desc",
             urgency=3, impact=3, priority=MagicMock(value=3),

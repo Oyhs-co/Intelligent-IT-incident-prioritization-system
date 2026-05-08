@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text
-from datetime import datetime
 from sqlalchemy.dialects.sqlite import TEXT as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -34,11 +34,11 @@ class CommentModel(Base):
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 
-    incident: Mapped["IncidentModel"] = relationship(
+    incident: Mapped[IncidentModel] = relationship(
         "IncidentModel",
         back_populates="comments",
     )
-    user: Mapped["UserModel | None"] = relationship("UserModel")
+    user: Mapped[UserModel | None] = relationship("UserModel")
 
     def __repr__(self) -> str:
         return f"<Comment(id={self.id}, incident_id={self.incident_id})>"

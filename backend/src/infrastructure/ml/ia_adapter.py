@@ -7,9 +7,8 @@ de machine learning ubicado en IA-module/.
 from __future__ import annotations
 
 import sys
-import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from src.application.ports.i_ai_model import IAIModel
 from src.domain.value_objects import map_ia_to_backend
@@ -30,7 +29,7 @@ class IAIntegrationAdapter(IAIModel):
     Implementa singleton para evitar recargar el modelo (~500MB RAM) en cada request.
     """
 
-    _instance: Optional[IAIntegrationAdapter] = None
+    _instance: IAIntegrationAdapter | None = None
     _initialized: bool = False
 
     def __new__(cls) -> IAIntegrationAdapter:
@@ -103,7 +102,7 @@ class IAIntegrationAdapter(IAIModel):
         self._ensure_model_loaded()
         return self._predictor is not None and self._model_loaded
 
-    async def predict(self, text: str, metadata: Optional[dict] = None) -> tuple[int, float]:
+    async def predict(self, text: str, metadata: dict | None = None) -> tuple[int, float]:
         """Predice la prioridad de un texto.
 
         Args:
@@ -138,7 +137,7 @@ class IAIntegrationAdapter(IAIModel):
     async def predict_with_explanation(
         self,
         text: str,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ) -> dict[str, Any]:
         """Predice con explicación detallada (SHAP o coeficientes).
 
@@ -233,7 +232,7 @@ class IAIntegrationAdapter(IAIModel):
     async def batch_predict(
         self,
         texts: list[str],
-        metadata_list: Optional[list[dict]] = None,
+        metadata_list: list[dict] | None = None,
     ) -> list[tuple[int, float]]:
         """Predice prioridades en lote.
 

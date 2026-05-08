@@ -2,50 +2,44 @@
 
 from __future__ import annotations
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import JSONResponse
 
+from src.application.use_cases.ai import (
+    GetRecommendationsRequest,
+    GetRecommendationsUseCase,
+    SearchSimilarIncidentsUseCase,
+)
 from src.application.use_cases.incidents import (
+    ClassifyIncidentUseCase,
     CreateIncidentUseCase,
+    DeleteIncidentUseCase,
     GetIncidentUseCase,
     ListIncidentsUseCase,
-    ClassifyIncidentUseCase,
     UpdateIncidentUseCase,
-    DeleteIncidentUseCase,
 )
-from src.application.use_cases.ai import (
-    GetRecommendationsUseCase,
-    GetRecommendationsRequest,
-    SearchSimilarIncidentsUseCase,
-    SearchSimilarIncidentsRequest,
-)
-from src.application.services import AIService
 from src.infrastructure.database import get_db_session
 from src.infrastructure.database.repositories import (
-    IncidentRepository,
-    EventRepository,
     CommentRepository,
+    EventRepository,
+    IncidentRepository,
 )
-from src.domain.repositories import (
-    IIncidentRepository,
-    IIncidentEventRepository,
-    ICommentRepository,
+from src.presentation.schemas import (
+    AddCommentRequest,
+    ClassificationResponse,
+    CommentResponse,
+    EventResponse,
+    IncidentListResponse,
+    IncidentResponse,
+    SearchSimilarRequest,
+    UpdateIncidentRequest,
 )
 from src.presentation.schemas import (
     CreateIncidentRequest as CreateIncidentSchema,
-    UpdateIncidentRequest,
-    IncidentResponse,
-    IncidentListResponse,
-    ClassificationResponse,
-    AddCommentRequest,
-    SearchSimilarRequest,
-    EventResponse,
-    CommentResponse,
 )
-from .dependencies import get_current_user, get_ai_service
+
+from .dependencies import get_ai_service, get_current_user
 
 router = APIRouter(prefix="/api/v1/incidents", tags=["Incidents"])
 
@@ -80,7 +74,7 @@ def _incident_to_response(inc) -> IncidentResponse:
 async def create_incident(
     request: CreateIncidentSchema,
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Crea un nuevo incidente."""
     incident_repo = IncidentRepository(session)
@@ -89,7 +83,9 @@ async def create_incident(
 
     use_case = CreateIncidentUseCase(incident_repo, event_repo, ai_svc)
 
-    from src.application.use_cases.incidents.create_incident import CreateIncidentRequest as CreateIncidentReq
+    from src.application.use_cases.incidents.create_incident import (
+        CreateIncidentRequest as CreateIncidentReq,
+    )
 
     uc_request = CreateIncidentReq(
         title=request.title,
@@ -113,9 +109,9 @@ async def create_incident(
 async def list_incidents(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    status: Optional[str] = None,
-    priority: Optional[int] = Query(None, ge=1, le=4),
-    category: Optional[str] = None,
+    status: str | None = None,
+    priority: int | None = Query(None, ge=1, le=4),
+    category: str | None = None,
     session=Depends(get_db_session),
 ):
     """Lista incidentes con filtros."""
@@ -165,7 +161,7 @@ async def update_incident(
     incident_id: UUID,
     request: UpdateIncidentRequest,
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Actualiza un incidente parcialmente."""
     incident_repo = IncidentRepository(session)
@@ -206,7 +202,7 @@ async def update_incident(
 async def delete_incident(
     incident_id: UUID,
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Elimina un incidente."""
     incident_repo = IncidentRepository(session)
@@ -233,7 +229,7 @@ async def classify_incident(
     incident_id: UUID,
     force: bool = Query(False),
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Clasifica un incidente usando IA."""
     incident_repo = IncidentRepository(session)
@@ -262,7 +258,7 @@ async def classify_incident(
 async def get_recommendations(
     incident_id: UUID,
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Obtiene recomendaciones basadas en incidentes similares."""
     incident_repo = IncidentRepository(session)
@@ -296,7 +292,7 @@ async def get_recommendations(
 async def search_similar(
     request: SearchSimilarRequest,
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Busca incidentes similares."""
     incident_repo = IncidentRepository(session)
@@ -336,7 +332,7 @@ async def get_incident_events(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Obtiene los eventos de auditoría de un incidente."""
     event_repo = EventRepository(session)
@@ -367,7 +363,7 @@ async def list_comments(
     limit: int = Query(100, ge=1, le=1000),
     include_internal: bool = Query(False),
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Lista los comentarios de un incidente."""
     comment_repo = CommentRepository(session)
@@ -395,7 +391,7 @@ async def add_comment(
     incident_id: UUID,
     request: AddCommentRequest,
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Agrega un comentario a un incidente."""
     from src.domain.entities.comment import Comment

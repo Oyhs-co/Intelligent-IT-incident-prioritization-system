@@ -12,6 +12,7 @@ Compatible con MiniLM-L6-v2 + LightGBM (v2.0)
 
 from pathlib import Path
 import sys
+import traceback
 
 # Add parent directory to path to import src as package
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -19,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.data_processor import DataProcessor
 from src.model_trainer import ModelTrainer, ModelFactory
 from src.predictor import PriorityPredictor
-from src.utils import Config, logger
+from src.utils import Config
 
 
 def check_model_exists():
@@ -69,7 +70,7 @@ def example_1_train_model():
         print(f"  - Test: {X_test.shape[0]} muestras")
         print(f"  - Features: {X_train.shape[1]} (embeddings MiniLM)")
         
-        print(f"\n2. Entrenando LightGBM classifier...")
+        print("\n2. Entrenando LightGBM classifier...")
         classifier = ModelFactory.create_lightgbm(
             n_classes=3,
             num_leaves=31,
@@ -85,9 +86,7 @@ def example_1_train_model():
         trainer.train(X_train, y_train)
         print("[OK] Modelo entrenado")
         
-        print("[OK] Validando modelo...")
-        val_metrics = trainer.validate(X_val, y_val)
-        
+        print("[OK] Validando modelo...")        
         print("[OK] Evaluando en test set...")
         test_metrics = trainer.test(X_test, y_test)
         
@@ -104,7 +103,7 @@ def example_1_train_model():
         print("[OK] Modelo y encoder guardados")
         
         print("\n[OK] ENTRENAMIENTO COMPLETADO EXITOSAMENTE")
-        print(f"\nMétricas finales:")
+        print("\nMétricas finales:")
         print(f"  Accuracy: {test_metrics['accuracy']:.4f}")
         print(f"  Precision: {test_metrics['precision']:.4f}")
         print(f"  Recall: {test_metrics['recall']:.4f}")
@@ -115,7 +114,7 @@ def example_1_train_model():
         print(f"\n  [OK] Requisito RNF-08 (Precisión >= {Config.MIN_ACCURACY}): {status}")
         
         if test_metrics['accuracy'] >= 0.85:
-            print(f"  META ASPIRACIONAL (>=85%): !ALCANZADA!")
+            print("  META ASPIRACIONAL (>=85%): !ALCANZADA!")
         
         return True
         
@@ -152,7 +151,7 @@ def example_2_predict_single():
         text = "Critical hardware failure in production server affecting all users. The main database server has experienced a complete disk array failure causing the entire production environment to go offline. Multiple services including customer portal, payment processing, and internal reporting tools are currently unavailable. The server room shows physical indicator lights on the RAID controller showing degraded state and backup systems have not automatically failed over. Estimated impact affects over 5000 active users and revenue-generating operations are halted. Immediate on-site technician intervention is required along with emergency data recovery procedures from the last available backup taken 6 hours ago."
         
         print(f"\nIncidente: {text}")
-        print(f"\nRealizando predicción...")
+        print("\nRealizando predicción...")
         
         priority, confidence = predictor.predict_with_confidence(text)
         
@@ -201,7 +200,6 @@ def example_3_predict_with_explanation():
             
             print("Factores clave (explicabilidad):")
             for feat in explanation['contributing_features']:
-                direction = "^^" if feat['importance'] == 'positive' else "vv"
                 sign = "+" if feat['importance'] == 'positive' else "-"
                 print(f"  [{sign}] Feature {feat['feature_index']:3d} (impacto: {feat['abs_score']:+.4f})")
             
@@ -211,7 +209,6 @@ def example_3_predict_with_explanation():
         
     except Exception as e:
         print("[ERROR] Error: {}".format(str(e)))
-        import traceback
         traceback.print_exc()
         return False
 

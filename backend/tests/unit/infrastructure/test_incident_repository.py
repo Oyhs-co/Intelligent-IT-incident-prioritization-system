@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -235,7 +235,7 @@ class TestIncidentRepositoryCounts:
         repo = IncidentRepository(session)
         i = _make_incident(title="Vencido")
         i.assign_priority(PriorityLevel.P4_CRITICAL, 0.9, "test")
-        object.__setattr__(i, "_sla_deadline", datetime.now(timezone.utc) - timedelta(hours=1))
+        object.__setattr__(i, "_sla_deadline", datetime.now(UTC) - timedelta(hours=1))
         await repo.create(i)
         count = await repo.sla_breach_count()
         assert count >= 1

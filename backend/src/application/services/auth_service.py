@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Optional
+from datetime import UTC, datetime, timedelta
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from jose import JWTError, jwt
@@ -13,8 +13,8 @@ from passlib.context import CryptContext
 from src.domain.entities.user import User, UserRole
 from src.domain.repositories import IUserRepository
 from src.shared.config import get_settings
-from src.shared.logging import get_logger
 from src.shared.exceptions import AuthenticationException
+from src.shared.logging import get_logger
 
 if TYPE_CHECKING:
     pass
@@ -48,7 +48,7 @@ class AuthService:
     MAX_LOGIN_ATTEMPTS = 5
     LOCKOUT_DURATION_MINUTES = 15
 
-    def __init__(self, user_repository: IUserRepository):
+    def __init__(self, user_repository: IUserRepository) -> None:
         self._user_repo = user_repository
 
     def _hash_password(self, password: str) -> str:
@@ -62,13 +62,13 @@ class AuthService:
     def _create_access_token(
         self,
         user_id: str,
-        expires_delta: Optional[timedelta] = None,
+        expires_delta: timedelta | None = None,
     ) -> str:
         """Crea un token de acceso JWT."""
         if expires_delta:
-            expire = datetime.now(timezone.utc) + expires_delta
+            expire = datetime.now(UTC) + expires_delta
         else:
-            expire = datetime.now(timezone.utc) + timedelta(
+            expire = datetime.now(UTC) + timedelta(
                 minutes=settings.access_token_expire_minutes,
             )
 
@@ -85,7 +85,7 @@ class AuthService:
 
     def _create_refresh_token(self, user_id: str) -> str:
         """Crea un token de refresh JWT."""
-        expire = datetime.now(timezone.utc) + timedelta(
+        expire = datetime.now(UTC) + timedelta(
             days=settings.refresh_token_expire_days,
         )
         to_encode = {
@@ -106,7 +106,7 @@ class AuthService:
         password: str,
         first_name: str = "",
         last_name: str = "",
-        department: Optional[str] = None,
+        department: str | None = None,
         role: UserRole = UserRole.USER,
     ) -> User:
         """Registra un nuevo usuario.
@@ -221,7 +221,7 @@ class AuthService:
             ),
         )
 
-    async def verify_token(self, token: str) -> Optional[str]:
+    async def verify_token(self, token: str) -> str | None:
         """Verifica un token JWT y retorna el user_id.
 
         Args:
@@ -297,9 +297,9 @@ class AuthService:
                 "Refresh token inválido",
                 error=str(e),
             )
-            raise AuthenticationException("Invalid refresh token")
+            raise AuthenticationException("Invalid refresh token") from e
 
-    async def get_user_by_id(self, user_id: UUID) -> Optional[User]:
+    async def get_user_by_id(self, user_id: UUID) -> User | None:
         """Obtiene un usuario por su ID.
 
         Args:

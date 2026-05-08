@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
 import numpy as np
 
 from src.application.ports import IEmbeddingModel
@@ -20,13 +19,13 @@ class SentenceTransformerEmbedding(IEmbeddingModel):
         self,
         model_name: str = DEFAULT_MODEL,
         device: str = "cpu",
-        cache_folder: Optional[str] = None,
+        cache_folder: str | None = None,
     ):
         self._model_name = model_name
         self._device = device
         self._cache_folder = cache_folder
         self._model = None
-        self._dimension: Optional[int] = None
+        self._dimension: int | None = None
 
     def _load_model(self) -> None:
         """Carga el modelo de embeddings."""
@@ -118,7 +117,7 @@ class TFIDFEmbedding(IEmbeddingModel):
     def __init__(self, max_features: int = 500):
         self._max_features = max_features
         self._vocabulary: dict[str, int] = {}
-        self._idf: Optional[np.ndarray] = None
+        self._idf: np.ndarray | None = None
         self._fitted = False
 
     def _tokenize(self, text: str) -> list[str]:

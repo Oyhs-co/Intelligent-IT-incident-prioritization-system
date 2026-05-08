@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
-from uuid import UUID
 import time
+from typing import TYPE_CHECKING
+from uuid import UUID
 
 from src.domain.entities.incident import Incident
 from src.domain.entities.incident_event import IncidentEvent
-from src.domain.repositories import IIncidentRepository, IIncidentEventRepository
+from src.domain.repositories import IIncidentEventRepository, IIncidentRepository
 from src.domain.value_objects import (
+    EventType,
     IncidentCategory,
     IncidentStatus,
     PriorityLevel,
-    EventType,
 )
 from src.shared.exceptions import NotFoundException
 from src.shared.logging import get_logger
@@ -39,24 +38,24 @@ class UpdateIncidentUseCase:
     async def execute(
         self,
         incident_id: UUID,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
-        category: Optional[str] = None,
-        subcategory: Optional[str] = None,
-        status: Optional[str] = None,
-        priority: Optional[int] = None,
-        urgency: Optional[int] = None,
-        impact: Optional[int] = None,
-        resolution: Optional[str] = None,
-        resolution_code: Optional[str] = None,
-        tags: Optional[list[str]] = None,
-        assigned_to: Optional[UUID] = None,
-        user_id: Optional[UUID] = None,
+        title: str | None = None,
+        description: str | None = None,
+        category: str | None = None,
+        subcategory: str | None = None,
+        status: str | None = None,
+        priority: int | None = None,
+        urgency: int | None = None,
+        impact: int | None = None,
+        resolution: str | None = None,
+        resolution_code: str | None = None,
+        tags: list[str] | None = None,
+        assigned_to: UUID | None = None,
+        user_id: UUID | None = None,
     ) -> Incident:
         """Ejecuta la actualización parcial de un incidente."""
         start_time = time.time()
 
-        logger.info(f"Updating incident", incident_id=str(incident_id))
+        logger.info("Updating incident", incident_id=str(incident_id))
 
         incident = await self._incident_repo.get_by_id(incident_id)
         if incident is None:
@@ -152,7 +151,7 @@ class UpdateIncidentUseCase:
         )
 
         logger.info(
-            f"Incident updated successfully",
+            "Incident updated successfully",
             incident_id=str(incident_id),
             changes=list(changes.keys()),
         )

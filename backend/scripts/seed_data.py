@@ -6,9 +6,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from src.domain.entities.user import User, UserRole
 from src.infrastructure.database import get_db_session
 from src.infrastructure.database.repositories import UserRepository
-from src.domain.entities.user import User, UserRole
 from src.shared.logging import get_logger
 
 logger = get_logger("seed_data")

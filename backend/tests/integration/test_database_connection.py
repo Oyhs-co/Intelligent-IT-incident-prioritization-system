@@ -6,19 +6,17 @@ funciona correctamente con commits/rollbacks explícitos.
 """
 
 import pytest
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
-    create_async_engine,
     async_sessionmaker,
+    create_async_engine,
 )
 
 from src.infrastructure.database import Base
-from src.infrastructure.database.models.user_model import UserModel
-from src.infrastructure.database.models.incident_model import IncidentModel
 from src.infrastructure.database.models.comment_model import CommentModel
-
+from src.infrastructure.database.models.incident_model import IncidentModel
+from src.infrastructure.database.models.user_model import UserModel
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 

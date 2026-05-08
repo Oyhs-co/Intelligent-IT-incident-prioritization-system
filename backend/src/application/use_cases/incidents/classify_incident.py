@@ -2,16 +2,15 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
-from uuid import UUID
 import time
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+from uuid import UUID
 
-from src.domain.entities.incident import Incident
-from src.domain.entities.incident_event import IncidentEvent
-from src.domain.repositories import IIncidentRepository, IIncidentEventRepository
-from src.domain.value_objects import PriorityLevel, EventType
 from src.application.services import AIService
+from src.domain.entities.incident_event import IncidentEvent
+from src.domain.repositories import IIncidentEventRepository, IIncidentRepository
+from src.domain.value_objects import EventType, PriorityLevel
 from src.shared.logging import get_logger
 
 if TYPE_CHECKING:
@@ -49,22 +48,22 @@ class ClassifyIncidentUseCase:
     async def execute(
         self,
         incident_id: UUID,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
         force: bool = False,
     ) -> ClassificationResult:
         """Ejecuta la clasificación de un incidente."""
         start_time = time.time()
 
-        logger.info(f"Classifying incident", incident_id=str(incident_id))
+        logger.info("Classifying incident", incident_id=str(incident_id))
 
         incident = await self._incident_repo.get_by_id(incident_id)
         if incident is None:
-            logger.warning(f"Incident not found", incident_id=str(incident_id))
+            logger.warning("Incident not found", incident_id=str(incident_id))
             raise ValueError(f"Incident {incident_id} not found")
 
         if incident.priority is not None and not force:
             logger.info(
-                f"Incident already classified, skipping",
+                "Incident already classified, skipping",
                 incident_id=str(incident_id),
                 priority=incident.priority.value,
             )

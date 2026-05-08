@@ -7,7 +7,7 @@ por identidad y conversión a diccionario.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -18,12 +18,12 @@ class BaseEntity:
 
     _id: UUID = field(default_factory=uuid4, init=False, repr=False)
     _created_at: datetime = field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         init=False,
         repr=False,
     )
     _updated_at: datetime = field(
-        default_factory=lambda: datetime.now(timezone.utc),
+        default_factory=lambda: datetime.now(UTC),
         init=False,
         repr=False,
     )
@@ -45,7 +45,7 @@ class BaseEntity:
 
     def _mark_updated(self) -> None:
         """Marca la entidad como actualizada."""
-        object.__setattr__(self, "_updated_at", datetime.now(timezone.utc))
+        object.__setattr__(self, "_updated_at", datetime.now(UTC))
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, BaseEntity):

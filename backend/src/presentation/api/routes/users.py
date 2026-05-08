@@ -2,23 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from src.application.use_cases.users import (
-    ListUsersUseCase,
     GetUserUseCase,
+    ListUsersUseCase,
     UpdateUserUseCase,
 )
 from src.infrastructure.database import get_db_session
 from src.infrastructure.database.repositories import UserRepository
 from src.presentation.schemas import (
-    UserResponse,
     UpdateUserRequest,
     UserListResponse,
+    UserResponse,
 )
+
 from .dependencies import get_current_user
 
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])
@@ -45,10 +45,10 @@ def _user_to_response(user) -> UserResponse:
 async def list_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=1000),
-    role: Optional[str] = None,
-    is_active: Optional[bool] = None,
+    role: str | None = None,
+    is_active: bool | None = None,
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Lista usuarios del sistema."""
     user_repo = UserRepository(session)
@@ -73,7 +73,7 @@ async def list_users(
 async def get_user(
     user_id: UUID,
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Obtiene un usuario por su ID."""
     user_repo = UserRepository(session)
@@ -95,7 +95,7 @@ async def update_user(
     user_id: UUID,
     request: UpdateUserRequest,
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Actualiza un usuario."""
     from src.domain.entities.user import UserRole
@@ -103,7 +103,9 @@ async def update_user(
     user_repo = UserRepository(session)
     use_case = UpdateUserUseCase(user_repo)
 
-    from src.application.use_cases.users.update_user import UpdateUserRequest as UpdateUserReq
+    from src.application.use_cases.users.update_user import (
+        UpdateUserRequest as UpdateUserReq,
+    )
 
     req = UpdateUserReq(
         email=request.email,
@@ -135,7 +137,7 @@ async def update_user(
 async def delete_user(
     user_id: UUID,
     session=Depends(get_db_session),
-    current_user: Optional[dict] = Depends(get_current_user),
+    current_user: dict | None = Depends(get_current_user),
 ):
     """Elimina un usuario."""
     user_repo = UserRepository(session)

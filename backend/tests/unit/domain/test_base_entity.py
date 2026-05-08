@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
-
-import pytest
-from uuid import UUID, uuid4
+from datetime import datetime
+from uuid import UUID
 
 from src.domain.entities.base import BaseEntity
 

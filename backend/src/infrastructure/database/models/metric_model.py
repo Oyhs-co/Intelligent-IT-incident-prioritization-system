@@ -5,7 +5,12 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Float, JSON, String  # fix: Column, UUID sin uso eliminados
+from sqlalchemy import (  # fix: Column, UUID sin uso eliminados
+    JSON,
+    DateTime,
+    Float,
+    String,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
 

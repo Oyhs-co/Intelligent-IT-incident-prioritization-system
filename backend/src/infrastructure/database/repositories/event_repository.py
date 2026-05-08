@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -11,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.domain.entities.incident_event import IncidentEvent
 from src.domain.repositories import IIncidentEventRepository
 from src.domain.value_objects import EventType
+
 from ..models.incident_event_model import IncidentEventModel
 
 

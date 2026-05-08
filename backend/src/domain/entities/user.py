@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Any, Optional
-from uuid import UUID
+from typing import Any
 
 from passlib.context import CryptContext
 
@@ -50,10 +49,10 @@ class User(BaseEntity):
     _role: UserRole = field(default=UserRole.USER)
     _first_name: str = field(default="")
     _last_name: str = field(default="")
-    _department: Optional[str] = field(default=None)
+    _department: str | None = field(default=None)
     _is_active: bool = field(default=True)
     _is_verified: bool = field(default=False)
-    _last_login: Optional[datetime] = field(default=None)
+    _last_login: datetime | None = field(default=None)
 
     @property
     def email(self) -> str:
@@ -122,12 +121,12 @@ class User(BaseEntity):
         return f"{self._first_name} {self._last_name}".strip()
 
     @property
-    def department(self) -> Optional[str]:
+    def department(self) -> str | None:
         """Obtiene el departamento."""
         return self._department
 
     @department.setter
-    def department(self, value: Optional[str]) -> None:
+    def department(self, value: str | None) -> None:
         """Establece el departamento."""
         object.__setattr__(self, "_department", value)
         self._mark_updated()
@@ -155,7 +154,7 @@ class User(BaseEntity):
         self._mark_updated()
 
     @property
-    def last_login(self) -> Optional[datetime]:
+    def last_login(self) -> datetime | None:
         """Obtiene la última fecha de login."""
         return self._last_login
 
@@ -177,7 +176,7 @@ class User(BaseEntity):
 
     def record_login(self) -> None:
         """Registra un nuevo login."""
-        object.__setattr__(self, "_last_login", datetime.now(timezone.utc))
+        object.__setattr__(self, "_last_login", datetime.now(UTC))
         self._mark_updated()
 
     def to_dict(self) -> dict[str, Any]:

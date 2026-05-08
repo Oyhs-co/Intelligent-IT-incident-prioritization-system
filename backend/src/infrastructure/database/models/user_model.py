@@ -6,7 +6,6 @@ from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, String  # fix: Column sin uso eliminado
-from sqlalchemy.dialects.sqlite import TEXT as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -36,12 +35,12 @@ class UserModel(Base):
         DateTime, server_default=func.now(), onupdate=func.now()  # fix: server_default
     )
 
-    reported_incidents: Mapped[list["IncidentModel"]] = relationship(
+    reported_incidents: Mapped[list[IncidentModel]] = relationship(
         "IncidentModel",
         foreign_keys="IncidentModel.reporter_id",
         back_populates="reporter",
     )
-    assigned_incidents: Mapped[list["IncidentModel"]] = relationship(
+    assigned_incidents: Mapped[list[IncidentModel]] = relationship(
         "IncidentModel",
         foreign_keys="IncidentModel.assigned_to",
         back_populates="assignee",

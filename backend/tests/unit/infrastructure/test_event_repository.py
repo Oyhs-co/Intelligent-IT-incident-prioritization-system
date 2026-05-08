@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-import pytest
-
 from src.domain.entities.incident import Incident
 from src.domain.entities.incident_event import IncidentEvent
 from src.domain.value_objects import EventType

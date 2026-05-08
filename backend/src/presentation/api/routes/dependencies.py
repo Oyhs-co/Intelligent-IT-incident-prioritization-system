@@ -2,16 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 from fastapi import Header, HTTPException, status
 
 from src.application.services import AIService, AuthService
-from src.infrastructure.database.repositories import UserRepository
 from src.infrastructure.database import get_db_session
+from src.infrastructure.database.repositories import UserRepository
 
-_ai_service: Optional[AIService] = None
-_auth_service: Optional[AuthService] = None
+_ai_service: AIService | None = None
+_auth_service: AuthService | None = None
 
 
 async def get_ai_service() -> AIService:
@@ -34,8 +32,8 @@ async def get_auth_service() -> AuthService:
 
 
 async def get_current_user(
-    authorization: Optional[str] = Header(None),
-) -> Optional[dict]:
+    authorization: str | None = Header(None),
+) -> dict | None:
     """Obtiene el usuario actual desde el token JWT."""
     if not authorization:
         return None

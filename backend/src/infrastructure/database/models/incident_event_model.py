@@ -5,7 +5,13 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, JSON  # fix: Column sin uso eliminado
+from sqlalchemy import (  # fix: Column sin uso eliminado
+    JSON,
+    DateTime,
+    ForeignKey,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.sqlite import TEXT as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -34,11 +40,11 @@ class IncidentEventModel(Base):
     )
     # fix: updated_at eliminado — log de auditoría es inmutable, solo se crea
 
-    incident: Mapped["IncidentModel"] = relationship(
+    incident: Mapped[IncidentModel] = relationship(
         "IncidentModel",
         back_populates="events",
     )
-    user: Mapped["UserModel | None"] = relationship("UserModel")
+    user: Mapped[UserModel | None] = relationship("UserModel")
 
     def __repr__(self) -> str:
         return f"<IncidentEvent(id={self.id}, incident_id={self.incident_id}, type={self.event_type})>"

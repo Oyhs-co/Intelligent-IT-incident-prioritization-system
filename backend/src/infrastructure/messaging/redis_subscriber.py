@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-import json
-from typing import Any, Callable, Optional, Awaitable
-from asyncio import Queue
 import asyncio
+import json
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 import redis.asyncio as redis
 
@@ -25,17 +25,17 @@ class RedisSubscriber:
         host: str = "localhost",
         port: int = 6379,
         db: int = 0,
-        password: Optional[str] = None,
+        password: str | None = None,
     ):
         self._host = host
         self._port = port
         self._db = db
         self._password = password
-        self._client: Optional[redis.Redis] = None
-        self._pubsub: Optional[redis.client.PubSub] = None
+        self._client: redis.Redis | None = None
+        self._pubsub: redis.client.PubSub | None = None
         self._handlers: dict[str, list[MessageHandler]] = {}
         self._running = False
-        self._task: Optional[asyncio.Task] = None
+        self._task: asyncio.Task | None = None
 
     async def connect(self) -> None:
         """Establece conexión con Redis."""

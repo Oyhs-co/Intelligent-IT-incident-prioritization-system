@@ -6,13 +6,13 @@ from datetime import datetime
 from uuid import uuid4
 
 from sqlalchemy import (
+    JSON,
     CheckConstraint,
     DateTime,
     Float,
     ForeignKey,
     Index,
     Integer,
-    JSON,
     String,
     Text,
     # fix: Boolean, Column sin uso eliminados
@@ -61,25 +61,25 @@ class IncidentModel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)  # fix: server_default
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())  # fix: server_default
 
-    reporter: Mapped["UserModel | None"] = relationship(
+    reporter: Mapped[UserModel | None] = relationship(
         "UserModel", foreign_keys=[reporter_id], back_populates="reported_incidents",
     )
-    assignee: Mapped["UserModel | None"] = relationship(
+    assignee: Mapped[UserModel | None] = relationship(
         "UserModel", foreign_keys=[assigned_to], back_populates="assigned_incidents",
     )
-    resolved_by_user: Mapped["UserModel | None"] = relationship(
+    resolved_by_user: Mapped[UserModel | None] = relationship(
         "UserModel", foreign_keys=[resolved_by],
     )
-    closed_by_user: Mapped["UserModel | None"] = relationship(
+    closed_by_user: Mapped[UserModel | None] = relationship(
         "UserModel", foreign_keys=[closed_by],
     )
-    comments: Mapped[list["CommentModel"]] = relationship(
+    comments: Mapped[list[CommentModel]] = relationship(
         "CommentModel", back_populates="incident", cascade="all, delete-orphan",
     )
-    events: Mapped[list["IncidentEventModel"]] = relationship(
+    events: Mapped[list[IncidentEventModel]] = relationship(
         "IncidentEventModel", back_populates="incident", cascade="all, delete-orphan",
     )
-    similar_incidents: Mapped[list["IncidentModel"]] = relationship(
+    similar_incidents: Mapped[list[IncidentModel]] = relationship(
         "IncidentModel",
         secondary="incident_similarities",
         primaryjoin="IncidentModel.id == foreign(IncidentSimilarityModel.incident_id)",

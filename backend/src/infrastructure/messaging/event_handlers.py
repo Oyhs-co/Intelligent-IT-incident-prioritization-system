@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from .redis_publisher import EventChannel
 from src.shared.logging import get_logger
 
 logger = get_logger("event_handlers")

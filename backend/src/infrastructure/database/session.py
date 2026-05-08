@@ -11,10 +11,10 @@ Si la URL contiene "sqlite" → modo desarrollo.
 
 from __future__ import annotations
 
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
 
 from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from src.shared.config import get_settings
@@ -27,7 +27,7 @@ class Base(DeclarativeBase):
 
 
 _async_engine = None
-_async_session_factory: Optional[async_sessionmaker[AsyncSession]] = None
+_async_session_factory: async_sessionmaker[AsyncSession] | None = None
 _sync_engine = None
 
 

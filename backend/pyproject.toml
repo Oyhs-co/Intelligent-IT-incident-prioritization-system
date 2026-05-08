@@ -28,6 +28,9 @@ dependencies = [
     "numpy",
     "pandas",
     "joblib",
+    "sentence-transformers",
+    "lightgbm",
+    "shap",
 
     # Cache & Queue
     "redis",
@@ -45,6 +48,8 @@ dependencies = [
     "email_validator",
     "aiohttp (>=3.13.5,<4.0.0)",
     "ruff (>=0.15.12,<0.16.0)",
+    "pytest",
+    "tqdm"
 ]
 
 [project.optional-dependencies]

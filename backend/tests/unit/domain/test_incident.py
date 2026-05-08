@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
 
 from src.domain.entities.incident import Incident
 from src.domain.value_objects.priority_level import (
-    PriorityLevel,
-    IncidentStatus,
-    IncidentCategory,
     IncidentSource,
+    IncidentStatus,
+    PriorityLevel,
 )
 
 
@@ -426,7 +425,7 @@ class TestIncidentSLA:
         i.assign_priority(PriorityLevel.P4_CRITICAL, 0.9, "Critical")
         assert i.sla_deadline is not None
         expected_minutes = 15  # P4_CRITICAL
-        diff = (i.sla_deadline - datetime.now(timezone.utc)).total_seconds() / 60
+        diff = (i.sla_deadline - datetime.now(UTC)).total_seconds() / 60
         assert 0 < diff <= expected_minutes + 1
 
     def test_is_sla_breached_no_deadline(self):

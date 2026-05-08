@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
-from uuid import UUID
 import time
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+from uuid import UUID
 
+from src.application.services import AIService
 from src.domain.entities.incident import Incident
 from src.domain.entities.incident_event import IncidentEvent
-from src.domain.repositories import IIncidentRepository, IIncidentEventRepository
-from src.domain.value_objects import IncidentCategory, IncidentSource, IncidentStatus, PriorityLevel, EventType
-from src.application.services import AIService
+from src.domain.repositories import IIncidentEventRepository, IIncidentRepository
+from src.domain.value_objects import (
+    EventType,
+    IncidentCategory,
+    IncidentSource,
+    IncidentStatus,
+)
 from src.shared.logging import get_logger
 
 if TYPE_CHECKING:
@@ -26,8 +31,8 @@ class CreateIncidentRequest:
 
     title: str
     description: str
-    category: Optional[str] = None
-    subcategory: Optional[str] = None
+    category: str | None = None
+    subcategory: str | None = None
     urgency: int = 3
     impact: int = 3
     source: str = "web"
@@ -49,13 +54,13 @@ class CreateIncidentUseCase:
     async def execute(
         self,
         request: CreateIncidentRequest,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> Incident:
         """Ejecuta la creación de un incidente."""
         start_time = time.time()
 
         logger.info(
-            f"Creating new incident",
+            "Creating new incident",
             title=request.title[:50],
             category=request.category,
         )
@@ -97,7 +102,7 @@ class CreateIncidentUseCase:
         )
 
         logger.info(
-            f"Incident created successfully",
+            "Incident created successfully",
             incident_id=str(saved_incident.id),
             ticket_number=ticket_number,
         )

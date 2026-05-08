@@ -5,17 +5,17 @@ from __future__ import annotations
 from datetime import datetime
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
 
-from src.application.services import AIService, MetricsService
+from src.application.services import MetricsService
 from src.infrastructure.database import get_db_session
 from src.presentation.schemas import (
-    OverviewMetricsResponse,
-    IncidentMetricsResponse,
     AIMetricsResponse,
     HealthResponse,
+    IncidentMetricsResponse,
+    OverviewMetricsResponse,
     SLAMetricsResponse,
 )
+
 from .dependencies import get_ai_service
 
 router = APIRouter(prefix="/api/v1/metrics", tags=["Metrics"])

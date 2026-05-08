@@ -1,13 +1,12 @@
 """Tests unitarios para middlewares de la API."""
 
 import time
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
+import pytest
 from fastapi import Request, Response
 from starlette.types import ASGIApp
-
 
 
 class TestRateLimitMiddleware:

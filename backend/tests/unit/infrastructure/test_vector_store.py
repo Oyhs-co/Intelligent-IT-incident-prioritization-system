@@ -9,7 +9,7 @@ from uuid import UUID, uuid4
 import numpy as np
 import pytest
 
-from src.infrastructure.ml.vector_store import IncidentVectorStore, INDEX_KEY, DATA_KEY
+from src.infrastructure.ml.vector_store import DATA_KEY, INDEX_KEY, IncidentVectorStore
 
 
 @pytest.fixture

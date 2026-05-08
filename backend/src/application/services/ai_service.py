@@ -6,14 +6,14 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
-from src.shared.logging import get_logger
-from src.shared.config import get_settings
 from src.domain.value_objects import map_ia_to_backend
+from src.shared.config import get_settings
+from src.shared.logging import get_logger
 
 if TYPE_CHECKING:
-    from src.domain.entities.incident import Incident
+    pass
 
 settings = get_settings()
 logger = get_logger("ai_service")
@@ -34,10 +34,11 @@ class AIService:
     """Servicio wrapper para el módulo de IA existente.
 
     Implementa singleton para evitar recargar el modelo (500MB RAM) en cada request.
-    Aplica map_ia_to_backend() para convertir prioridades de IA (0-2) al rango del backend (1-4).
+    Aplica map_ia_to_backend()
+    para convertir prioridades de IA (0-2) al rango del backend (1-4).
     """
 
-    _instance: Optional[AIService] = None
+    _instance: AIService | None = None
     _initialized: bool = False
 
     def __new__(cls) -> AIService:
@@ -90,7 +91,7 @@ class AIService:
     async def predict_priority(
         self,
         text: str,
-        metadata: Optional[dict] = None,
+        metadata: dict | None = None,
     ) -> PredictionResult:
         """Predice la prioridad de un incidente.
 
@@ -159,7 +160,7 @@ class AIService:
     async def predict_batch(
         self,
         texts: list[str],
-        metadata_list: Optional[list[dict]] = None,
+        metadata_list: list[dict] | None = None,
     ) -> list[PredictionResult]:
         """Predice prioridades en lote.
 

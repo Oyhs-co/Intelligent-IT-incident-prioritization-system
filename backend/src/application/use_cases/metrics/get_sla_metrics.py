@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING
 import time
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,10 +58,10 @@ class GetSLAMetricsUseCase:
 
         logger.info("Calculating SLA metrics")
 
-        from src.infrastructure.database.models import IncidentModel
         from src.domain.value_objects import PriorityLevel
+        from src.infrastructure.database.models import IncidentModel
 
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
 
         stmt = select(IncidentModel)
         result = await self._session.execute(stmt)

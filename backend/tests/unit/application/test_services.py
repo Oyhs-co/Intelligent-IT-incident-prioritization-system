@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 from jose import JWTError
 
-from src.application.services.ai_service import AIService, PredictionResult
-from src.application.services.metrics_service import MetricsService, OverviewMetrics
+from src.application.services.ai_service import AIService
 from src.application.services.auth_service import AuthService
-from src.domain.value_objects import PriorityLevel
-
+from src.application.services.metrics_service import MetricsService, OverviewMetrics
 
 # =============================================================================
 # AIService Tests
@@ -223,7 +221,7 @@ class TestMetricsService:
     @pytest.mark.asyncio
     async def test_get_overview_metrics_with_data(self, mock_session):
         """Con incidentes debe calcular métricas correctamente."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         async def execute_side_effect(query):
             execute_side_effect.call_count = getattr(execute_side_effect, "call_count", 0) + 1

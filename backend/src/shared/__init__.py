@@ -1,17 +1,17 @@
 """Shared module."""
 
 from .config import Settings, get_settings
-from .logging import Logger, get_logger, set_trace_context, generate_trace_id
 from .exceptions import (
+    AIServiceException,
     AppException,
-    NotFoundException,
-    ValidationException,
     AuthenticationException,
     AuthorizationException,
     ConflictException,
     DatabaseException,
-    AIServiceException,
+    NotFoundException,
+    ValidationException,
 )
+from .logging import Logger, generate_trace_id, get_logger, set_trace_context
 
 __all__ = [
     "Settings",

@@ -1,29 +1,30 @@
 """Unit tests for application layer use cases."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
-from src.application.use_cases.incidents.create_incident import (
-    CreateIncidentUseCase,
-    CreateIncidentRequest,
-)
+import pytest
+
 from src.application.use_cases.incidents.classify_incident import (
     ClassifyIncidentUseCase,
 )
-from src.application.use_cases.incidents.list_incidents import (
-    ListIncidentsUseCase,
-)
-from src.application.use_cases.incidents.get_incident import (
-    GetIncidentUseCase,
-)
-from src.application.use_cases.incidents.update_incident import (
-    UpdateIncidentUseCase,
+from src.application.use_cases.incidents.create_incident import (
+    CreateIncidentRequest,
+    CreateIncidentUseCase,
 )
 from src.application.use_cases.incidents.delete_incident import (
     DeleteIncidentUseCase,
 )
-from src.domain.value_objects import PriorityLevel, IncidentCategory
+from src.application.use_cases.incidents.get_incident import (
+    GetIncidentUseCase,
+)
+from src.application.use_cases.incidents.list_incidents import (
+    ListIncidentsUseCase,
+)
+from src.application.use_cases.incidents.update_incident import (
+    UpdateIncidentUseCase,
+)
+from src.domain.value_objects import IncidentCategory
 from src.shared.exceptions import NotFoundException
 
 

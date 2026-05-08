@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.infrastructure.database import init_db, close_db
+from src.infrastructure.database import close_db, init_db
 from src.shared.logging import get_logger
 
 logger = get_logger("init_db")

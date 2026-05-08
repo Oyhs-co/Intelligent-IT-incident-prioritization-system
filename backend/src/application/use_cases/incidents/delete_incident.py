@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
-from uuid import UUID
 import time
+from typing import TYPE_CHECKING
+from uuid import UUID
 
 from src.domain.entities.incident_event import IncidentEvent
-from src.domain.repositories import IIncidentRepository, IIncidentEventRepository
+from src.domain.repositories import IIncidentEventRepository, IIncidentRepository
 from src.domain.value_objects import EventType
 from src.shared.logging import get_logger
 
@@ -31,7 +31,7 @@ class DeleteIncidentUseCase:
     async def execute(
         self,
         incident_id: UUID,
-        user_id: Optional[UUID] = None,
+        user_id: UUID | None = None,
     ) -> bool:
         """Ejecuta la eliminación de un incidente.
 
@@ -40,7 +40,7 @@ class DeleteIncidentUseCase:
         """
         start_time = time.time()
 
-        logger.info(f"Deleting incident", incident_id=str(incident_id))
+        logger.info("Deleting incident", incident_id=str(incident_id))
 
         deleted = await self._incident_repo.delete(incident_id)
 
@@ -58,7 +58,7 @@ class DeleteIncidentUseCase:
             )
 
             logger.info(
-                f"Incident deleted successfully",
+                "Incident deleted successfully",
                 incident_id=str(incident_id),
             )
 

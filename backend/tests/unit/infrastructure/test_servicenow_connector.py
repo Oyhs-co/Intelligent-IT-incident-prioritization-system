@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.infrastructure.connectors.servicenow_connector import ServiceNowConnector
 from src.infrastructure.connectors.base_connector import (
     ExternalTicket,
+    SyncDirection,
     TicketConnectionError,
     TicketSyncError,
-    SyncDirection,
 )
+from src.infrastructure.connectors.servicenow_connector import ServiceNowConnector
 
 
 def _make_response(status: int, json_data: dict | None = None):

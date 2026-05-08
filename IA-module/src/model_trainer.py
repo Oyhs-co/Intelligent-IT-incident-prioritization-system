@@ -137,12 +137,6 @@ class ModelTrainer:
         
         # Predicciones
         y_pred = self.classifier.predict(X)
-        y_pred_labels = y_pred + 1  # Convertir de 0-index a 1-3
-        y_true_labels = y + 1
-        
-        # Probabilidades
-        y_proba = self.classifier.predict_proba(X)
-        
         # Calcular métricas
         metrics = {
             "accuracy": accuracy_score(y, y_pred),
@@ -162,9 +156,9 @@ class ModelTrainer:
         
         # Matriz de confusión
         cm = metrics["confusion_matrix"]
-        logger.info(f"\n  Confusion Matrix:")
-        logger.info(f"    Predicted ->")
-        logger.info(f"       P1  P2  P3")
+        logger.info("\n  Confusion Matrix:")
+        logger.info("    Predicted ->")
+        logger.info("       P1  P2  P3")
         for i, row in enumerate(cm):
             logger.info(f"  P{i+1}  {row[0]:3d} {row[1]:3d} {row[2]:3d}")
         
@@ -249,9 +243,9 @@ class ModelTrainer:
             train_val_gap = abs(self.metrics["validation"]["accuracy"] - test_metrics["accuracy"])
             logger.info(f"\n  Gap validation-test: {train_val_gap:.4f}")
             if train_val_gap < 0.05:
-                logger.info(f"[OK] RNF-10: Buena capacidad de generalización (gap < 5%)")
+                logger.info("[OK] RNF-10: Buena capacidad de generalización (gap < 5%)")
             else:
-                logger.warning(f"[WARN] RNF-10: Posible overfitting (gap > 5%)")
+                logger.warning("[WARN] RNF-10: Posible overfitting (gap > 5%)")
         
         self.metrics["test"] = test_metrics
         return test_metrics

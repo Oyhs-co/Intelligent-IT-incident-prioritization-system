@@ -27,20 +27,18 @@ def _cleanup_db():
             pass
 
 # Try to close app's engine before atexit cleanup
-import atexit
 atexit.register(_cleanup_db)
 
 
-import pytest
 import asyncio
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from httpx import AsyncClient, ASGITransport
+import pytest
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from src.presentation.api.app import app
 from src.infrastructure.database import Base
-
+from src.presentation.api.app import app
 
 TEST_DATABASE_URL = _db_uri
 

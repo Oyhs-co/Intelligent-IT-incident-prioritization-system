@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -10,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.entities.user import User, UserRole
 from src.domain.repositories import IUserRepository
+
 from ..models.user_model import UserModel
 
 
@@ -66,21 +66,21 @@ class UserRepository(IUserRepository):
         await self._session.refresh(model)
         return self._model_to_entity(model)
 
-    async def get_by_id(self, user_id: UUID) -> Optional[User]:
+    async def get_by_id(self, user_id: UUID) -> User | None:
         """Obtiene un usuario por su ID."""
         stmt = select(UserModel).where(UserModel.id == str(user_id))
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
-    async def get_by_email(self, email: str) -> Optional[User]:
+    async def get_by_email(self, email: str) -> User | None:
         """Obtiene un usuario por su email."""
         stmt = select(UserModel).where(UserModel.email == email.lower())
         result = await self._session.execute(stmt)
         model = result.scalar_one_or_none()
         return self._model_to_entity(model) if model else None
 
-    async def get_by_username(self, username: str) -> Optional[User]:
+    async def get_by_username(self, username: str) -> User | None:
         """Obtiene un usuario por su username."""
         stmt = select(UserModel).where(UserModel.username == username.lower())
         result = await self._session.execute(stmt)
@@ -125,8 +125,8 @@ class UserRepository(IUserRepository):
         self,
         skip: int = 0,
         limit: int = 100,
-        role: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        role: str | None = None,
+        is_active: bool | None = None,
     ) -> tuple[list[User], int]:
         """Lista usuarios con filtros."""
         stmt = select(UserModel)

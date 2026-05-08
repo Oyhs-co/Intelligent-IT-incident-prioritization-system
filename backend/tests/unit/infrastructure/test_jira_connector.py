@@ -6,13 +6,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.infrastructure.connectors.jira_connector import JiraConnector
 from src.infrastructure.connectors.base_connector import (
     ExternalTicket,
+    SyncDirection,
     TicketConnectionError,
     TicketSyncError,
-    SyncDirection,
 )
+from src.infrastructure.connectors.jira_connector import JiraConnector
 
 
 @pytest.fixture

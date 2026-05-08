@@ -6,12 +6,11 @@ y que el flujo completo de predicción con mapeo de prioridades funciona.
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from src.application.services.ai_service import AIService, PredictionResult
-from src.domain.value_objects import PriorityLevel
 
 
 class TestAIServiceWithIAAdapter:

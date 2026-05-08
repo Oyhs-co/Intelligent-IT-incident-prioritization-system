@@ -8,19 +8,9 @@ compatible con el driver configurado (SQLite en desarrollo, PostgreSQL en produc
 
 from logging.config import fileConfig
 
-from sqlalchemy import pool
-
 from alembic import context
 
 from src.infrastructure.database import Base, get_sync_engine
-from src.infrastructure.database.models import (
-    UserModel,
-    IncidentModel,
-    CommentModel,
-    IncidentEventModel,
-    MetricModel,
-    IncidentSimilarityModel,
-)
 
 config = context.config
 

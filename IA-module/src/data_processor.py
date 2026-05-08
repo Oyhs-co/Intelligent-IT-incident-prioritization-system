@@ -16,7 +16,6 @@ Principio DIP: DataProcessor depende de abstracciones (IEncoder), no de implemen
 from pathlib import Path
 from typing import Tuple, List, Optional
 import re
-import json
 import hashlib
 import numpy as np
 import pandas as pd
@@ -90,8 +89,8 @@ class DataProcessor:
         for t in sample_texts:
             hasher.update(t.encode("utf-8"))
         
-        hasher.update(" ".join(str(l) for l in labels[:500]).encode())
-        hasher.update(" ".join(str(l) for l in labels[-500:]).encode())
+        hasher.update(" ".join(str(label) for label in labels[:500]).encode())
+        hasher.update(" ".join(str(label) for label in labels[-500:]).encode())
         return hasher.hexdigest()[:16]
     
     def _get_cache_dir(self) -> Path:
@@ -385,7 +384,7 @@ class DataProcessor:
             balanced_texts, np.array(balanced_labels), rng
         )
         
-        logger.info(f"Distribución después del balanceo:")
+        logger.info("Distribución después del balanceo:")
         logger.info(f"{pd.Series(balanced_labels).value_counts().sort_index()}")
         logger.info(f"Total de muestras: {len(balanced_texts)}")
         logger.info("=" * 50)
@@ -504,7 +503,7 @@ class DataProcessor:
                 X_text, _ = cached
                 logger.info("CACHÉ HIT: Skipping encoding (loaded from cache)")
                 if use_meta_features and meta_features is not None and meta_features.shape[1] > 0:
-                    logger.info(f"Concatenando meta-features a embeddings cacheados...")
+                    logger.info("Concatenando meta-features a embeddings cacheados...")
                     X = np.hstack([X_text, meta_features.astype(np.float32)])
                     logger.info(f"  Features combinadas: {X.shape[1]}")
                 else:
@@ -531,7 +530,7 @@ class DataProcessor:
         
         # 10. Concatenar meta-features si están disponibles
         if meta_features is not None and meta_features.shape[1] > 0 and not balance_classes:
-            logger.info(f"Concatenando meta-features a embeddings de texto...")
+            logger.info("Concatenando meta-features a embeddings de texto...")
             logger.info(f"  Text features: {X_text.shape[1]}, Meta-features: {meta_features.shape[1]}")
             X = np.hstack([X_text, meta_features.astype(np.float32)])
             logger.info(f"  Features combinadas: {X.shape[1]}")
