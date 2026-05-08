@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -29,6 +29,12 @@ class IncidentRepository(IIncidentRepository):
         """Inicializa el repositorio con una sesión de base de datos."""
         self._session = session
 
+    @staticmethod
+    def _ensure_aware(dt: datetime | None) -> datetime | None:
+        if dt is not None and dt.tzinfo is None:
+            return dt.replace(tzinfo=UTC)
+        return dt
+
     def _model_to_entity(self, model: IncidentModel) -> Incident:
         """Convierte modelo ORM a entidad de dominio."""
         incident = Incident()
@@ -45,12 +51,12 @@ class IncidentRepository(IIncidentRepository):
             if model.suggested_priority is not None else None
         )
         incident._ai_model_version = model.ai_model_version
-        incident._ai_processed_at = model.ai_processed_at
+        incident._ai_processed_at = self._ensure_aware(model.ai_processed_at)
         incident._urgency = model.urgency
         incident._impact = model.impact
         incident._confidence_score = model.confidence_score
         incident._explanation = model.explanation
-        incident._sla_deadline = model.sla_deadline
+        incident._sla_deadline = self._ensure_aware(model.sla_deadline)
         incident._resolution = model.resolution
         incident._resolution_code = model.resolution_code
         incident._source = IncidentSource(model.source)
@@ -61,10 +67,10 @@ class IncidentRepository(IIncidentRepository):
         incident._resolved_by = UUID(model.resolved_by) if model.resolved_by else None
         incident._closed_by = UUID(model.closed_by) if model.closed_by else None
         incident._similar_incidents = [UUID(m.id) for m in model.similar_incidents]
-        incident._resolved_at = model.resolved_at
-        incident._closed_at = model.closed_at
-        incident._created_at = model.created_at
-        incident._updated_at = model.updated_at
+        incident._resolved_at = self._ensure_aware(model.resolved_at)
+        incident._closed_at = self._ensure_aware(model.closed_at)
+        incident._created_at = self._ensure_aware(model.created_at)
+        incident._updated_at = self._ensure_aware(model.updated_at)
         return incident
 
     def _entity_to_model(self, entity: Incident) -> IncidentModel:
@@ -287,7 +293,6 @@ class IncidentRepository(IIncidentRepository):
 
     async def sla_breach_count(self) -> int:
         """Cuenta incidentes con SLA incumplido (deadline pasado y no resueltos)."""
-        from datetime import datetime
         stmt = select(func.count(IncidentModel.id)).where(
             IncidentModel.sla_deadline.isnot(None),
             IncidentModel.sla_deadline < datetime.now(UTC),
