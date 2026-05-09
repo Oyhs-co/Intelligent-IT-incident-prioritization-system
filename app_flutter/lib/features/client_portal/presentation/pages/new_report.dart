@@ -45,14 +45,34 @@ class NewReportPage extends ConsumerWidget {
                 backgroundColor: Colors.blue,
                 foregroundColor: Colors.white,
               ),
-              onPressed: () {
-                ref
+              onPressed: () async {
+                final success = await ref
                     .read(incidentProvider.notifier)
                     .addIncident(
                       _titleController.text,
                       _descriptionController.text,
                     );
-                Navigator.pop(context);
+
+                if (!context.mounted) return;
+
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Ticket enviado con éxito.'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Error al enviar el ticket por problemas de servidor o conexión a internet.',
+                      ),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
               },
               child: const Text(
                 'Enviar Reporte',

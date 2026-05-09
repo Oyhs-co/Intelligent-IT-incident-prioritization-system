@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logger/logger.dart';
 import '../../../../core/network/api_client.dart';
 import '../incident.dart';
 
 final apiClient = ApiClient();
+final logger = Logger();
 
 class IncidentNotifier extends Notifier<List<Incident>> {
   @override
@@ -20,7 +22,7 @@ class IncidentNotifier extends Notifier<List<Incident>> {
       status: 'En progreso',
     ),
   ];
-  Future<void> addIncident(String title, String description) async {
+  Future<bool> addIncident(String title, String description) async {
     final newIncident = Incident(
       id: 'INC-${1000 + state.length + 1}',
       title: title,
@@ -30,7 +32,7 @@ class IncidentNotifier extends Notifier<List<Incident>> {
     state = [...state, newIncident];
     final enviadoConExito = await apiClient.enviarTicket(title, description);
     if (enviadoConExito) {
-      print("El backend de FastAPI recibio el ticket.");
+      logger.i("El backend de FastAPI recibio el ticket.");
       state = state.map((incident) {
         if (incident.id == newIncident.id) {
           return Incident(
@@ -42,10 +44,12 @@ class IncidentNotifier extends Notifier<List<Incident>> {
         }
         return incident;
       }).toList();
+      return true;
     } else {
-      print(
+      logger.w(
         " AVISO: El servidor Python está apagado. Se guardó solo en la memoria del celular.",
       );
+      return false;
     }
   }
 }

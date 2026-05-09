@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/client_portal/models/providers/client_portal_providers.dart';
 import '../../../auth/presentation/pages/login_page.dart';
+
 class AnalystDashboardPage extends ConsumerStatefulWidget {
   const AnalystDashboardPage({super.key});
   @override
   ConsumerState<AnalystDashboardPage> createState() =>
       _AnalystDashboardPageState();
 }
+
 class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
   String filtroBusqueda = '';
   @override
@@ -116,7 +118,7 @@ class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.indigo.withOpacity(0.1),
+                                    color: Colors.indigo.withAlpha(25),
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(color: Colors.indigo),
                                   ),
@@ -143,4 +145,3 @@ class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
     );
   }
 }
-
