@@ -1,7 +1,6 @@
 """Interfaces de repositorios."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional
 from uuid import UUID
 
 from ..entities.comment import Comment

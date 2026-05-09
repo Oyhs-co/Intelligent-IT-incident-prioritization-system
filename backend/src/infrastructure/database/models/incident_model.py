@@ -24,9 +24,9 @@ from sqlalchemy.sql import func
 from ..session import Base
 
 if TYPE_CHECKING:
-    from .user_model import UserModel
     from .comment_model import CommentModel
     from .incident_event_model import IncidentEventModel
+    from .user_model import UserModel
 
 class IncidentModel(Base):
     """Modelo de base de datos para incidentes."""
