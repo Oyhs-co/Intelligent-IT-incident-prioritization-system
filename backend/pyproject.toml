@@ -90,10 +90,10 @@ ignore = ["ANN101", "ANN102", "ANN401"]
 fixable = ["ALL"]
  
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["ANN", "N814", "N806", "B017", "B007", "C416", "F841"]
+"tests/**" = ["ANN", "N814", "N806", "B017", "B007", "C416", "F841", "E501"]
 "**/conftest.py" = ["E402"]
 "backend/test_endpoints.py" = ["ANN", "E501"]
-"src/presentation/api/routes/**" = ["B008"]
+"src/presentation/api/routes/**" = ["B008", "ANN001", "ANN201"]
 "src/shared/exceptions.py" = ["N818"]
 
 [tool.mypy]

@@ -18,13 +18,13 @@ from src.presentation.schemas import (
     UserListResponse,
     UserResponse,
 )
-
 from .dependencies import get_current_user
+from src.domain.entities.user import User
 
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])
 
 
-def _user_to_response(user) -> UserResponse:
+def _user_to_response(user: User) -> UserResponse:
     return UserResponse(
         id=user.id,
         email=user.email,

@@ -147,11 +147,11 @@ async def get_incident(
 
     try:
         incident = await use_case.execute(incident_id)
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Incident {incident_id} not found",
-        )
+        ) from e
 
     return _incident_to_response(incident)
 
@@ -273,7 +273,7 @@ async def get_recommendations(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        )from e
 
     return {
         "incident_id": str(result.incident_id),

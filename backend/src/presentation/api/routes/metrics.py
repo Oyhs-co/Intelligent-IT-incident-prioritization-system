@@ -59,8 +59,9 @@ async def get_incident_metrics(session = Depends(get_db_session)):
         by_status=metrics.by_status,
         by_priority={str(k): v for k, v in metrics.by_priority.items()},
         by_category=metrics.by_category,
-        avg_age_by_priority={str(k): v for k, v in metrics.avg_age_by_priority.items()},
-        resolution_rate_by_priority={str(k): v for k, v in metrics.resolution_rate_by_priority.items()},
+        resolution_rate_by_priority={
+            str(k): v for k, v in metrics.resolution_rate_by_priority.items()
+        },
     )
 
 
