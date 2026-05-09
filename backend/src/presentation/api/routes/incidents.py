@@ -193,7 +193,7 @@ async def update_incident(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(e),
-        )
+        )from e
 
     return _incident_to_response(incident)
 
@@ -386,7 +386,12 @@ async def list_comments(
     ]
 
 
-@router.post("/{incident_id}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{incident_id}/comments",
+    response_model=CommentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+
 async def add_comment(
     incident_id: UUID,
     request: AddCommentRequest,

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text
@@ -12,6 +13,9 @@ from sqlalchemy.sql import func
 
 from ..session import Base
 
+if TYPE_CHECKING:
+    from .incident_model import IncidentModel
+    from .user_model import UserModel
 
 class CommentModel(Base):
     """Modelo de base de datos para comentarios."""

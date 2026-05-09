@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Float, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..session import Base
 
+if TYPE_CHECKING:
+    pass
 
 class IncidentSimilarityModel(Base):
     """Tabla de asociación para incidentes similares.

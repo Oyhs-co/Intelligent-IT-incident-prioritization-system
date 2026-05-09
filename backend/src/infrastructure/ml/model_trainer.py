@@ -127,7 +127,8 @@ class ModelTrainer:
 
         if val_metrics["accuracy"] >= 0.85:
             logger.info(
-                f"[OK] Excelente: Accuracy ({val_metrics['accuracy']:.4f}) >= 85% (Meta aspiracional)"
+                f"[OK] Excelente: Accuracy ({val_metrics['accuracy']:.4f})"
+                f">= 85% (Meta aspiracional)"
             )
 
         self.metrics["validation"] = val_metrics
@@ -186,10 +187,11 @@ class ModelTrainer:
             logger.info(f"Encoder guardado en {vec_path}")
 
         if metadata is None:
+            params = self.classifier.get_params() if hasattr(self.classifier, "get_params") else None
             metadata = {
                 "metrics": self.metrics,
-                "classifier_params": self.classifier.get_params() if hasattr(self.classifier, 'get_params') else None,
-                "random_state": self.random_state
+                "classifier_params": params,
+                "random_state": self.random_state,
             }
 
         metadata_path = save_path.parent / "metadata.json"

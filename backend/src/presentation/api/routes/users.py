@@ -11,6 +11,7 @@ from src.application.use_cases.users import (
     ListUsersUseCase,
     UpdateUserUseCase,
 )
+from src.domain.entities.user import User
 from src.infrastructure.database import get_db_session
 from src.infrastructure.database.repositories import UserRepository
 from src.presentation.schemas import (
@@ -18,8 +19,8 @@ from src.presentation.schemas import (
     UserListResponse,
     UserResponse,
 )
+
 from .dependencies import get_current_user
-from src.domain.entities.user import User
 
 router = APIRouter(prefix="/api/v1/users", tags=["Users"])
 

@@ -83,7 +83,6 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def _clean_old_requests(self, client_ip: str, now: float) -> None:
         """Limpia requests antiguos."""
-        minute_ago = now - 60
         hour_ago = now - 3600
 
         self._requests[client_ip] = [

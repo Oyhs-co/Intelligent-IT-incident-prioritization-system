@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import Boolean, DateTime, String  # fix: Column sin uso eliminado
+from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from ..session import Base
+
+if TYPE_CHECKING:
+    from .incident_model import IncidentModel
 
 
 class UserModel(Base):

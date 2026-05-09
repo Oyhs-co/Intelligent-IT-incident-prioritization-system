@@ -113,7 +113,7 @@ class PriorityPredictor:
         tags_str = metadata.get("tags", "")
         row_tags = set()
         if tags_str:
-            row_tags = set(t.strip() for t in str(tags_str).split(",") if t.strip())
+            row_tags = {t.strip() for t in str(tags_str).split(",") if t.strip()}
 
         for col in self.meta_feature_columns:
             if col.startswith("dept_"):
@@ -378,7 +378,7 @@ class PriorityPredictor:
 
         results = [
             (int(pred), float(prob.max()))
-            for pred, prob in zip(predictions, probabilities)
+            for pred, prob in zip(predictions, probabilities, strict=False)
         ]
 
         return results

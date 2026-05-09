@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -15,7 +16,6 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
-    # fix: Boolean, Column sin uso eliminados
 )
 from sqlalchemy.dialects.sqlite import TEXT as UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -23,6 +23,10 @@ from sqlalchemy.sql import func
 
 from ..session import Base
 
+if TYPE_CHECKING:
+    from .user_model import UserModel
+    from .comment_model import CommentModel
+    from .incident_event_model import IncidentEventModel
 
 class IncidentModel(Base):
     """Modelo de base de datos para incidentes."""

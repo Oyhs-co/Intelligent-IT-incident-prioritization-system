@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from sqlalchemy import (  # fix: Column sin uso eliminado
+from sqlalchemy import (
     JSON,
     DateTime,
     ForeignKey,
@@ -18,6 +19,9 @@ from sqlalchemy.sql import func
 
 from ..session import Base
 
+if TYPE_CHECKING:
+    from .incident_model import IncidentModel
+    from .user_model import UserModel
 
 class IncidentEventModel(Base):
     """Modelo de base de datos para eventos de auditoría."""

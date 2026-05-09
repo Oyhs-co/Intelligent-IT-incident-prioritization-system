@@ -61,7 +61,7 @@ async def register(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        )from e
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -84,11 +84,11 @@ async def login(
             expires_in=result.tokens.expires_in,
         )
 
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
-        )
+        )from e
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -110,11 +110,11 @@ async def refresh_token(
             expires_in=tokens.expires_in,
         )
 
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
-        )
+        )from e
 
 
 @router.get("/me", response_model=UserResponse)
