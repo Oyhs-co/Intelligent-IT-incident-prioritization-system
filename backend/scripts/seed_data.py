@@ -377,7 +377,6 @@ async def seed_comments(
 
 async def seed_similarities(session, incident_ids: list[UUID]):
     """Enlaza incidentes similares basados en categorías."""
-    from src.infrastructure.database.models.incident_model import IncidentModel
 
     pairs = 0
     for i, inc_id in enumerate(incident_ids):
