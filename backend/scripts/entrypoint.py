@@ -1,6 +1,7 @@
+import os
 import subprocess
 import sys
-import os
+
 
 def run_command(cmd, check=True, optional=False, discard_stderr_on_fail=False):
     """Run a command and handle errors like set -e"""
@@ -32,11 +33,11 @@ def run_command(cmd, check=True, optional=False, discard_stderr_on_fail=False):
 def main():
     print("[entrypoint] Inicializando base de datos...")
     run_command("python scripts/init_db.py")
-    
+
     print("[entrypoint] Ejecutando seeds (opcional)...")
     # This simulates: python scripts/seed_data.py 2>/dev/null || echo "[entrypoint] Seeds omitidos o ya ejecutados"
     run_command("python scripts/seed_data.py", optional=True, discard_stderr_on_fail=True)
-    
+
     print("[entrypoint] Iniciando servidor...")
     # Use os.execvp to replace the current process like exec in bash
     port = os.environ.get("PORT", "8000")

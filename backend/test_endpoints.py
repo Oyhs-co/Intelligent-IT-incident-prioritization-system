@@ -731,7 +731,7 @@ async def run_all():
     print(f"\n{'='*60}")
     print(f"  Results: {passed}/{total} passed, {failed} failed")
     if failed:
-        print(f"\n  Failed tests:")
+        print("\n  Failed tests:")
         for name, ok, _ in results:
             if not ok:
                 print(f"    - {name}")

@@ -1,20 +1,21 @@
-"""Tests de integración entre AIService e IAIntegrationAdapter.
+"""Tests de integración de AIService con predictor mockeado.
 
-Verifica que AIService puede usar IAIntegrationAdapter como predictor
-y que el flujo completo de predicción con mapeo de prioridades funciona.
+Verifica que AIService puede usar PriorityPredictor (o cualquier predictor
+con la misma interfaz) y que el flujo completo de predicción con mapeo
+de prioridades funciona.
 """
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.application.services.ai_service import AIService, PredictionResult
 
 
-class TestAIServiceWithIAAdapter:
-    """Tests de integración AIService + IAIntegrationAdapter."""
+class TestAIServicePrediction:
+    """Tests de predicción de AIService con predictor mockeado."""
 
     def teardown_method(self):
         AIService._instance = None
@@ -30,7 +31,7 @@ class TestAIServiceWithIAAdapter:
             "predicted_priority": 0,
             "confidence": 0.95,
             "contributing_features": [
-                {"feature": "urgent", "score": 0.5},
+                {"feature_name": "urgent", "score": 0.5},
             ],
             "reasoning": "Alta urgencia detectada",
         })
@@ -103,14 +104,15 @@ class TestAIServiceWithIAAdapter:
     async def test_adapter_fallback_when_model_unavailable(self):
         """Cuando el adapter no tiene modelo, AIService debe caer a fallback."""
         service = AIService()
-        service._predictor = None
-        service._model_loaded = False
+        with patch.object(AIService, "_ensure_model_loaded"):
+            service._predictor = None
+            service._model_loaded = False
 
-        result = await service.predict_priority("test")
+            result = await service.predict_priority("test")
 
-        assert result.priority == 3
-        assert result.confidence == 0.5
-        assert result.reasoning == "Modelo no disponible"
+            assert result.priority == 3
+            assert result.confidence == 0.5
+            assert result.reasoning == "Modelo no disponible"
 
     @pytest.mark.asyncio
     async def test_adapter_error_propagation(self):
@@ -134,21 +136,21 @@ class TestAIServiceWithIAAdapter:
     async def test_is_model_available_with_adapter(self):
         """is_model_available debe reflejar estado del adapter."""
         service = AIService()
-        assert service.is_model_available() is False
+        with patch.object(AIService, "_ensure_model_loaded"):
+            assert service.is_model_available() is False
 
         service._model_loaded = True
         service._predictor = MagicMock()
         assert service.is_model_available() is True
 
     @pytest.mark.asyncio
-    async def test_get_model_info_includes_adapter_info(self):
-        """get_model_info debe incluir rutas del adapter."""
+    async def test_get_model_info(self):
+        """get_model_info debe incluir info del modelo."""
         service = AIService()
         info = service.get_model_info()
 
         assert "modelo_cargado" in info
         assert "ruta_modelo" in info
-        assert "ruta_vectorizer" in info
 
     @pytest.mark.asyncio
     async def test_predict_batch_empty_with_adapter(self):
