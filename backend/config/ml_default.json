@@ -1,0 +1,23 @@
+{
+  "tf_idf_max_features": 1000,
+  "tf_idf_min_df": 2,
+  "tf_idf_max_df": 0.8,
+  "minilm_model_name": "all-MiniLM-L6-v2",
+  "embedding_dim": 384,
+  "embedding_batch_size": 16,
+  "lgb_num_leaves": 50,
+  "lgb_max_depth": 7,
+  "lgb_learning_rate": 0.03,
+  "lgb_n_estimators": 500,
+  "lgb_min_child_samples": 20,
+  "lgb_reg_alpha": 0.05,
+  "lgb_reg_lambda": 0.05,
+  "lgb_early_stopping_rounds": 30,
+  "random_state": 42,
+  "test_size": 0.15,
+  "validation_size": 0.15,
+  "balance_classes": false,
+  "min_accuracy": 0.70,
+  "response_time_seconds": 2,
+  "model_name": "priority_classifier_v1"
+}

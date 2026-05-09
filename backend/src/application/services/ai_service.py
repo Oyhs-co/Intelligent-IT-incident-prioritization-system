@@ -1,14 +1,18 @@
-"""Servicio de IA para priorización de incidentes."""
+"""Servicio de IA para priorización de incidentes.
+
+Refactored to import PriorityPredictor locally from infrastructure/ml/
+instead of hacking sys.path to reach IA-module/.
+"""
 
 from __future__ import annotations
 
-import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from src.domain.value_objects import map_ia_to_backend
+from src.infrastructure.ml.predictor import PriorityPredictor
 from src.shared.config import get_settings
 from src.shared.logging import get_logger
 
@@ -31,11 +35,10 @@ class PredictionResult:
 
 
 class AIService:
-    """Servicio wrapper para el módulo de IA existente.
+    """Servicio wrapper para el modelo de IA (PriorityPredictor).
 
-    Implementa singleton para evitar recargar el modelo (500MB RAM) en cada request.
-    Aplica map_ia_to_backend()
-    para convertir prioridades de IA (0-2) al rango del backend (1-4).
+    Implementa singleton para evitar recargar el modelo (~500MB RAM) en cada request.
+    Aplica map_ia_to_backend() para convertir prioridades de IA (0-2) al rango del backend (1-4).
     """
 
     _instance: AIService | None = None
@@ -52,10 +55,9 @@ class AIService:
             return
         AIService._initialized = True
 
-        self._predictor = None
+        self._predictor: PriorityPredictor | None = None
         self._model_loaded = False
         self._model_path = Path(settings.model_path)
-        self._vectorizer_path = Path(settings.vectorizer_path)
         self._model_timeout = 30.0
 
     def _ensure_model_loaded(self) -> None:
@@ -64,14 +66,8 @@ class AIService:
             return
 
         try:
-            ia_module = str(Path(__file__).parent.parent.parent.parent.parent / "IA-module")
-            if ia_module not in sys.path:
-                sys.path.insert(0, ia_module)
-
-            from src.predictor import PriorityPredictor
-
             model_file = self._model_path / "priority_classifier_v1.pkl"
-            encoder_dir = self._vectorizer_path / "encoder"
+            encoder_dir = self._model_path / "encoder"
 
             if model_file.exists() and encoder_dir.exists():
                 self._predictor = PriorityPredictor(
@@ -79,13 +75,16 @@ class AIService:
                     encoder_path=Path(str(encoder_dir)),
                 )
                 self._model_loaded = True
-                logger.info("Modelo IA cargado exitosamente")
+                logger.info("PriorityPredictor cargado exitosamente")
             else:
-                logger.warning(f"Archivos de modelo no encontrados en {self._model_path}")
+                logger.warning(
+                    f"Archivos de modelo no encontrados en {self._model_path}. "
+                    f"Se esperaba: {model_file} y {encoder_dir}"
+                )
                 self._predictor = None
 
         except Exception as e:
-            logger.error(f"Error al cargar modelo IA: {e}")
+            logger.error(f"Error al cargar PriorityPredictor: {e}")
             self._predictor = None
 
     async def predict_priority(
@@ -130,7 +129,7 @@ class AIService:
                 priority=backend_priority.value,
                 confidence=explanation.get("confidence", 0.0),
                 top_features=[
-                    f["feature"]
+                    f["feature_name"]
                     for f in explanation.get("contributing_features", [])
                 ],
                 reasoning=explanation.get("reasoning", ""),
@@ -230,5 +229,4 @@ class AIService:
         return {
             "modelo_cargado": self._model_loaded,
             "ruta_modelo": str(self._model_path),
-            "ruta_vectorizer": str(self._vectorizer_path),
         }

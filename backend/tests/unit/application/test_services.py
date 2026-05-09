@@ -36,16 +36,17 @@ class TestAIService:
         s2 = AIService()
         assert s1 is s2
 
-    def test_is_model_available_returns_false_when_not_loaded(self):
-        """Sin modelo cargado debe retornar False."""
+    def test_is_model_available_returns_true_when_model_exists(self):
+        """Con modelo en disco, is_model_available debe cargar y retornar True."""
         service = AIService()
-        assert service.is_model_available() is False
+        assert service.is_model_available() is True
 
     @pytest.mark.asyncio
     async def test_predict_priority_returns_default_when_no_model(self):
         """Sin modelo debe retornar predicción por defecto."""
         service = AIService()
-        result = await service.predict_priority("test text")
+        with patch.object(AIService, "_ensure_model_loaded"):
+            result = await service.predict_priority("test text")
 
         assert result is not None
         assert result.priority == 3
@@ -56,10 +57,11 @@ class TestAIService:
     async def test_predict_priority_with_metadata(self):
         """Con metadatos debe retornar predicción por defecto."""
         service = AIService()
-        result = await service.predict_priority(
-            "test text",
-            metadata={"department": "IT", "incident_id": "123"},
-        )
+        with patch.object(AIService, "_ensure_model_loaded"):
+            result = await service.predict_priority(
+                "test text",
+                metadata={"department": "IT", "incident_id": "123"},
+            )
 
         assert result.priority == 3
 
@@ -67,7 +69,8 @@ class TestAIService:
     async def test_predict_batch_returns_defaults_when_no_model(self):
         """Batch sin modelo debe retornar defaults."""
         service = AIService()
-        results = await service.predict_batch(["text1", "text2"])
+        with patch.object(AIService, "_ensure_model_loaded"):
+            results = await service.predict_batch(["text1", "text2"])
 
         assert len(results) == 2
         assert all(r.priority == 3 for r in results)
@@ -103,8 +106,8 @@ class TestAIService:
             "predicted_priority": 0,
             "confidence": 0.95,
             "contributing_features": [
-                {"feature": "urgent", "score": 0.5},
-                {"feature": "critical", "score": 0.3},
+                {"feature_name": "urgent", "score": 0.5},
+                {"feature_name": "critical", "score": 0.3},
             ],
             "reasoning": "Alta urgencia detectada",
         })

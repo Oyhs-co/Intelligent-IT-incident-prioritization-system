@@ -37,8 +37,7 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 7
 
     # AI/ML
-    model_path: str = "../IA-module/models"
-    vectorizer_path: str = "../IA-module/models"
+    model_path: str = "models"
     embedding_model: str = "all-MiniLM-L6-v2"
 
     # Logging

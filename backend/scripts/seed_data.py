@@ -35,25 +35,15 @@ from src.shared.logging import get_logger
 
 logger = get_logger("seed_data")
 
-# ── Datos de prueba ───────────────────────────────────────────────────
+# Datos de prueba
 
 USERS = [
     # (username, email, password, role, first_name, last_name, department)
     ("admin", "admin@example.com", "admin123", UserRole.ADMIN, "Admin", "User", "IT"),
-    ("jperez", "jperez@example.com", "tech1234", UserRole.TECHNICIAN, "Juan", "Perez", "Support"),
-    ("mlopez", "mlopez@example.com", "tech1234", UserRole.TECHNICIAN, "Maria", "Lopez", "Infrastructure"),
-    ("crodriguez", "crodriguez@example.com", "tech1234", UserRole.TECHNICIAN, "Carlos", "Rodriguez", "Network"),
-    ("agarcia", "agarcia@example.com", "tech1234", UserRole.TECHNICIAN, "Ana", "Garcia", "Security"),
-    ("lmartinez", "lmartinez@example.com", "tech1234", UserRole.TECHNICIAN, "Luis", "Martinez", "Support"),
-    ("pgonzalez", "pgonzalez@example.com", "tech1234", UserRole.TECHNICIAN, "Patricia", "Gonzalez", "Applications"),
-    ("rmendoza", "rmendoza@example.com", "tech1234", UserRole.TECHNICIAN, "Roberto", "Mendoza", "Database"),
-    ("user1", "user1@example.com", "user1234", UserRole.USER, "Pedro", "Sanchez", "Sales"),
-    ("user2", "user2@example.com", "user1234", UserRole.USER, "Laura", "Torres", "Marketing"),
-    ("user3", "user3@example.com", "user1234", UserRole.USER, "Diego", "Ramirez", "Finance"),
-    ("user4", "user4@example.com", "user1234", UserRole.USER, "Sofia", "Castro", "HR"),
-    ("user5", "user5@example.com", "user1234", UserRole.USER, "Miguel", "Vargas", "Operations"),
-    ("user6", "user6@example.com", "user1234", UserRole.USER, "Carmen", "Reyes", "Logistics"),
-    ("viewer1", "viewer1@example.com", "viewer123", UserRole.VIEWER, "Elena", "Flores", "Management"),
+    ("jperez", "jperez@example.com", "tech1234",
+      UserRole.TECHNICIAN, "Juan", "Perez", "Support"),
+    ("mlopez", "mlopez@example.com", "tech1234",
+      UserRole.TECHNICIAN, "Maria", "Lopez", "Infrastructure")
 ]
 
 CATEGORIES = [
@@ -97,13 +87,13 @@ INCIDENT_TEMPLATES = [
 ]
 
 
-def _random_tags():
+def _random_tags() -> list[str]:
     tags_pool = ["urgent", "recurring", "high_impact", "known_issue", "escalated",
                  "needs_review", "vendor", "internal", "customer_reported", "automated"]
     return random.sample(tags_pool, random.randint(0, 3))
 
 
-# ── Seed functions ────────────────────────────────────────────────────
+# Seed functions
 
 async def seed_users(user_repo: UserRepository) -> dict[str, UUID]:
     """Crea usuarios y devuelve {username: user_id}."""
@@ -143,7 +133,7 @@ async def seed_incidents(
 
     base_time = datetime.now(UTC) - timedelta(days=60)
 
-    for idx, (title_tpl, desc_tpl, cat_idx, sub_idx, urg_min, urg_max, imp_min, imp_max) in enumerate(INCIDENT_TEMPLATES):
+    for _idx, (title_tpl, desc_tpl, cat_idx, sub_idx, urg_min, urg_max, imp_min, imp_max) in enumerate(INCIDENT_TEMPLATES):
         cat, subcats = CATEGORIES[cat_idx]
         sub = subcats[sub_idx]
 

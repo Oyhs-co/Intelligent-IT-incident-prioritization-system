@@ -1,5 +1,6 @@
 """Tests configuration."""
 
+import atexit
 import os
 import sys
 import tempfile
@@ -15,7 +16,6 @@ _db_uri = f"sqlite+aiosqlite:///{_db_path}"
 
 os.environ["DATABASE_URL"] = _db_uri
 
-import atexit
 
 
 def _cleanup_db():
