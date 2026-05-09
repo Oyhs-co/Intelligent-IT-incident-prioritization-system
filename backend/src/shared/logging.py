@@ -18,7 +18,7 @@ request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
 class Logger:
     """Logger centralizado con trazabilidad y métricas."""
 
-    def __init__(self, service_name: str = "incident-service"):
+    def __init__(self, service_name: str = "incident-service") -> None:
         self.service_name = service_name
         self._configure()
 

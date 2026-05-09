@@ -93,6 +93,8 @@ fixable = ["ALL"]
 "tests/**" = ["ANN", "N814", "N806", "B017", "B007", "C416", "F841"]
 "**/conftest.py" = ["E402"]
 "backend/test_endpoints.py" = ["ANN", "E501"]
+"src/presentation/api/routes/**" = ["B008"]
+"src/shared/exceptions.py" = ["N818"]
 
 [tool.mypy]
 python_version = "3.11"

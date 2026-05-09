@@ -81,11 +81,11 @@ async def get_user(
 
     try:
         user = await use_case.execute(user_id)
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User {user_id} not found",
-        )
+        ) from e
 
     return _user_to_response(user)
 
@@ -123,12 +123,13 @@ async def update_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
-    except Exception:
+        ) from e
+
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"User {user_id} not found",
-        )
+        ) from e
 
     return _user_to_response(user)
 
