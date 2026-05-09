@@ -89,6 +89,9 @@ ignore = ["ANN101", "ANN102", "ANN401"]
 [tool.ruff.lint]
 fixable = ["ALL"]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "N814"]
+
 [tool.mypy]
 python_version = "3.11"
 strict = false
