@@ -31,12 +31,12 @@ class UserModel(Base):
     department: Mapped[str | None] = mapped_column(String(100), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
-    last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), nullable=False  # fix: server_default
+        DateTime(timezone=True), server_default=func.now(), nullable=False  # fix: server_default
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now()  # fix: server_default
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()  # fix: server_default
     )
 
     reported_incidents: Mapped[list[IncidentModel]] = relationship(

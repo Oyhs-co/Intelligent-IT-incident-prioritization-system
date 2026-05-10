@@ -32,15 +32,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://app:changeme@postgres:5432/incidents}
+      - DATABASE_URL=postgresql+asyncpg://app:changeme@postgres:5432/incidents
       - REDIS_URL=redis://redis:6379/0
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
       - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
       - DEBUG=${DEBUG:-false}
-    volumes:
-      - ./data:/app/data
-      - ./logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy

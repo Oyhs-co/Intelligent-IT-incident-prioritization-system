@@ -30,7 +30,7 @@ class MetricModel(Base):
     labels: Mapped[dict] = mapped_column(JSON, default=lambda: {})  # fix: lambda mutable
     service: Mapped[str] = mapped_column(String(50), default="app")
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime,
+        DateTime(timezone=True),
         server_default=func.now(),  # fix: server_default evaluado por la BD en cada INSERT
         nullable=False,
         index=True,
