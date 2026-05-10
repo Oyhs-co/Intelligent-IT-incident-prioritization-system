@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/client_portal/models/providers/client_portal_providers.dart';
 import '../../../../features/client_portal/models/incident.dart';
 import '../../../../core/presentation/widgets/modern_sidebar.dart';
+import '../../models/providers/analyst_providers.dart';
 import 'incident_review_page.dart';
 
 class AnalystDashboardPage extends ConsumerStatefulWidget {
@@ -21,7 +22,8 @@ class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
     final listaFiltrada = listaCompleta.where((ticket) {
       final tituloCoincide = ticket.title.toLowerCase().contains(filtroBusqueda.toLowerCase());
       final idCoincide = ticket.id.toLowerCase().contains(filtroBusqueda.toLowerCase());
-      final prioridadCoincide = filtroGlobal == 'Todas' || ticket.aiPriority.toLowerCase() == filtroGlobal.toLowerCase();
+      final currentPriority = ticket.finalPriority ?? ticket.aiPriority;
+      final prioridadCoincide = filtroGlobal == 'Todas' || currentPriority.toLowerCase() == filtroGlobal.toLowerCase();
       
       return (tituloCoincide || idCoincide) && prioridadCoincide;
     }).toList();
@@ -124,7 +126,7 @@ class _AnalystTicketCard extends StatelessWidget {
                     ticket.id,
                     style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.5),
                   ),
-                  _buildPriorityChip(ticket.aiPriority),
+                  _buildPriorityChip(ticket.finalPriority ?? ticket.aiPriority),
                 ],
               ),
               const SizedBox(height: 12),

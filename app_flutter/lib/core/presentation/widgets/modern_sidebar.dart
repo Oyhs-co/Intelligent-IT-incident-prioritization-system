@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../features/client_portal/models/providers/client_portal_providers.dart';
+import '../../../features/analyst_dashboard/models/providers/analyst_providers.dart';
 import '../../../features/auth/presentation/pages/login_page.dart';
 import '../../../features/client_portal/presentation/pages/client_profile_page.dart';
 import '../../../features/analyst_dashboard/presentation/pages/analyst_settings_page.dart';
 
-enum UserRole { client, analyst, admin }
+enum UserRole { client, analyst, admin, technician }
 
 class ModernSidebar extends StatelessWidget {
   final UserRole role;

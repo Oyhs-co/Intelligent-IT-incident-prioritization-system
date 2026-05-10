@@ -16,6 +16,10 @@ class IncidentNotifier extends Notifier<List<Incident>> {
       status: 'Pendiente',
       aiPriority: 'Baja',
       aiSuggestedArea: 'Soporte de Hardware',
+      timeline: [
+        IncidentEvent(title: 'Ticket Creado', description: 'El cliente reportó el problema.', date: DateTime.now().subtract(const Duration(hours: 2))),
+        IncidentEvent(title: 'Análisis Preliminar', description: 'El sistema ha clasificado inicialmente el reporte.', date: DateTime.now().subtract(const Duration(hours: 1, minutes: 59))),
+      ],
     ),
     Incident(
       id: 'INC-1002',
@@ -25,15 +29,37 @@ class IncidentNotifier extends Notifier<List<Incident>> {
       aiPriority: 'Alta',
       aiSuggestedArea: 'Cuentas y Accesos',
       assignedArea: 'Cuentas y Accesos',
+      timeline: [
+        IncidentEvent(title: 'Ticket Creado', description: 'El cliente reportó el problema.', date: DateTime.now().subtract(const Duration(days: 1))),
+        IncidentEvent(title: 'Análisis Preliminar', description: 'El sistema ha clasificado inicialmente el reporte.', date: DateTime.now().subtract(const Duration(days: 1, minutes: -1))),
+        IncidentEvent(title: 'Asignado a Área', description: 'El analista asignó el ticket a Cuentas y Accesos.', date: DateTime.now().subtract(const Duration(hours: 5))),
+      ],
     ),
   ];
 
+  String _generateNextId() {
+    if (state.isEmpty) return 'INC-1001';
+    int maxId = 1000;
+    for (final ticket in state) {
+      if (ticket.id.startsWith('INC-')) {
+        final numPart = int.tryParse(ticket.id.substring(4));
+        if (numPart != null && numPart > maxId) {
+          maxId = numPart;
+        }
+      }
+    }
+    return 'INC-${maxId + 1}';
+  }
+
   Future<bool> addIncident(String title, String description) async {
     final newIncident = Incident(
-      id: 'INC-${1000 + state.length + 1}',
+      id: _generateNextId(),
       title: title,
       description: description,
       status: 'Enviando...',
+      timeline: [
+        IncidentEvent(title: 'Ticket Creado', description: 'El cliente reportó el incidente desde el portal.', date: DateTime.now()),
+      ],
     );
     state = [...state, newIncident];
     final enviadoConExito = await apiClient.enviarTicket(title, description);
@@ -56,6 +82,10 @@ class IncidentNotifier extends Notifier<List<Incident>> {
             status: 'Pendiente', 
             aiPriority: 'Alta', 
             aiSuggestedArea: 'Redes',
+            timeline: [
+              ...incident.timeline,
+              IncidentEvent(title: 'Análisis Preliminar', description: 'Clasificación automática completada.', date: DateTime.now().add(const Duration(seconds: 1))),
+            ],
           );
         }
         return incident;
@@ -70,7 +100,11 @@ class IncidentNotifier extends Notifier<List<Incident>> {
         return incident.copyWith(
           status: 'En progreso',
           assignedArea: area,
-          aiPriority: priority,
+          finalPriority: priority,
+          timeline: [
+            ...incident.timeline,
+            IncidentEvent(title: 'Asignado a Área', description: 'El Analista asignó el caso a $area con prioridad $priority.', date: DateTime.now()),
+          ],
         );
       }
       return incident;
@@ -83,10 +117,18 @@ class IncidentNotifier extends Notifier<List<Incident>> {
         return incident.copyWith(
           status: 'Resuelto',
           finalResolution: resolution,
+          timeline: [
+            ...incident.timeline,
+            IncidentEvent(title: 'Ticket Resuelto', description: 'El Técnico registró la resolución final.', date: DateTime.now()),
+          ],
         );
       }
       return incident;
     }).toList();
+  }
+
+  void deleteIncident(String incidentId) {
+    state = state.where((incident) => incident.id != incidentId).toList();
   }
 }
 
@@ -105,13 +147,3 @@ class ClientFilterNotifier extends Notifier<String> {
 
 final clientFilterProvider = NotifierProvider<ClientFilterNotifier, String>(ClientFilterNotifier.new);
 
-class AnalystFilterNotifier extends Notifier<String> {
-  @override
-  String build() => 'Todas';
-
-  void setFilter(String filter) {
-    state = filter;
-  }
-}
-
-final analystFilterProvider = NotifierProvider<AnalystFilterNotifier, String>(AnalystFilterNotifier.new);

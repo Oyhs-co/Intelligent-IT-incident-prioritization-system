@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../client_portal/presentation/pages/client_home.dart';
 import '../../../analyst_dashboard/presentation/pages/dashboard_page.dart';
 import '../../../admin/presentation/pages/admin_dashboard_page.dart';
+import '../../../technician_dashboard/presentation/pages/technician_dashboard_page.dart';
 import '../widgets/auth_input_field.dart';
 import 'register_page.dart';
 class LoginPage extends StatefulWidget {
@@ -34,11 +35,15 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const AdminDashboardPage()),
       );
+    } else if (email == 'tecnico@test.com' && password == '123456') {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const TechnicianDashboardPage()),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Usa: cliente@, analista@ o admin@test.com (Pass: 123456)',
+            'Usa: cliente@, analista@, tecnico@ o admin@test.com (Pass: 123456)',
           ),
           backgroundColor: Colors.redAccent,
         ),

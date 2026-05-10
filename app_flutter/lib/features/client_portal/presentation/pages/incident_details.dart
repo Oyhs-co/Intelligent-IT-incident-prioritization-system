@@ -165,10 +165,50 @@ class IncidentDetailsPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    _buildVerticalTimeline(incident.status),
+                    _buildVerticalTimeline(incident),
                   ],
                 ),
               ),
+              if (incident.status.toLowerCase() == 'resuelto' && incident.finalResolution != null) ...[
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFECFDF5),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF10B981)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 24),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Reporte de Resolución del Técnico',
+                            style: TextStyle(
+                              color: Color(0xFF065F46),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        incident.finalResolution!,
+                        style: const TextStyle(
+                          color: Color(0xFF047857),
+                          height: 1.5,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -176,24 +216,17 @@ class IncidentDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildVerticalTimeline(String currentStatus) {
-    final states = [
-      {'title': 'pendiente', 'desc': 'El reporte ha sido creado y está a la espera de ser revisado.'},
-      {'title': 'recibido', 'desc': 'El reporte ha sido recibido y el equipo lo está analizando.'},
-      {'title': 'en progreso', 'desc': 'El equipo técnico está trabajando activamente en la resolución.'},
-      {'title': 'resuelto', 'desc': 'El incidente ha sido resuelto de manera exitosa.'}
-    ];
-    String normalizedStatus = currentStatus.toLowerCase();
-    if (normalizedStatus == 'enviando...') normalizedStatus = 'pendiente';
-    
-    int currentIndex = states.indexWhere((s) => s['title'] == normalizedStatus);
-    if (currentIndex == -1) currentIndex = 0;
+  Widget _buildVerticalTimeline(Incident incident) {
+    final timeline = incident.timeline;
+    if (timeline.isEmpty) {
+      return const Text('No hay eventos en el historial.', style: TextStyle(color: Colors.grey));
+    }
 
     return Column(
-      children: List.generate(states.length, (index) {
-        bool isCompleted = index <= currentIndex;
-        bool isCurrent = index == currentIndex;
-        bool isLast = index == states.length - 1;
+      children: List.generate(timeline.length, (index) {
+        final event = timeline[index];
+        bool isLast = index == timeline.length - 1;
+        bool isCurrent = isLast; // El último evento es el evento actual/más reciente
 
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +242,7 @@ class IncidentDetailsPage extends StatelessWidget {
                     margin: const EdgeInsets.only(top: 4),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isCompleted ? const Color(0xFF2563EB) : const Color(0xFFE5E7EB),
+                      color: const Color(0xFF2563EB),
                       border: isCurrent 
                         ? Border.all(color: const Color(0xFFBFDBFE), width: 4) 
                         : null,
@@ -218,8 +251,8 @@ class IncidentDetailsPage extends StatelessWidget {
                   if (!isLast)
                     Container(
                       width: 2,
-                      height: isCompleted ? 60 : 40,
-                      color: index < currentIndex ? const Color(0xFF2563EB) : const Color(0xFFE5E7EB),
+                      height: 60,
+                      color: const Color(0xFF2563EB),
                     ),
                 ],
               ),
@@ -231,25 +264,32 @@ class IncidentDetailsPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          event.title,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: isCurrent ? FontWeight.w800 : FontWeight.w600,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        Text(
+                          '${event.date.hour}:${event.date.minute.toString().padLeft(2, '0')}',
+                          style: const TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                     Text(
-                      states[index]['title']!,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: isCurrent ? FontWeight.w800 : (isCompleted ? FontWeight.w600 : FontWeight.w500),
-                        color: isCurrent ? const Color(0xFF111827) : (isCompleted ? const Color(0xFF374151) : const Color(0xFF9CA3AF)),
+                      event.description,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF4B5563),
+                        height: 1.4,
                       ),
                     ),
-                    if (isCompleted) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        states[index]['desc']!,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: isCurrent ? const Color(0xFF4B5563) : const Color(0xFF9CA3AF),
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),

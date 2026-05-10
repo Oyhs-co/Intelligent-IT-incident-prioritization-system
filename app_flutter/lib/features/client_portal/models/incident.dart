@@ -1,3 +1,11 @@
+class IncidentEvent {
+  final String title;
+  final String description;
+  final DateTime date;
+
+  IncidentEvent({required this.title, required this.description, required this.date});
+}
+
 class Incident {
   final String id;
   final String title;
@@ -6,7 +14,9 @@ class Incident {
   final String aiPriority;
   final String aiSuggestedArea;
   final String? assignedArea;
+  final String? finalPriority;
   final String? finalResolution;
+  final List<IncidentEvent> timeline;
 
   Incident({
     required this.id,
@@ -16,7 +26,9 @@ class Incident {
     this.aiPriority = 'Media', 
     this.aiSuggestedArea = 'Soporte General', 
     this.assignedArea,
+    this.finalPriority,
     this.finalResolution,
+    this.timeline = const [],
   });
 
   Incident copyWith({
@@ -27,7 +39,9 @@ class Incident {
     String? aiPriority,
     String? aiSuggestedArea,
     String? assignedArea,
+    String? finalPriority,
     String? finalResolution,
+    List<IncidentEvent>? timeline,
   }) {
     return Incident(
       id: id ?? this.id,
@@ -37,7 +51,9 @@ class Incident {
       aiPriority: aiPriority ?? this.aiPriority,
       aiSuggestedArea: aiSuggestedArea ?? this.aiSuggestedArea,
       assignedArea: assignedArea ?? this.assignedArea,
+      finalPriority: finalPriority ?? this.finalPriority,
       finalResolution: finalResolution ?? this.finalResolution,
+      timeline: timeline ?? this.timeline,
     );
   }
 }

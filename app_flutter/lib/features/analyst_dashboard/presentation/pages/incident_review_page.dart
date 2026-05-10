@@ -23,7 +23,7 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
   void initState() {
     super.initState();
     areaSeleccionada = widget.ticket.assignedArea ?? widget.ticket.aiSuggestedArea;
-    prioridadSeleccionada = widget.ticket.aiPriority;
+    prioridadSeleccionada = widget.ticket.finalPriority ?? widget.ticket.aiPriority;
     
     if (!areas.contains(areaSeleccionada)) areas.add(areaSeleccionada);
     if (!prioridades.contains(prioridadSeleccionada)) prioridades.add(prioridadSeleccionada);
