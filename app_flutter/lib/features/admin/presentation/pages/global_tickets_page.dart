@@ -17,15 +17,21 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
   Widget build(BuildContext context) {
     final tickets = ref.watch(incidentProvider);
 
+    bool esPrioridadAlta(String? p) {
+      final lower = (p ?? '').toLowerCase();
+      return lower == 'alta' || lower == 'crítica' || lower == 'critica'
+          || lower == 'high' || lower == 'critical';
+    }
+
     final int total = tickets.length;
     final int pendientes = tickets.where((t) => ['pendiente', 'recibido', 'enviando...', 'new', 'open'].contains(t.status.toLowerCase())).length;
     final int resueltos = tickets.where((t) => ['resuelto', 'resolved', 'closed'].contains(t.status.toLowerCase())).length;
-    final int criticos = tickets.where((t) => (t.finalPriority ?? t.priorityLabel ?? '').toLowerCase() == 'alta' || (t.finalPriority ?? t.priorityLabel ?? '').toLowerCase() == 'crítica').length;
+    final int criticos = tickets.where((t) => esPrioridadAlta(t.finalPriority ?? t.priorityLabel)).length;
 
     final displayedTickets = tickets.where((t) {
       if (_filter == 'Pendientes') return ['pendiente', 'recibido', 'enviando...', 'new', 'open'].contains(t.status.toLowerCase());
       if (_filter == 'Resueltos') return ['resuelto', 'resolved', 'closed'].contains(t.status.toLowerCase());
-      if (_filter == 'Críticos') return (t.finalPriority ?? t.priorityLabel ?? '').toLowerCase() == 'alta' || (t.finalPriority ?? t.priorityLabel ?? '').toLowerCase() == 'crítica';
+      if (_filter == 'Críticos') return esPrioridadAlta(t.finalPriority ?? t.priorityLabel);
       return true;
     }).toList();
 
@@ -85,8 +91,7 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
                     itemCount: displayedTickets.length,
                     itemBuilder: (context, index) {
                       final ticket = displayedTickets[index];
-                      final priorityText = (ticket.finalPriority ?? ticket.priorityLabel ?? '').toLowerCase();
-                      final isCritico = priorityText == 'alta' || priorityText == 'crítica' || priorityText == 'critical';
+                      final isCritico = esPrioridadAlta(ticket.finalPriority ?? ticket.priorityLabel);
 
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),

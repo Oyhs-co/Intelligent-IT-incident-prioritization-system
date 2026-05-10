@@ -348,6 +348,14 @@ class _AnalystFilterExpansionState
                   },
                 ),
                 _SubItem(
+                  title: 'Crítica Prioridad',
+                  isSelected: currentFilter == 'Crítica',
+                  onTap: () {
+                    ref.read(analystFilterProvider.notifier).setFilter('Crítica');
+                    Navigator.pop(context);
+                  },
+                ),
+                _SubItem(
                   title: 'Alta Prioridad',
                   isSelected: currentFilter == 'Alta',
                   onTap: () {

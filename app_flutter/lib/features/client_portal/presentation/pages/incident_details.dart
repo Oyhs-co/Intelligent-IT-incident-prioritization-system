@@ -275,14 +275,18 @@ class IncidentDetailsPage extends StatelessWidget {
   Widget _buildPriorityBadge(String label) {
     Color bgColor, textColor;
     switch (label.toLowerCase()) {
+      case 'crítica':
+      case 'critica':
       case 'critical':
       case 'p4_critical':
       case 'p4':
-        bgColor = const Color(0xFFFEE2E2); textColor = const Color(0xFF991B1B); break;
+        bgColor = const Color(0xFF7F1D1D); textColor = Colors.white; break;
+      case 'alta':
       case 'high':
       case 'p3_high':
       case 'p3':
-        bgColor = const Color(0xFFFFEDD5); textColor = const Color(0xFF9A3412); break;
+        bgColor = const Color(0xFFFEE2E2); textColor = const Color(0xFF991B1B); break;
+      case 'media':
       case 'medium':
       case 'p2_medium':
       case 'p2':

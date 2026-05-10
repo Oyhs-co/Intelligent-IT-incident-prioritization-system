@@ -26,4 +26,6 @@ class ApiEndpoints {
   static const String metricsIncidents = '/metrics/incidents';
   static const String metricsAI = '/metrics/ai';
   static const String metricsHealth = '/metrics/health';
+
+  static const String users = '/users/';
 }

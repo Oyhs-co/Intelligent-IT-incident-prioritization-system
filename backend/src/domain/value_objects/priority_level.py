@@ -21,10 +21,10 @@ class PriorityLevel(Enum):
     def label(self) -> str:
         """Etiqueta legible del nivel."""
         labels = {
-            1: "P1 (Low)",
-            2: "P2 (Medium)",
-            3: "P3 (High)",
-            4: "P4 (Critical)",
+            1: "Baja",
+            2: "Media",
+            3: "Alta",
+            4: "Crítica",
         }
         return labels[self.value]
 
@@ -63,15 +63,19 @@ class PriorityLevel(Enum):
         mapping = {
             "P1": 1,
             "LOW": 1,
+            "BAJA": 1,
             "1": 1,
             "P2": 2,
             "MEDIUM": 2,
+            "MEDIA": 2,
             "2": 2,
             "P3": 3,
             "HIGH": 3,
+            "ALTA": 3,
             "3": 3,
             "P4": 4,
             "CRITICAL": 4,
+            "CRITICA": 4,
             "4": 4,
         }
         upper = value.upper().strip()

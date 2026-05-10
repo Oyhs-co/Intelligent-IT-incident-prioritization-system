@@ -94,12 +94,14 @@ class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
   bool _matchPriority(Incident ticket, String filter) {
     final label = (ticket.finalPriority ?? ticket.priorityLabel ?? '').toLowerCase();
     switch (filter.toLowerCase()) {
+      case 'crítica':
+        return label == 'crítica' || label == 'critica' || label == 'critical' || label == 'p4 (critical)';
       case 'alta':
-        return label == 'critical' || label == 'high' || label == 'alta' || label == 'crítica';
+        return label == 'alta' || label == 'high' || label == 'p3 (high)';
       case 'media':
-        return label == 'medium' || label == 'media';
+        return label == 'media' || label == 'medium' || label == 'p2 (medium)';
       case 'baja':
-        return label == 'low' || label == 'baja';
+        return label == 'baja' || label == 'low' || label == 'p1 (low)';
       default:
         return true;
     }
@@ -141,14 +143,20 @@ class _AnalystTicketCard extends StatelessWidget {
               Text(ticket.description, maxLines: 2, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5)),
               const Padding(padding: EdgeInsets.symmetric(vertical: 16.0), child: Divider(height: 1, color: Color(0xFFF3F4F6))),
-              Row(
-                children: [
-                  const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF2563EB)),
-                  const SizedBox(width: 8),
-                  Text('Sugerencia IA: ${ticket.category ?? "Sin categoría"}',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2563EB))),
-                ],
-              ),
+                  Row(
+                    children: [
+                      const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF2563EB)),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'IA: ${ticket.priorityLabel ?? "Sin clasificar"} '
+                          '${ticket.confidenceScore != null ? "(${(ticket.confidenceScore! * 100).toInt()}%)" : ""}',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2563EB)),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
             ],
           ),
         ),
@@ -160,15 +168,22 @@ class _AnalystTicketCard extends StatelessWidget {
     Color bgColor;
     Color textColor;
     switch (label.toLowerCase()) {
-      case 'critical':
-      case 'high':
-      case 'alta':
       case 'crítica':
+      case 'critica':
+      case 'critical':
+      case 'p4 (critical)':
+        bgColor = const Color(0xFF7F1D1D);
+        textColor = Colors.white;
+        break;
+      case 'alta':
+      case 'high':
+      case 'p3 (high)':
         bgColor = const Color(0xFFFEE2E2);
         textColor = const Color(0xFF991B1B);
         break;
-      case 'medium':
       case 'media':
+      case 'medium':
+      case 'p2 (medium)':
         bgColor = const Color(0xFFFEF3C7);
         textColor = const Color(0xFF92400E);
         break;

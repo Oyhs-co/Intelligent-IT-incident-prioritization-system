@@ -30,7 +30,7 @@ LLM_BOILERPLATE_PATTERNS = [
 
 
 class PriorityPredictor:
-    PRIORITY_LABELS = {0: "P1 (Critical)", 1: "P2 (Medium)", 2: "P3 (Low)"}
+    PRIORITY_LABELS = {0: "Crítica (Critical)", 1: "Media (Medium)", 2: "Baja (Low)"}
     PRIORITY_DESCRIPTIONS = {
         0: "Critical - Requiere atención inmediata",
         1: "Medium - Requiere atención pronta",
