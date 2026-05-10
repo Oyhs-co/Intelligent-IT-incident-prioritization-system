@@ -14,6 +14,14 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
   String _filter = 'Todos';
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(incidentProvider.notifier).fetchIncidents();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final tickets = ref.watch(incidentProvider);
 

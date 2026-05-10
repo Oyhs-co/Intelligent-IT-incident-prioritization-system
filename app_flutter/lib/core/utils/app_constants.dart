@@ -28,4 +28,8 @@ class ApiEndpoints {
   static const String metricsHealth = '/metrics/health';
 
   static const String users = '/users/';
+  static String user(String id) => '/users/$id';
+
+  static String incidentEvents(String id) => '/incidents/$id/events';
+
 }

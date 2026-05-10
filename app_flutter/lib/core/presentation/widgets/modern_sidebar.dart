@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../features/client_portal/models/providers/client_portal_providers.dart';
 import '../../../features/auth/providers/auth_providers.dart';
 import '../../../features/analyst_dashboard/models/providers/analyst_providers.dart';
 import '../../../features/client_portal/presentation/pages/client_profile_page.dart';
 import '../../../features/analyst_dashboard/presentation/pages/analyst_settings_page.dart';
+
+void _navigate(BuildContext context, String route) {
+  Navigator.pop(context);
+  context.go(route);
+}
 
 enum UserRole { client, analyst, admin, technician }
 
@@ -102,43 +108,25 @@ class ModernSidebar extends ConsumerWidget {
                       icon: Icons.dashboard_outlined,
                       title: 'panel principal',
                       isSelected: true,
-                      onTap: () {},
+                      onTap: () => _navigate(context, '/admin/dashboard'),
                     ),
                     const SizedBox(height: 4),
                     _SidebarItem(
                       icon: Icons.people_outline,
                       title: 'gestión de usuarios',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Navegando a Usuarios...'),
-                          ),
-                        );
-                      },
+                      onTap: () => _navigate(context, '/admin/users'),
                     ),
                     const SizedBox(height: 4),
                     _SidebarItem(
                       icon: Icons.analytics_outlined,
                       title: 'reportes y métricas',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Navegando a Reportes...'),
-                          ),
-                        );
-                      },
+                      onTap: () => _navigate(context, '/admin/tickets'),
                     ),
                     const SizedBox(height: 4),
                     _SidebarItem(
                       icon: Icons.settings_outlined,
-                      title: 'configuraciones',
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Navegando a Configuraciones...'),
-                          ),
-                        );
-                      },
+                      title: 'config. de ia',
+                      onTap: () => _navigate(context, '/admin/ai-settings'),
                     ),
                   ],
                 ],

@@ -120,6 +120,20 @@ class IncidentNotifier extends Notifier<List<Incident>> {
     }
   }
 
+  Future<bool> updateIncident(String incidentId, Map<String, dynamic> fields) async {
+    try {
+      final data = await _api.request('PUT', ApiEndpoints.updateIncident(incidentId), body: fields, auth: true);
+      if (data is Map<String, dynamic>) {
+        final updated = Incident.fromJson(data);
+        state = state.map((inc) => inc.id == incidentId ? updated : inc).toList();
+      }
+      return true;
+    } catch (e) {
+      logger.e('Failed to update incident $incidentId: $e');
+      return false;
+    }
+  }
+
   Future<void> resolveIncident(String incidentId, String resolution) async {
     try {
       await _api.request('PUT', ApiEndpoints.updateIncident(incidentId), body: {
@@ -143,8 +157,15 @@ class IncidentNotifier extends Notifier<List<Incident>> {
     }
   }
 
-  void deleteIncident(String incidentId) {
-    state = state.where((incident) => incident.id != incidentId).toList();
+  Future<bool> deleteIncident(String incidentId) async {
+    try {
+      await _api.request('DELETE', ApiEndpoints.incident(incidentId), auth: true);
+      state = state.where((incident) => incident.id != incidentId).toList();
+      return true;
+    } catch (e) {
+      logger.e('Failed to delete incident $incidentId: $e');
+      return false;
+    }
   }
 }
 
