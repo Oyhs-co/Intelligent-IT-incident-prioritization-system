@@ -17,8 +17,8 @@ class _NewReportPageState extends ConsumerState<NewReportPage> {
   String _category = '';
   bool _isLoading = false;
 
-  final _categories = ['', 'hardware', 'software', 'red', 'seguridad', 'otro'];
-  final _categoryLabels = {'': 'Sin categoría', 'hardware': 'Hardware', 'software': 'Software', 'red': 'Red', 'seguridad': 'Seguridad', 'otro': 'Otro'};
+  final _categories = ['', 'hardware', 'software', 'network', 'security', 'other'];
+  final _categoryLabels = {'': 'Sin categoría', 'hardware': 'Hardware', 'software': 'Software', 'network': 'Red', 'security': 'Seguridad', 'other': 'Otro'};
 
   @override
   void dispose() {

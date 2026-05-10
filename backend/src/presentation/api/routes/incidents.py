@@ -19,11 +19,14 @@ from src.application.use_cases.incidents import (
     ListIncidentsUseCase,
     UpdateIncidentUseCase,
 )
+from src.domain.entities.incident_event import IncidentEvent
+from src.domain.value_objects import EventType
 from src.infrastructure.database import get_db_session
 from src.infrastructure.database.repositories import (
     CommentRepository,
     EventRepository,
     IncidentRepository,
+    UserRepository,
 )
 from src.presentation.schemas import (
     AddCommentRequest,
@@ -42,6 +45,53 @@ from src.presentation.schemas import (
 from .dependencies import get_ai_service, get_current_user
 
 router = APIRouter(prefix="/api/v1/incidents", tags=["Incidents"])
+
+
+@router.get("/categories")
+async def list_categories():
+    """Lista las categorías/departamentos disponibles."""
+    from src.domain.value_objects import IncidentCategory
+    return [
+        {"value": c.value, "label": _category_label(c)}
+        for c in IncidentCategory
+    ]
+
+
+@router.get("/priorities")
+async def list_priorities():
+    """Lista los niveles de prioridad disponibles."""
+    from src.domain.value_objects import PriorityLevel
+    return [
+        {"value": p.value, "label": p.label}
+        for p in PriorityLevel
+    ]
+
+
+def _category_label(cat) -> str:
+    labels = {
+        "infrastructure": "Infraestructura",
+        "application": "Soporte General",
+        "network": "Redes",
+        "security": "Seguridad",
+        "database": "Bases de Datos",
+        "hardware": "Soporte de Hardware",
+        "software": "Desarrollo de Software",
+        "access": "Cuentas y Accesos",
+        "other": "Otros",
+    }
+    return labels.get(cat.value, cat.value)
+
+
+CATEGORY_TO_DEPARTMENT = {
+    "infrastructure": "Infrastructure",
+    "application": "Support",
+    "network": "Network",
+    "security": "Security",
+    "database": "Infrastructure",
+    "hardware": "Support",
+    "software": "Support",
+    "access": "Security",
+}
 
 
 def _incident_to_response(inc) -> IncidentResponse:
@@ -208,6 +258,27 @@ async def update_incident(
             assigned_to=request.assigned_to,
             user_id=user_id,
         )
+
+        if request.category is not None and request.assigned_to is None:
+            dept = CATEGORY_TO_DEPARTMENT.get(request.category)
+            if dept:
+                user_repo = UserRepository(session)
+                techs, _ = await user_repo.list_all(
+                    role="technician", is_active=True, department=dept, limit=1
+                )
+                if techs:
+                    incident.assign_to(techs[0].id)
+                    await incident_repo.update(incident)
+                    assign_event = IncidentEvent()
+                    assign_event.incident_id = incident.id
+                    assign_event.event_type = EventType.ASSIGNED
+                    assign_event.user_id = user_id
+                    assign_event.metadata = {
+                        "assigned_to": str(techs[0].id),
+                        "department": dept,
+                    }
+                    await event_repo.create(assign_event)
+
         await session.commit()
     except Exception as e:
         raise HTTPException(

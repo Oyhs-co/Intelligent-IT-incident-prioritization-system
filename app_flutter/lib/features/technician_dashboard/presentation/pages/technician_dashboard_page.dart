@@ -1,19 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/presentation/widgets/modern_sidebar.dart';
-import '../../../../features/client_portal/models/incident.dart';
-import '../../../../features/client_portal/models/providers/client_portal_providers.dart';
+import '../../../client_portal/models/incident.dart';
+import '../../../client_portal/models/providers/client_portal_providers.dart';
 import 'technician_resolve_page.dart';
 
-class TechnicianDashboardPage extends ConsumerWidget {
+class TechnicianDashboardPage extends ConsumerStatefulWidget {
   const TechnicianDashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TechnicianDashboardPage> createState() => _TechnicianDashboardPageState();
+}
+
+class _TechnicianDashboardPageState extends ConsumerState<TechnicianDashboardPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(incidentProvider.notifier).fetchIncidents();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tickets = ref.watch(incidentProvider);
-    // Para propósitos de demostración, asumimos que el técnico actual ve todos los tickets "En progreso".
-    // En un entorno real, filtraríamos por ticket.assignedArea == areaDelTecnicoActual.
-    final ticketsPendientes = tickets.where((t) => t.status == 'En progreso').toList();
+    final ticketsPendientes = tickets.where((t) => t.status == 'in_progress').toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -40,13 +51,16 @@ class TechnicianDashboardPage extends ConsumerWidget {
                 ],
               ),
             )
-          : ListView.builder(
-              padding: const EdgeInsets.all(24),
-              itemCount: ticketsPendientes.length,
-              itemBuilder: (context, index) {
-                final ticket = ticketsPendientes[index];
-                return _TechnicianTicketCard(ticket: ticket);
-              },
+          : RefreshIndicator(
+              onRefresh: () => ref.read(incidentProvider.notifier).fetchIncidents(),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(24),
+                itemCount: ticketsPendientes.length,
+                itemBuilder: (context, index) {
+                  final ticket = ticketsPendientes[index];
+                  return _TechnicianTicketCard(ticket: ticket);
+                },
+              ),
             ),
     );
   }

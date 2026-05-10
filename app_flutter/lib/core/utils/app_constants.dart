@@ -32,4 +32,6 @@ class ApiEndpoints {
 
   static String incidentEvents(String id) => '/incidents/$id/events';
 
+  static const String incidentCategories = '/incidents/categories';
+  static const String incidentPriorities = '/incidents/priorities';
 }

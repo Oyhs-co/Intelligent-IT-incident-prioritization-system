@@ -79,6 +79,8 @@ class IncidentNotifier extends Notifier<List<Incident>> {
       final data = await _api.request('POST', ApiEndpoints.classifyIncident(incidentId), queryParams: queryParams, auth: true);
       final result = data as Map<String, dynamic>;
 
+      await updateIncident(incidentId, {'status': 'open'});
+
       state = state.map((incident) {
         if (incident.id == incidentId) {
           return incident.copyWith(
@@ -86,6 +88,7 @@ class IncidentNotifier extends Notifier<List<Incident>> {
             priorityLabel: result['priority_label'] as String?,
             confidenceScore: (result['confidence'] as num?)?.toDouble(),
             explanation: result['explanation'] as String?,
+            status: 'open',
           );
         }
         return incident;
@@ -98,12 +101,12 @@ class IncidentNotifier extends Notifier<List<Incident>> {
     }
   }
 
-  Future<void> assignAndEditTicket(String incidentId, String area, String priorityStr, {int? priorityValue}) async {
+  Future<void> assignAndEditTicket(String incidentId, String categoryBackend, int priorityValue) async {
     try {
       await _api.request('PUT', ApiEndpoints.updateIncident(incidentId), body: {
-        'category': area,
+        'category': categoryBackend,
         'status': 'in_progress',
-        'priority': ?priorityValue,
+        'priority': priorityValue,
       }, auth: true);
 
       final updated = await _api.request('GET', ApiEndpoints.incident(incidentId), auth: true);

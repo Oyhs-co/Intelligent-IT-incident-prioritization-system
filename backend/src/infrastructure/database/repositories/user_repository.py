@@ -127,6 +127,7 @@ class UserRepository(IUserRepository):
         limit: int = 100,
         role: str | None = None,
         is_active: bool | None = None,
+        department: str | None = None,
     ) -> tuple[list[User], int]:
         """Lista usuarios con filtros."""
         stmt = select(UserModel)
@@ -138,6 +139,9 @@ class UserRepository(IUserRepository):
         if is_active is not None:
             stmt = stmt.where(UserModel.is_active.is_(is_active))       # fix: is_() idiomático
             count_stmt = count_stmt.where(UserModel.is_active.is_(is_active))
+        if department:
+            stmt = stmt.where(UserModel.department == department)
+            count_stmt = count_stmt.where(UserModel.department == department)
 
         stmt = stmt.order_by(UserModel.created_at.desc()).offset(skip).limit(limit)
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/client_portal/models/incident.dart';
 import '../../../../features/client_portal/models/providers/client_portal_providers.dart';
+import '../../models/providers/analyst_metadata_providers.dart';
 
 class IncidentReviewPage extends ConsumerStatefulWidget {
   final Incident ticket;
@@ -13,19 +14,10 @@ class IncidentReviewPage extends ConsumerStatefulWidget {
 }
 
 class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
-  late String areaSeleccionada;
-  late String prioridadSeleccionada;
+  String? _selectedCategoryValue;
+  int? _selectedPriorityValue;
   bool _isClassifying = false;
-
-  static const _areas = ['Redes', 'Soporte de Hardware', 'Cuentas y Accesos', 'Desarrollo de Software', 'Bases de Datos', 'Soporte General'];
-  static const _prioridades = ['Crítica', 'Alta', 'Media', 'Baja'];
-
-  static const _priorityValue = {
-    'Crítica': 4,
-    'Alta': 3,
-    'Media': 2,
-    'Baja': 1,
-  };
+  bool _metadataLoaded = false;
 
   Incident get _incident =>
       ref.watch(incidentProvider).where((i) => i.id == widget.ticket.id).firstOrNull ?? widget.ticket;
@@ -33,20 +25,52 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
   @override
   void initState() {
     super.initState();
-    areaSeleccionada = widget.ticket.category ?? 'Soporte General';
-    prioridadSeleccionada = _matchPriorityLabel(widget.ticket.finalPriority ?? widget.ticket.priorityLabel);
-
-    if (!_areas.contains(areaSeleccionada)) areaSeleccionada = 'Soporte General';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadMetadata();
+    });
   }
 
-  String _matchPriorityLabel(String? label) {
-    if (label == null) return 'Media';
-    final lower = label.toLowerCase();
-    if (lower == 'crítica' || lower == 'critica' || lower == 'critical' || lower == 'p4 (critical)') return 'Crítica';
-    if (lower == 'alta' || lower == 'high' || lower == 'p3 (high)') return 'Alta';
-    if (lower == 'media' || lower == 'medium' || lower == 'p2 (medium)') return 'Media';
-    if (lower == 'baja' || lower == 'low' || lower == 'p1 (low)') return 'Baja';
-    return 'Media';
+  Future<void> _loadMetadata() async {
+    final notifier = ref.read(metadataProvider.notifier);
+    if (ref.read(metadataProvider).categories.isEmpty) {
+      await notifier.fetchMetadata();
+    }
+    if (mounted) {
+      setState(() {
+        _metadataLoaded = true;
+        _initSelections();
+      });
+    }
+  }
+
+  void _initSelections() {
+    final meta = ref.read(metadataProvider);
+    final inc = _incident;
+
+    if (inc.category != null) {
+      final match = meta.categories.where((c) => c.value == inc.category).firstOrNull;
+      _selectedCategoryValue = match?.value ?? (meta.categories.isNotEmpty ? meta.categories.first.value : null);
+    } else {
+      _selectedCategoryValue = meta.categories.isNotEmpty ? meta.categories.first.value : null;
+    }
+
+    if (inc.priority != null) {
+      _selectedPriorityValue = inc.priority;
+    } else {
+      _selectedPriorityValue = meta.priorities.isNotEmpty ? meta.priorities.first.value : null;
+    }
+  }
+
+  String _findCategoryLabel(String? value) {
+    final meta = ref.read(metadataProvider);
+    final match = meta.categories.where((c) => c.value == value).firstOrNull;
+    return match?.label ?? value ?? 'Sin asignar';
+  }
+
+  String _findPriorityLabel(int? value) {
+    final meta = ref.read(metadataProvider);
+    final match = meta.priorities.where((p) => p.value == value).firstOrNull;
+    return match?.label ?? value?.toString() ?? 'Sin definir';
   }
 
   Future<void> _classifyWithAI() async {
@@ -56,12 +80,15 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
     setState(() => _isClassifying = false);
 
     if (result != null) {
+      final priorityVal = result['priority'] as int?;
+      if (priorityVal != null) {
+        setState(() => _selectedPriorityValue = priorityVal);
+      }
       final label = result['priority_label'] as String? ?? '';
-      prioridadSeleccionada = _matchPriorityLabel(label);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Clasificación IA: $label (${(result['confidence'] as num? ?? 0).toStringAsFixed(2)})'),
+            content: Text('Clasificación IA: $label (${(result['confidence'] as num? ?? 0).toStringAsFixed(2)}) - Estado actualizado a "Abierto"'),
             backgroundColor: const Color(0xFF059669),
           ),
         );
@@ -76,6 +103,10 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
   @override
   Widget build(BuildContext context) {
     final inc = _incident;
+    final meta = ref.watch(metadataProvider);
+    final categories = meta.categories;
+    final priorities = meta.priorities;
+    final isLoading = meta.isLoading && !_metadataLoaded;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -98,7 +129,7 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
             const SizedBox(height: 24),
             _buildMetadataCard(inc),
             const SizedBox(height: 24),
-            _buildTriageCard(),
+            _buildTriageCard(categories, priorities, isLoading),
             const SizedBox(height: 32),
             _buildSubmitButton(),
             const SizedBox(height: 40),
@@ -175,6 +206,17 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
                   const SizedBox(height: 8),
                   Text(inc.explanation!, style: const TextStyle(color: Color(0xFF1E3A8A), fontSize: 13)),
                 ],
+                if (inc.status == 'open')
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.check_circle, size: 14, color: Color(0xFF059669)),
+                        SizedBox(width: 6),
+                        Text('Estado actualizado a Abierto', style: TextStyle(color: Color(0xFF059669), fontSize: 12, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
@@ -217,7 +259,7 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
           _metadataRow('Estado', inc.status),
           _metadataRow('Urgencia', '${inc.urgency}/5'),
           _metadataRow('Impacto', '${inc.impact}/5'),
-          _metadataRow('Categoría', inc.category ?? 'Sin asignar'),
+          _metadataRow('Categoría', _findCategoryLabel(inc.category)),
           _metadataRow('Subcategoría', inc.subcategory ?? 'Sin asignar'),
           _metadataRow('Fuente', inc.source),
           _metadataRow('Creado', inc.createdAt.length >= 10 ? inc.createdAt.substring(0, 10) : inc.createdAt),
@@ -276,7 +318,7 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
     );
   }
 
-  Widget _buildTriageCard() {
+  Widget _buildTriageCard(List<IncidentCategory> categories, List<PriorityOption> priorities, bool isLoading) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -292,43 +334,51 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
           const SizedBox(height: 24),
           const Text('PRIORIDAD FINAL', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), contentPadding: const EdgeInsets.symmetric(horizontal: 16)),
-            initialValue: prioridadSeleccionada,
-            items: _prioridades.map((p) => DropdownMenuItem(value: p, child: Text(p))).toList(),
-            onChanged: (val) => setState(() => prioridadSeleccionada = val!),
-          ),
+          if (isLoading || priorities.isEmpty)
+            const SizedBox(height: 56, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          else
+            DropdownButtonFormField<int>(
+              decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), contentPadding: const EdgeInsets.symmetric(horizontal: 16)),
+              initialValue: _selectedPriorityValue ?? (priorities.isNotEmpty ? priorities.first.value : null),
+              items: priorities.map((p) => DropdownMenuItem(value: p.value, child: Text('${p.label} (${p.value})'))).toList(),
+              onChanged: (val) => setState(() => _selectedPriorityValue = val),
+            ),
           const SizedBox(height: 24),
-          const Text('ÁREA TÉCNICA ENCARGADA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+          const Text('DEPARTAMENTO / ÁREA TÉCNICA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
           const SizedBox(height: 8),
-          DropdownButtonFormField<String>(
-            decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), contentPadding: const EdgeInsets.symmetric(horizontal: 16)),
-            initialValue: areaSeleccionada,
-            items: _areas.map((a) => DropdownMenuItem(value: a, child: Text(a))).toList(),
-            onChanged: (val) => setState(() => areaSeleccionada = val!),
-          ),
+          if (isLoading || categories.isEmpty)
+            const SizedBox(height: 56, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+          else
+            DropdownButtonFormField<String>(
+              decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), contentPadding: const EdgeInsets.symmetric(horizontal: 16)),
+              initialValue: _selectedCategoryValue ?? (categories.isNotEmpty ? categories.first.value : null),
+              items: categories.map((c) => DropdownMenuItem(value: c.value, child: Text(c.label))).toList(),
+              onChanged: (val) => setState(() => _selectedCategoryValue = val),
+            ),
         ],
       ),
     );
   }
 
   Widget _buildSubmitButton() {
+    final canSubmit = _selectedCategoryValue != null && _selectedPriorityValue != null;
+
     return ElevatedButton(
-      onPressed: () async {
-        final messenger = ScaffoldMessenger.of(context);
-        final navigator = Navigator.of(context);
-        await ref.read(incidentProvider.notifier).assignAndEditTicket(
-          widget.ticket.id,
-          areaSeleccionada,
-          prioridadSeleccionada,
-          priorityValue: _priorityValue[prioridadSeleccionada],
-        );
-        if (!context.mounted) {
-          return;
-        }
-        navigator.pop();
-        messenger.showSnackBar(SnackBar(content: Text('Ticket asignado a $areaSeleccionada')));
-      },
+      onPressed: canSubmit
+          ? () async {
+              final messenger = ScaffoldMessenger.of(context);
+              final navigator = Navigator.of(context);
+              final catLabel = _findCategoryLabel(_selectedCategoryValue);
+              await ref.read(incidentProvider.notifier).assignAndEditTicket(
+                widget.ticket.id,
+                _selectedCategoryValue!,
+                _selectedPriorityValue!,
+              );
+              if (!context.mounted) return;
+              navigator.pop();
+              messenger.showSnackBar(SnackBar(content: Text('Ticket asignado a $catLabel con prioridad ${_findPriorityLabel(_selectedPriorityValue)}')));
+            }
+          : null,
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFF0F172A),
         foregroundColor: Colors.white,
@@ -336,7 +386,7 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         elevation: 0,
       ),
-      child: const Text('Guardar y Enviar a Área', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+      child: const Text('Guardar y Enviar a Departamento', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
     );
   }
 
@@ -370,9 +420,22 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(20)),
       child: Text(
-        status.toUpperCase(),
+        _statusLabel(status),
         style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w800),
       ),
     );
+  }
+
+  String _statusLabel(String status) {
+    switch (status) {
+      case 'new': return 'NUEVO';
+      case 'open': return 'ABIERTO';
+      case 'in_progress': return 'EN PROGRESO';
+      case 'resolved': return 'RESUELTO';
+      case 'closed': return 'CERRADO';
+      case 'pending': return 'PENDIENTE';
+      case 'rejected': return 'RECHAZADO';
+      default: return status.toUpperCase();
+    }
   }
 }

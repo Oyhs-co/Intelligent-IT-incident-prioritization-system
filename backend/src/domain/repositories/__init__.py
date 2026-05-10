@@ -100,6 +100,7 @@ class IUserRepository(ABC):
         limit: int = 100,
         role: str | None = None,
         is_active: bool | None = None,
+        department: str | None = None,
     ) -> tuple[list[User], int]:
         raise NotImplementedError
 
