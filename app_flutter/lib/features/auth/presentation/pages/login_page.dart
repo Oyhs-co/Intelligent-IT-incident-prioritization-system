@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_providers.dart';
 import '../widgets/auth_input_field.dart';
+import '../widgets/auth_shared_widgets.dart';
 import 'register_page.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -12,7 +13,7 @@ class LoginPage extends ConsumerStatefulWidget {
 }
 
 class _LoginPageState extends ConsumerState<LoginPage> {
-  final _emailController = TextEditingController();
+  final _emailController    = TextEditingController();
   final _passwordController = TextEditingController();
 
   @override
@@ -23,74 +24,122 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   void _handleLogin() {
-    final email = _emailController.text.trim();
+    final email    = _emailController.text.trim();
     final password = _passwordController.text.trim();
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email y contraseña requeridos'), backgroundColor: Colors.redAccent),
-      );
+      _showSnack('Email y contraseña requeridos');
       return;
     }
     ref.read(authProvider.notifier).login(email, password);
   }
 
+  void _showSnack(String msg, {bool isError = true}) {
+    final cs = Theme.of(context).colorScheme;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(children: [
+          Icon(
+            isError ? Icons.error_outline : Icons.check_circle_outline,
+            color: isError ? cs.onError : cs.onPrimary,
+            size: 16,
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: Text(msg, style: const TextStyle(fontSize: 13))),
+        ]),
+        backgroundColor: isError ? cs.error : cs.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final cs        = Theme.of(context).colorScheme;
+    final isLoading = authState.status == AuthStatus.loading;
 
     ref.listen(authProvider, (previous, next) {
       if (next.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error!), backgroundColor: Colors.redAccent),
-        );
+        _showSnack(next.error!);
         ref.read(authProvider.notifier).clearError();
       }
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: cs.surfaceContainerLowest,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Icon(Icons.lock_person_rounded, size: 80, color: Colors.blueAccent),
-                const SizedBox(height: 24),
-                const Text('Bienvenido de nuevo', textAlign: TextAlign.center, style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87)),
-                const SizedBox(height: 8),
-                const Text('Inicia sesión para continuar', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Colors.grey)),
-                const SizedBox(height: 40),
-                AuthInputField(label: 'Correo electrónico', icon: Icons.email_outlined, controller: _emailController),
-                AuthInputField(label: 'Contraseña', icon: Icons.lock_outline, isPassword: true, controller: _passwordController),
-                Align(alignment: Alignment.centerRight, child: TextButton(onPressed: () {}, child: const Text('¿Olvidaste tu contraseña?'))),
-                const SizedBox(height: 16),
-                authState.status == AuthStatus.loading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed: _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ── Brand header ──────────────────────────────────
+                  const AuthBrandHeader(
+                    icon: Icons.verified_user_outlined,
+                    title: 'Bienvenido de nuevo',
+                    subtitle: 'Inicia sesión en tu cuenta',
+                  ),
+                  const SizedBox(height: 36),
+
+                  // ── Form card ─────────────────────────────────────
+                  AuthFormCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        AuthInputField(
+                          label: 'Correo electrónico',
+                          icon: Icons.alternate_email,
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
                         ),
-                        child: const Text('Iniciar Sesión', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('¿No tienes una cuenta?'),
-                    TextButton(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterPage())),
-                      child: const Text('Regístrate', style: TextStyle(fontWeight: FontWeight.bold)),
+                        AuthInputField(
+                          label: 'Contraseña',
+                          icon: Icons.lock_outline,
+                          isPassword: true,
+                          controller: _passwordController,
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {},
+                            style: TextButton.styleFrom(
+                              foregroundColor: cs.primary,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 2),
+                              textStyle: const TextStyle(
+                                  fontSize: 12, fontWeight: FontWeight.w500),
+                            ),
+                            child: const Text('¿Olvidaste tu contraseña?'),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        AuthPrimaryButton(
+                          label: 'Iniciar Sesión',
+                          icon: Icons.login_outlined,
+                          isLoading: isLoading,
+                          onPressed: _handleLogin,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+
+                  // ── Footer link ───────────────────────────────────
+                  const SizedBox(height: 24),
+                  AuthFooterLink(
+                    question: '¿No tienes una cuenta?',
+                    actionLabel: 'Regístrate',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const RegisterPage()),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
