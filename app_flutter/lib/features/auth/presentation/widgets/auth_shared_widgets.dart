@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Encabezado de marca con ícono degradado, título y subtítulo.
+
 class AuthBrandHeader extends StatelessWidget {
   const AuthBrandHeader({
     super.key,
@@ -60,7 +60,7 @@ class AuthBrandHeader extends StatelessWidget {
   }
 }
 
-/// Tarjeta contenedora del formulario con sombra sutil y borde del tema.
+
 class AuthFormCard extends StatelessWidget {
   const AuthFormCard({super.key, required this.child});
   final Widget child;
@@ -87,7 +87,7 @@ class AuthFormCard extends StatelessWidget {
   }
 }
 
-/// Botón primario con soporte de carga inline.
+
 class AuthPrimaryButton extends StatelessWidget {
   const AuthPrimaryButton({
     super.key,
@@ -136,7 +136,7 @@ class AuthPrimaryButton extends StatelessWidget {
   }
 }
 
-/// Fila de pie con pregunta y enlace de acción.
+
 class AuthFooterLink extends StatelessWidget {
   const AuthFooterLink({
     super.key,
@@ -172,7 +172,6 @@ class AuthFooterLink extends StatelessWidget {
   }
 }
 
-/// Etiqueta de sección con texto en mayúsculas y color primario.
 class AuthSectionLabel extends StatelessWidget {
   const AuthSectionLabel({super.key, required this.label});
   final String label;

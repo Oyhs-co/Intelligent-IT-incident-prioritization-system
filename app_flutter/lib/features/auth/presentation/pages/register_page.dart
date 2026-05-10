@@ -105,7 +105,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ── Brand header ──────────────────────────────────
+                  
                   const AuthBrandHeader(
                     icon: Icons.person_add_outlined,
                     title: 'Crear cuenta',
@@ -113,12 +113,12 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   ),
                   const SizedBox(height: 32),
 
-                  // ── Form card ─────────────────────────────────────
+                
                   AuthFormCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Sección: acceso
+                        
                         const AuthSectionLabel(label: 'Información de acceso'),
                         const SizedBox(height: 12),
                         AuthInputField(
@@ -139,7 +139,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                           controller: _passwordController,
                         ),
 
-                        // Divider con etiqueta
+                        
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Row(children: [
@@ -165,7 +165,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         ),
                         const SizedBox(height: 4),
 
-                        // Nombre y apellido en fila
+                        
                         Row(
                           children: [
                             Expanded(
@@ -202,7 +202,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     ),
                   ),
 
-                  // ── Footer link ───────────────────────────────────
+                  
                   const SizedBox(height: 24),
                   AuthFooterLink(
                     question: '¿Ya tienes una cuenta?',

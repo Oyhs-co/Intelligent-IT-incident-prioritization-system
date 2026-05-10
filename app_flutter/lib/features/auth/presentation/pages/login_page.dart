@@ -78,7 +78,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ── Brand header ──────────────────────────────────
                   const AuthBrandHeader(
                     icon: Icons.verified_user_outlined,
                     title: 'Bienvenido de nuevo',
@@ -86,7 +85,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                   const SizedBox(height: 36),
 
-                  // ── Form card ─────────────────────────────────────
+                  
                   AuthFormCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -128,7 +127,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     ),
                   ),
 
-                  // ── Footer link ───────────────────────────────────
+                 
                   const SizedBox(height: 24),
                   AuthFooterLink(
                     question: '¿No tienes una cuenta?',

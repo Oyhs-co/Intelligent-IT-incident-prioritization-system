@@ -38,7 +38,6 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
     }
   }
 
-  // ── helpers ────────────────────────────────────────────────────────────────
 
   Color _roleColor(String role) {
     switch (role) {
@@ -82,7 +81,7 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
     );
   }
 
-  // ── dialogs ────────────────────────────────────────────────────────────────
+
 
   void _showAddUserDialog() {
     final nameCtrl       = TextEditingController();
@@ -316,7 +315,7 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
     );
   }
 
-  // ── build ──────────────────────────────────────────────────────────────────
+  
 
   @override
   Widget build(BuildContext context) {
@@ -467,7 +466,6 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
   }
 }
 
-// ── Sub-widgets ────────────────────────────────────────────────────────────────
 
 class _UserCard extends StatelessWidget {
   const _UserCard({
