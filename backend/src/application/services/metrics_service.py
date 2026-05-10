@@ -167,7 +167,7 @@ class MetricsService:
         metrics.active_users = result.scalar() or 0
 
         stmt_techs = select(func.count(UserModel.id)).where(
-            UserModel.is_active == True,
+            UserModel.is_active.is_(True),
             UserModel.role == "technician",
         )
         result = await self._session.execute(stmt_techs)
