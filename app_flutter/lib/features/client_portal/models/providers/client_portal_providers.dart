@@ -10,52 +10,7 @@ class IncidentNotifier extends Notifier<List<Incident>> {
   final ApiClient _api = ApiClient();
 
   @override
-  List<Incident> build() => [
-    Incident(
-      id: 'INC-1001',
-      ticketNumber: 'INC-1001',
-      title: 'Mi pantalla no enciende',
-      description: 'Ayuda',
-      status: 'Pendiente',
-      priorityLabel: 'Baja',
-      category: 'Soporte de Hardware',
-      createdAt: DateTime.now().toIso8601String(),
-      updatedAt: DateTime.now().toIso8601String(),
-      timeline: [
-        IncidentEvent(title: 'Ticket Creado', description: 'El cliente reportó el problema.', date: DateTime.now().subtract(const Duration(hours: 2))),
-        IncidentEvent(title: 'Análisis Preliminar', description: 'El sistema ha clasificado inicialmente el reporte.', date: DateTime.now().subtract(const Duration(hours: 1, minutes: 59))),
-      ],
-    ),
-    Incident(
-      id: 'INC-1002',
-      ticketNumber: 'INC-1002',
-      title: 'No puedo entrar al correo',
-      description: 'Clave rota',
-      status: 'En progreso',
-      priorityLabel: 'Alta',
-      category: 'Cuentas y Accesos',
-      assignedTo: 'Cuentas y Accesos',
-      createdAt: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-      updatedAt: DateTime.now().toIso8601String(),
-      timeline: [
-        IncidentEvent(title: 'Ticket Creado', description: 'El cliente reportó el problema.', date: DateTime.now().subtract(const Duration(days: 1))),
-        IncidentEvent(title: 'Análisis Preliminar', description: 'El sistema ha clasificado inicialmente el reporte.', date: DateTime.now().subtract(const Duration(days: 1, minutes: -1))),
-        IncidentEvent(title: 'Asignado a Área', description: 'El analista asignó el ticket a Cuentas y Accesos.', date: DateTime.now().subtract(const Duration(hours: 5))),
-      ],
-    ),
-  ];
-
-  String _generateNextId() {
-    if (state.isEmpty) return 'INC-1001';
-    int maxId = 1000;
-    for (final ticket in state) {
-      if (ticket.id.startsWith('INC-')) {
-        final numPart = int.tryParse(ticket.id.substring(4));
-        if (numPart != null && numPart > maxId) maxId = numPart;
-      }
-    }
-    return 'INC-${maxId + 1}';
-  }
+  List<Incident> build() => [];
 
   Future<void> fetchIncidents({
     int skip = 0,
@@ -74,8 +29,7 @@ class IncidentNotifier extends Notifier<List<Incident>> {
       if (category != null) queryParams['category'] = category;
 
       final data = await _api.request('GET', ApiEndpoints.incidents, queryParams: queryParams, auth: true) as Map<String, dynamic>;
-      final items = (data['items'] as List<dynamic>).map((e) => Incident.fromJson(e as Map<String, dynamic>)).toList();
-      state = items.isNotEmpty ? items : state;
+      state = (data['items'] as List<dynamic>).map((e) => Incident.fromJson(e as Map<String, dynamic>)).toList();
     } catch (e) {
       logger.e('Failed to fetch incidents: $e');
     }
@@ -87,7 +41,7 @@ class IncidentNotifier extends Notifier<List<Incident>> {
       return Incident.fromJson(data as Map<String, dynamic>);
     } catch (e) {
       logger.e('Failed to fetch incident $id: $e');
-      return state.where((i) => i.id == id).firstOrNull;
+      return null;
     }
   }
 
@@ -115,20 +69,6 @@ class IncidentNotifier extends Notifier<List<Incident>> {
       return true;
     } catch (e) {
       logger.e('Failed to create incident: $e');
-      final newIncident = Incident(
-        id: _generateNextId(),
-        ticketNumber: _generateNextId(),
-        title: title,
-        description: description,
-        status: 'Pendiente',
-        createdAt: DateTime.now().toIso8601String(),
-        updatedAt: DateTime.now().toIso8601String(),
-        category: category,
-        urgency: urgency,
-        impact: impact,
-        timeline: [IncidentEvent(title: 'Ticket Creado', description: 'El cliente reportó el incidente desde el portal.', date: DateTime.now())],
-      );
-      state = [...state, newIncident];
       return false;
     }
   }
@@ -158,38 +98,49 @@ class IncidentNotifier extends Notifier<List<Incident>> {
     }
   }
 
-  void assignAndEditTicket(String incidentId, String area, String priorityStr) {
-    state = state.map((incident) {
-      if (incident.id == incidentId) {
-        return incident.copyWith(
-          status: 'En progreso',
-          category: area,
-          priorityLabel: priorityStr,
-          finalPriority: priorityStr,
-          timeline: [
-            ...incident.timeline,
-            IncidentEvent(title: 'Asignado a Área', description: 'El Analista asignó el caso a $area con prioridad $priorityStr.', date: DateTime.now()),
-          ],
-        );
+  Future<void> assignAndEditTicket(String incidentId, String area, String priorityStr, {int? priorityValue}) async {
+    try {
+      await _api.request('PUT', ApiEndpoints.updateIncident(incidentId), body: {
+        'category': area,
+        'status': 'in_progress',
+        'priority': ?priorityValue,
+      }, auth: true);
+
+      final updated = await _api.request('GET', ApiEndpoints.incident(incidentId), auth: true);
+      if (updated is Map<String, dynamic>) {
+        state = state.map((inc) {
+          if (inc.id == incidentId) {
+            return Incident.fromJson(updated);
+          }
+          return inc;
+        }).toList();
       }
-      return incident;
-    }).toList();
+    } catch (e) {
+      logger.e('Failed to assign ticket: $e');
+    }
   }
 
-  void resolveIncident(String incidentId, String resolution) {
-    state = state.map((incident) {
-      if (incident.id == incidentId) {
-        return incident.copyWith(
-          status: 'Resuelto',
-          finalResolution: resolution,
-          timeline: [
-            ...incident.timeline,
-            IncidentEvent(title: 'Ticket Resuelto', description: 'El Técnico registró la resolución final.', date: DateTime.now()),
-          ],
-        );
+  Future<void> resolveIncident(String incidentId, String resolution) async {
+    try {
+      await _api.request('PUT', ApiEndpoints.updateIncident(incidentId), body: {
+        'status': 'resolved',
+        'resolution': resolution,
+        'resolution_code': 'FIXED',
+      }, auth: true);
+
+      final updated = await _api.request('GET', ApiEndpoints.incident(incidentId), auth: true);
+      if (updated is Map<String, dynamic>) {
+        state = state.map((inc) {
+          if (inc.id == incidentId) {
+            return Incident.fromJson(updated);
+          }
+          return inc;
+        }).toList();
+        return;
       }
-      return incident;
-    }).toList();
+    } catch (e) {
+      logger.e('Failed to resolve incident via API: $e');
+    }
   }
 
   void deleteIncident(String incidentId) {

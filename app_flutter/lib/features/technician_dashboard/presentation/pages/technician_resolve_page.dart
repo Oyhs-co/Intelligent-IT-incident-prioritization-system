@@ -21,7 +21,7 @@ class _TechnicianResolvePageState extends ConsumerState<TechnicianResolvePage> {
     super.dispose();
   }
 
-  void _resolveTicket() {
+  Future<void> _resolveTicket() async {
     if (_resolutionController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Debes ingresar un reporte de solución antes de cerrar el ticket.')),
@@ -29,9 +29,14 @@ class _TechnicianResolvePageState extends ConsumerState<TechnicianResolvePage> {
       return;
     }
 
-    ref.read(incidentProvider.notifier).resolveIncident(widget.ticket.id, _resolutionController.text.trim());
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    await ref.read(incidentProvider.notifier).resolveIncident(widget.ticket.id, _resolutionController.text.trim());
+    if (!context.mounted) {
+      return;
+    }
+    navigator.pop();
+    messenger.showSnackBar(
       SnackBar(content: Text('Ticket ${widget.ticket.id} resuelto correctamente', style: const TextStyle(fontWeight: FontWeight.bold))),
     );
   }

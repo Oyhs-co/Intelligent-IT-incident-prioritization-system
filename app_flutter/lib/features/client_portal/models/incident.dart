@@ -30,6 +30,9 @@ class Incident {
   final bool isSlaBreached;
   final String? finalPriority;
   final String? finalResolution;
+  final String? resolution;
+  final String? resolutionCode;
+  final String? resolvedAt;
   final List<IncidentEvent> timeline;
 
   Incident({
@@ -56,6 +59,9 @@ class Incident {
     this.isSlaBreached = false,
     this.finalPriority,
     this.finalResolution,
+    this.resolution,
+    this.resolutionCode,
+    this.resolvedAt,
     this.timeline = const [],
   });
 
@@ -82,6 +88,9 @@ class Incident {
       createdAt: json['created_at'] as String,
       updatedAt: json['updated_at'] as String,
       isSlaBreached: json['is_sla_breached'] as bool? ?? false,
+      resolution: json['resolution'] as String?,
+      resolutionCode: json['resolution_code'] as String?,
+      resolvedAt: json['resolved_at'] as String?,
     );
   }
 
@@ -109,6 +118,9 @@ class Incident {
     bool? isSlaBreached,
     String? finalPriority,
     String? finalResolution,
+    String? resolution,
+    String? resolutionCode,
+    String? resolvedAt,
     List<IncidentEvent>? timeline,
   }) {
     return Incident(
@@ -135,6 +147,9 @@ class Incident {
       isSlaBreached: isSlaBreached ?? this.isSlaBreached,
       finalPriority: finalPriority ?? this.finalPriority,
       finalResolution: finalResolution ?? this.finalResolution,
+      resolution: resolution ?? this.resolution,
+      resolutionCode: resolutionCode ?? this.resolutionCode,
+      resolvedAt: resolvedAt ?? this.resolvedAt,
       timeline: timeline ?? this.timeline,
     );
   }

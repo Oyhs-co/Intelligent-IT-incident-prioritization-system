@@ -55,6 +55,7 @@ async def get_current_user(
             "email": user.email,
             "username": user.username,
             "role": user.role.value,
+            "department": user.department,
         }
 
     except ValueError:

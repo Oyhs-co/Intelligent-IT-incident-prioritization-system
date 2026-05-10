@@ -64,6 +64,9 @@ def _incident_to_response(inc) -> IncidentResponse:
         tags=inc.tags,
         reporter_id=inc.reporter_id,
         assigned_to=inc.assigned_to,
+        resolution=inc.resolution,
+        resolution_code=inc.resolution_code,
+        resolved_at=inc.resolved_at,
         created_at=inc.created_at,
         updated_at=inc.updated_at,
         is_sla_breached=inc.is_sla_breached,
@@ -113,11 +116,25 @@ async def list_incidents(
     priority: int | None = Query(None, ge=1, le=4),
     category: str | None = None,
     session=Depends(get_db_session),
+    current_user: dict | None = Depends(get_current_user),
 ):
-    """Lista incidentes con filtros."""
+    """Lista incidentes con filtros y control de roles."""
     incident_repo = IncidentRepository(session)
 
     use_case = ListIncidentsUseCase(incident_repo)
+
+    assigned_to = None
+    created_by = None
+    assigned_department = None
+
+    if current_user:
+        role = current_user.get("role")
+        user_id = UUID(current_user["id"]) if current_user.get("id") else None
+
+        if role == "user":
+            created_by = user_id
+        elif role == "technician":
+            assigned_department = current_user.get("department")
 
     result = await use_case.execute(
         skip=skip,
@@ -125,6 +142,9 @@ async def list_incidents(
         status=status,
         priority=priority,
         category=category,
+        assigned_to=assigned_to,
+        created_by=created_by,
+        assigned_department=assigned_department,
     )
 
     return IncidentListResponse(

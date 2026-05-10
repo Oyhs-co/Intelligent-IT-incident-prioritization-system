@@ -72,6 +72,15 @@ class ModernSidebar extends ConsumerWidget {
                         );
                       },
                     ),
+                  ] else if (role == UserRole.technician) ...[
+                    const _TechnicianFilterExpansion(),
+                    const SizedBox(height: 4),
+                    _SidebarItem(
+                      icon: Icons.assignment_outlined,
+                      title: 'tickets asignados',
+                      isSelected: true,
+                      onTap: () {},
+                    ),
                   ] else if (role == UserRole.analyst) ...[
                     const _AnalystFilterExpansion(),
                     const SizedBox(height: 4),
@@ -369,6 +378,24 @@ class _AnalystFilterExpansionState
               ? CrossFadeState.showSecond
               : CrossFadeState.showFirst,
           duration: const Duration(milliseconds: 200),
+        ),
+      ],
+    );
+  }
+}
+
+class _TechnicianFilterExpansion extends ConsumerWidget {
+  const _TechnicianFilterExpansion();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        _SidebarItem(
+          icon: Icons.build_outlined,
+          title: 'mis tickets',
+          isSelected: true,
+          onTap: () {},
         ),
       ],
     );

@@ -41,6 +41,7 @@ class ListIncidentsUseCase:
         category: str | None = None,
         assigned_to: UUID | None = None,
         created_by: UUID | None = None,
+        assigned_department: str | None = None,
     ) -> ListIncidentsResult:
         """Ejecuta el listado de incidentes."""
         logger.info(
@@ -59,6 +60,7 @@ class ListIncidentsUseCase:
             category=category,
             assigned_to=assigned_to,
             created_by=created_by,
+            assigned_department=assigned_department,
         )
 
         logger.info(

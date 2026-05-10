@@ -13,6 +13,8 @@ import '../../features/analyst_dashboard/presentation/pages/analyst_history_page
 import '../../features/analyst_dashboard/presentation/pages/analyst_metrics_page.dart';
 import '../../features/analyst_dashboard/presentation/pages/analyst_settings_page.dart';
 import '../../features/analyst_dashboard/presentation/pages/analyst_directory_page.dart';
+import '../../features/technician_dashboard/presentation/pages/technician_dashboard_page.dart';
+import '../../features/technician_dashboard/presentation/pages/technician_resolve_page.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/global_tickets_page.dart';
 import '../../features/admin/presentation/pages/user_management_page.dart';
@@ -30,15 +32,21 @@ final routerProvider = Provider<GoRouter>((ref) {
     initialLocation: '/login',
     redirect: (context, state) {
       final isLoggedIn = authState.isAuthenticated;
-      final isLoginRoute = state.matchedLocation == '/login';
-      final isRegisterRoute = state.matchedLocation == '/register';
+      final location = state.matchedLocation;
+      final isLoginRoute = location == '/login';
+      final isRegisterRoute = location == '/register';
 
       if (!isLoggedIn && !isLoginRoute && !isRegisterRoute) {
         return '/login';
       }
 
+      final role = authState.user?.role ?? 'user';
+
       if (isLoggedIn && (isLoginRoute || isRegisterRoute)) {
-        final role = authState.user?.role ?? 'user';
+        return _getHomeRoute(role);
+      }
+
+      if (isLoggedIn && !_isRouteAllowedForRole(location, role)) {
         return _getHomeRoute(role);
       }
 
@@ -77,6 +85,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/client/profile',
         name: 'clientProfile',
         builder: (context, state) => const ClientProfilePage(),
+      ),
+      GoRoute(
+        path: '/technician/dashboard',
+        name: 'technicianDashboard',
+        builder: (context, state) => const TechnicianDashboardPage(),
+      ),
+      GoRoute(
+        path: '/technician/resolve/:id',
+        name: 'technicianResolve',
+        builder: (context, state) {
+          final ticket = state.extra as Incident;
+          return TechnicianResolvePage(ticket: ticket);
+        },
       ),
       GoRoute(
         path: '/analyst/dashboard',
@@ -135,12 +156,29 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
+bool _isRouteAllowedForRole(String location, String role) {
+  if (location == '/login' || location == '/register') return true;
 
+  switch (role) {
+    case 'admin':
+      return location.startsWith('/admin/');
+    case 'technician':
+      return location.startsWith('/technician/');
+    case 'analyst':
+      return location.startsWith('/analyst/');
+    case 'user':
+      return location.startsWith('/client/');
+    default:
+      return false;
+  }
+}
 
 String _getHomeRoute(String role) {
   switch (role) {
     case 'admin':
       return '/admin/dashboard';
+    case 'technician':
+      return '/technician/dashboard';
     case 'analyst':
       return '/analyst/dashboard';
     default:

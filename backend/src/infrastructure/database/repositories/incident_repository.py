@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -20,6 +20,7 @@ from src.domain.value_objects import (
 
 from ..models.incident_model import IncidentModel
 from ..models.incident_similarity_model import IncidentSimilarityModel
+from ..models.user_model import UserModel
 
 
 class IncidentRepository(IIncidentRepository):
@@ -224,6 +225,7 @@ class IncidentRepository(IIncidentRepository):
         category: str | None = None,
         assigned_to: UUID | None = None,
         created_by: UUID | None = None,
+        assigned_department: str | None = None,
     ) -> tuple[list[Incident], int]:
         """Lista incidentes con filtros."""
         stmt = select(IncidentModel).options(
@@ -246,6 +248,20 @@ class IncidentRepository(IIncidentRepository):
         if created_by:
             stmt = stmt.where(IncidentModel.reporter_id == str(created_by))
             count_stmt = count_stmt.where(IncidentModel.reporter_id == str(created_by))
+        if assigned_department:
+            subq = select(UserModel.id).where(UserModel.department == assigned_department)
+            stmt = stmt.where(
+                or_(
+                    IncidentModel.assigned_to.in_(subq),
+                    IncidentModel.assigned_to.is_(None),
+                )
+            )
+            count_stmt = count_stmt.where(
+                or_(
+                    IncidentModel.assigned_to.in_(subq),
+                    IncidentModel.assigned_to.is_(None),
+                )
+            )
 
         stmt = stmt.order_by(IncidentModel.created_at.desc()).offset(skip).limit(limit)
 

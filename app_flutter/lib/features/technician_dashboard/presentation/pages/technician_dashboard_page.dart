@@ -17,7 +17,7 @@ class TechnicianDashboardPage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
-      drawer: const ModernSidebar(role: UserRole.analyst), // Usaremos el mismo rol por ahora, aunque podríamos crear UserRole.technician
+      drawer: const ModernSidebar(role: UserRole.technician),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,

@@ -41,9 +41,21 @@ USERS = [
     # (username, email, password, role, first_name, last_name, department)
     ("admin", "admin@example.com", "admin123", UserRole.ADMIN, "Admin", "User", "IT"),
     ("jperez", "jperez@example.com", "tech1234",
-      UserRole.TECHNICIAN, "Juan", "Perez", "Support"),
+     UserRole.TECHNICIAN, "Juan", "Perez", "Support"),
     ("mlopez", "mlopez@example.com", "tech1234",
-      UserRole.TECHNICIAN, "Maria", "Lopez", "Infrastructure")
+     UserRole.TECHNICIAN, "Maria", "Lopez", "Infrastructure"),
+    ("rredes", "rredes@example.com", "tech1234",
+     UserRole.TECHNICIAN, "Roberto", "Redes", "Network"),
+    ("asegura", "asegura@example.com", "tech1234",
+     UserRole.TECHNICIAN, "Ana", "Segura", "Security"),
+    ("analista1", "analista1@example.com", "analyst1",
+     UserRole.ANALYST, "Carlos", "Analisis", "Service Desk"),
+    ("analista2", "analista2@example.com", "analyst2",
+     UserRole.ANALYST, "Laura", "Analisis", "Service Desk"),
+    ("cliente1", "cliente1@example.com", "client123",
+     UserRole.USER, "Pedro", "Cliente", None),
+    ("cliente2", "cliente2@example.com", "client456",
+     UserRole.USER, "Sofia", "Cliente", None),
 ]
 
 CATEGORIES = [
@@ -126,8 +138,11 @@ async def seed_incidents(
     user_map: dict[str, UUID],
 ) -> list[UUID]:
     """Crea incidentes con datos realistas y sus eventos. Devuelve lista de IDs."""
-    technicians = [uid for name, uid in user_map.items() if name != "admin" and not name.startswith("user") and name != "viewer1"]
-    reporters = [uid for name, uid in user_map.items() if name.startswith("user") or name == "admin"]
+    tech_users = {name: uid for name, uid in user_map.items()}
+    admins = [uid for name, uid in tech_users.items() if name == "admin"]
+    technicians = [uid for name, uid in tech_users.items() if name in ("jperez", "mlopez", "rredes", "asegura")]
+    analyst_users = [uid for name, uid in tech_users.items() if name in ("analista1", "analista2")]
+    reporters = [uid for name, uid in tech_users.items() if name in ("cliente1", "cliente2", "admin")]
     incident_ids = []
     created = 0
 
@@ -159,11 +174,23 @@ async def seed_incidents(
         impact = random.randint(imp_min, imp_max)
         priority = _urgency_impact_to_priority(urgency, impact)
 
-        # Decidir si está asignado
+        # Mapear categoría al técnico del área correspondiente
+        _area_techs = {
+            0: [uid for n, uid in tech_users.items() if n == "mlopez"],     # Infrastructure
+            1: [uid for n, uid in tech_users.items() if n == "jperez"],     # Support
+            2: [uid for n, uid in tech_users.items() if n == "rredes"],     # Network
+            3: [uid for n, uid in tech_users.items() if n == "asegura"],    # Security
+            4: [uid for n, uid in tech_users.items() if n == "mlopez"],     # Database → Infrastructure
+            5: [uid for n, uid in tech_users.items() if n == "jperez"],     # Hardware → Support
+            6: [uid for n, uid in tech_users.items() if n == "jperez"],     # Software → Support
+            7: [uid for n, uid in tech_users.items() if n == "asegura"],    # Access → Security
+        }
+
         assigned_to = None
         if status in (IncidentStatus.IN_PROGRESS, IncidentStatus.ON_HOLD, IncidentStatus.PENDING,
                       IncidentStatus.RESOLVED, IncidentStatus.CLOSED):
-            assigned_to = random.choice(technicians)
+            area_techs = _area_techs.get(cat_idx, technicians)
+            assigned_to = random.choice(area_techs) if area_techs else random.choice(technicians)
 
         # Resolución para cerrados
         resolution = None

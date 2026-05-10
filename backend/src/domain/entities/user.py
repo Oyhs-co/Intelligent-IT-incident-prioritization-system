@@ -17,22 +17,19 @@ class UserRole(Enum):
 
     ADMIN = "admin"
     TECHNICIAN = "technician"
+    ANALYST = "analyst"
     USER = "user"
-    VIEWER = "viewer"
 
     @property
     def can_assign_incidents(self) -> bool:
-        """Verifica si el rol puede asignar incidentes."""
-        return self in (UserRole.ADMIN, UserRole.TECHNICIAN)
+        return self in (UserRole.ADMIN, UserRole.TECHNICIAN, UserRole.ANALYST)
 
     @property
     def can_resolve_incidents(self) -> bool:
-        """Verifica si el rol puede resolver incidentes."""
         return self in (UserRole.ADMIN, UserRole.TECHNICIAN)
 
     @property
     def can_manage_users(self) -> bool:
-        """Verifica si el rol puede gestionar usuarios."""
         return self == UserRole.ADMIN
 
 

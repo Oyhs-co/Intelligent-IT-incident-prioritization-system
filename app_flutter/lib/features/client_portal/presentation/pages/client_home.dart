@@ -74,11 +74,11 @@ class _ClientHomeState extends ConsumerState<ClientHome> {
   bool _matchFilter(String status, String filter) {
     switch (filter.toLowerCase()) {
       case 'pendiente':
-        return status == 'new' || status == 'open';
+        return ['new', 'open', 'pending'].contains(status.toLowerCase());
       case 'en progreso':
-        return status == 'in_progress' || status == 'pending';
+        return status.toLowerCase() == 'in_progress';
       case 'resuelto':
-        return status == 'resolved' || status == 'closed';
+        return ['resolved', 'closed'].contains(status.toLowerCase());
       default:
         return true;
     }

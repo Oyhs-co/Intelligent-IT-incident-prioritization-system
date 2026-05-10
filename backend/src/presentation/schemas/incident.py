@@ -103,6 +103,9 @@ class IncidentResponse(BaseModel):
     tags: list[str] = []
     reporter_id: UUID | None = None
     assigned_to: UUID | None = None
+    resolution: str | None = None
+    resolution_code: str | None = None
+    resolved_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     is_sla_breached: bool = False

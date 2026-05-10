@@ -184,10 +184,10 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
             const SizedBox(height: 32),
 
             ElevatedButton(
-              onPressed: () {
-                ref.read(incidentProvider.notifier).assignAndEditTicket(widget.ticket.id, areaSeleccionada, prioridadSeleccionada);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ticket asignado a $areaSeleccionada')));
+              onPressed: () async {
+                await ref.read(incidentProvider.notifier).assignAndEditTicket(widget.ticket.id, areaSeleccionada, prioridadSeleccionada);
+                if (context.mounted) Navigator.pop(context);
+                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ticket asignado a $areaSeleccionada')));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF0F172A),
