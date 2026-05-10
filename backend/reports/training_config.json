@@ -8,5 +8,5 @@
     "encoder_type": "MiniLMEncoder",
     "classifier_type": "LightGBMClassifier",
     "random_state": 42,
-    "training_time": 180.2250473499298
+    "training_time": 221.26624488830566
 }

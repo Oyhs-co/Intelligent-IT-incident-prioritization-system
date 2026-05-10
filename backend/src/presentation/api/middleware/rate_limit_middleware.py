@@ -40,6 +40,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         call_next: Callable,
     ) -> Response:
         """Aplica rate limiting."""
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
+        if request.url.path in ("/", "/health"):
+            return await call_next(request)
+
         client_ip = self._get_client_ip(request)
         now = time.time()
 
@@ -65,9 +71,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     headers={"Retry-After": str(self._get_retry_after(client_ip))},
                 )
 
-            self._requests[client_ip].append(now)
-
         response = await call_next(request)
+
+        async with self._lock:
+            self._requests[client_ip].append(time.time())
+
         remaining = self._get_remaining(client_ip)
         response.headers["X-RateLimit-Remaining"] = str(remaining)
         response.headers["X-RateLimit-Limit"] = str(self._rpm)

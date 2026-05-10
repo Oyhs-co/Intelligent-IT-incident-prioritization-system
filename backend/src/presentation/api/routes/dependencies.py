@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from fastapi import Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 
 from src.application.services import AIService, AuthService
 from src.infrastructure.database import get_db_session
 from src.infrastructure.database.repositories import UserRepository
 
 _ai_service: AIService | None = None
-_auth_service: AuthService | None = None
 
 
 async def get_ai_service() -> AIService:
@@ -20,19 +19,15 @@ async def get_ai_service() -> AIService:
     return _ai_service
 
 
-async def get_auth_service() -> AuthService:
-    """Obtiene el servicio de autenticación."""
-    global _auth_service
-    if _auth_service is None:
-        async for session in get_db_session():
-            user_repo = UserRepository(session)
-            _auth_service = AuthService(user_repo)
-            break
-    return _auth_service
+def _create_auth_service(session) -> AuthService:
+    """Crea un AuthService con la sesión dada."""
+    user_repo = UserRepository(session)
+    return AuthService(user_repo)
 
 
 async def get_current_user(
     authorization: str | None = Header(None),
+    session = Depends(get_db_session),
 ) -> dict | None:
     """Obtiene el usuario actual desde el token JWT."""
     if not authorization:
@@ -43,7 +38,7 @@ async def get_current_user(
         if scheme.lower() != "bearer":
             return None
 
-        auth_service = await get_auth_service()
+        auth_service = _create_auth_service(session)
         user_id = await auth_service.verify_token(token)
 
         if not user_id:
@@ -62,7 +57,7 @@ async def get_current_user(
             "role": user.role.value,
         }
 
-    except (ValueError, Exception):
+    except ValueError:
         return None
 
 

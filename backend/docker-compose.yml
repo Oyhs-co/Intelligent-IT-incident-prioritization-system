@@ -41,7 +41,6 @@ services:
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
-      - ../IA-module/models:/app/models
     depends_on:
       postgres:
         condition: service_healthy

@@ -57,14 +57,6 @@ def create_app() -> FastAPI:
         version="1.0.0",
         lifespan=lifespan,
     )
-
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins_list,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
     app.add_middleware(LoggingMiddleware)
     app.add_middleware(RateLimitMiddleware)
     app.add_middleware(TraceMiddleware)
@@ -73,6 +65,14 @@ def create_app() -> FastAPI:
     app.include_router(metrics_router)
     app.include_router(auth_router)
     app.include_router(users_router)
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins_list,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     _add_exception_handlers(app)
 

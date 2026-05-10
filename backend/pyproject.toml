@@ -27,7 +27,6 @@ dependencies = [
     "scikit-learn",
     "numpy",
     "pandas",
-    "joblib",
     "sentence-transformers",
     "lightgbm",
     "shap",
@@ -38,18 +37,15 @@ dependencies = [
     # Security
     "python-jose[cryptography]",
     "passlib[bcrypt]",
+    "bcrypt<4.1",
     "python-multipart",
 
     # Utilities
     "loguru",
-    "structlog",
-    "python-dateutil",
     "httpx",
-    "email_validator",
     "aiohttp (>=3.13.5,<4.0.0)",
-    "ruff (>=0.15.12,<0.16.0)",
-    "pytest",
-    "tqdm"
+    "tqdm",
+    "email-validator (>=2.3.0,<3.0.0)"
 ]
 
 [project.optional-dependencies]
@@ -64,10 +60,6 @@ dev = [
 ]
 embeddings = [
     "sentence-transformers",
-    "pgvector",
-    "torch",
-    "torchvision",
-    "torchaudio",
 ]
 
 [project.scripts]

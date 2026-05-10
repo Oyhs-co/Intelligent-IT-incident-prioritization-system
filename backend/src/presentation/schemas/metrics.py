@@ -34,7 +34,7 @@ class IncidentMetricsResponse(BaseModel):
     by_status: dict[str, int]
     by_priority: dict[str, int]
     by_category: dict[str, int]
-    avg_age_by_priority: dict[str, float]
+    avg_age_by_priority: dict[str, float] = {}
     resolution_rate_by_priority: dict[str, float]
 
 

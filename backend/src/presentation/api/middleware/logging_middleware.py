@@ -10,7 +10,7 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 
-from src.shared.logging import get_logger, set_trace_id
+from src.shared.logging import get_logger, get_trace_id
 
 logger = get_logger("middleware.logging")
 
@@ -29,8 +29,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         """Procesa el request con logging."""
         start_time = time.time()
 
-        trace_id = request.headers.get("X-Trace-ID", str(uuid4()))
-        set_trace_id(trace_id)
+        trace_id = get_trace_id() or request.headers.get("X-Trace-ID", str(uuid4()))
 
         request_id = request.headers.get("X-Request-ID", str(uuid4()))
 
