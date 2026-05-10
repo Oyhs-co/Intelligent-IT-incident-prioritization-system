@@ -19,17 +19,17 @@ class ApiClient {
           'user_id': 1,
           'category': 'hardware',
         }),
-      );
+      ).timeout(const Duration(seconds: 3));
 
       if (respuesta.statusCode == 200 || respuesta.statusCode == 201) {
-        debugPrint('¡Ticket enviado con éxito al servidor!');
+        debugPrint('ticket enviado con exito al servidor!');
         return true;
       } else {
-        debugPrint('Error del servidor: ${respuesta.statusCode}');
+        debugPrint('error del servidor: ${respuesta.statusCode}');
         return false;
       }
     } catch (e) {
-      debugPrint('Fallo la conexion: $e');
+      debugPrint('fallo la conexion o tiempo agotado: $e');
       return false;
     }
   }

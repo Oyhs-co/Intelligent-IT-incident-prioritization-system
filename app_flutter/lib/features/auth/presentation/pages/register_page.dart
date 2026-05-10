@@ -44,7 +44,6 @@ class _RegisterPageState extends State<RegisterPage> {
     final lastName = _lastNameController.text.trim();
     final department = _departmentController.text.trim();
 
-    // Validaciones básicas
     if (email.isEmpty || username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Email, usuario y contraseña son requeridos')),
@@ -56,7 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
-      // Ajusta la URL a la ruta de registro de tu API
+      
       final url = Uri.parse('http://10.0.2.2:8000/api/v1/users/register'); 
       final response = await http.post(
         url,
@@ -81,7 +80,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         );
 
-        // Auto-login para obtener el JWT
+       
         final loginUrl = Uri.parse('http://10.0.2.2:8000/api/v1/auth/login');
         final loginResponse = await http.post(
           loginUrl,
@@ -94,7 +93,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
         if (!mounted) return;
 
-        // Puedes guardar los tokens si la petición es exitosa. Por ahora enviamos a login.
+      
         if (loginResponse.statusCode == 200) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const LoginPage()),

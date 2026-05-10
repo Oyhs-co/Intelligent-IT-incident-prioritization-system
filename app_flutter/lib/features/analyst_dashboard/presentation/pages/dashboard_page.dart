@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/client_portal/models/providers/client_portal_providers.dart';
-import '../../../auth/presentation/pages/login_page.dart';
+import '../../../../features/client_portal/models/incident.dart';
+import '../../../../core/presentation/widgets/modern_sidebar.dart';
+import 'incident_review_page.dart';
 
 class AnalystDashboardPage extends ConsumerStatefulWidget {
   const AnalystDashboardPage({super.key});
   @override
-  ConsumerState<AnalystDashboardPage> createState() =>
-      _AnalystDashboardPageState();
+  ConsumerState<AnalystDashboardPage> createState() => _AnalystDashboardPageState();
 }
 
 class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
@@ -15,132 +16,172 @@ class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
   @override
   Widget build(BuildContext context) {
     final listaCompleta = ref.watch(incidentProvider);
+    final filtroGlobal = ref.watch(analystFilterProvider);
+    
     final listaFiltrada = listaCompleta.where((ticket) {
-      final tituloCoincide = ticket.title.toLowerCase().contains(
-        filtroBusqueda.toLowerCase(),
-      );
-      final idCoincide = ticket.id.toLowerCase().contains(
-        filtroBusqueda.toLowerCase(),
-      );
-      return tituloCoincide || idCoincide;
+      final tituloCoincide = ticket.title.toLowerCase().contains(filtroBusqueda.toLowerCase());
+      final idCoincide = ticket.id.toLowerCase().contains(filtroBusqueda.toLowerCase());
+      final prioridadCoincide = filtroGlobal == 'Todas' || ticket.aiPriority.toLowerCase() == filtroGlobal.toLowerCase();
+      
+      return (tituloCoincide || idCoincide) && prioridadCoincide;
     }).toList();
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF1F5F9),
+      drawer: const ModernSidebar(role: UserRole.analyst),
       appBar: AppBar(
-        title: const Text('Panel de Analista IT - SIPIIT'),
-        backgroundColor: Colors.indigo,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            tooltip: 'Cerrar sesion',
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const LoginPage()),
-                (route) => false,
-              );
-            },
+        elevation: 0,
+        backgroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.black87),
+        title: Text(
+          'Triage de Incidentes${filtroGlobal != "Todas" ? " ($filtroGlobal)" : ""}',
+          style: const TextStyle(
+            color: Color(0xFF111827),
+            fontWeight: FontWeight.w800,
+            fontSize: 22,
+            letterSpacing: -0.5,
           ),
-        ],
+        ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Bandeja de Entrada',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                Chip(label: Text('${listaFiltrada.length} Resultados')),
-              ],
-            ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 24),
             TextField(
               decoration: InputDecoration(
-                hintText: 'Buscar por ID o palabra clave...',
-                prefixIcon: const Icon(Icons.search),
+                hintText: 'Buscar por ID o título...',
+                prefixIcon: const Icon(Icons.search, color: Color(0xFF6B7280)),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(vertical: 16),
               ),
-              onChanged: (valor) {
-                setState(() {
-                  filtroBusqueda = valor;
-                });
-              },
+              onChanged: (valor) => setState(() => filtroBusqueda = valor),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 24),
+            Text(
+              'Bandeja de Entrada (${listaFiltrada.length})',
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF6B7280)),
+            ),
+            const SizedBox(height: 12),
             Expanded(
               child: listaFiltrada.isEmpty
-                  ? const Center(child: Text('No se encontraron incidentes.'))
+                  ? const Center(child: Text('No hay incidentes.', style: TextStyle(color: Colors.black54)))
                   : ListView.builder(
+                      physics: const BouncingScrollPhysics(),
                       itemCount: listaFiltrada.length,
                       itemBuilder: (context, index) {
                         final ticket = listaFiltrada[index];
-                        return Card(
-                          elevation: 2,
-                          margin: const EdgeInsets.symmetric(vertical: 8),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.all(12),
-                            title: Text(
-                              '${ticket.id}: ${ticket.title}',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                ticket.description,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text(
-                                  'Prioridad IA',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.indigo.withAlpha(25),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.indigo),
-                                  ),
-                                  child: const Text(
-                                    'Pendiente',
-                                    style: TextStyle(
-                                      color: Colors.indigo,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            onTap: () {},
-                          ),
-                        );
+                        return _AnalystTicketCard(ticket: ticket);
                       },
                     ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _AnalystTicketCard extends StatelessWidget {
+  final Incident ticket;
+  const _AnalystTicketCard({required this.ticket});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6)),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => IncidentReviewPage(ticket: ticket)),
+          );
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    ticket.id,
+                    style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.5),
+                  ),
+                  _buildPriorityChip(ticket.aiPriority),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                ticket.title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF111827), letterSpacing: -0.3),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                ticket.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5),
+              ),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                child: Divider(height: 1, color: Color(0xFFF3F4F6)),
+              ),
+              Row(
+                children: [
+                  const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF2563EB)),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Sugerencia IA: ${ticket.aiSuggestedArea}',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2563EB)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityChip(String priority) {
+    Color bgColor;
+    Color textColor;
+    switch (priority) {
+      case 'Alta':
+        bgColor = const Color(0xFFFEE2E2);
+        textColor = const Color(0xFF991B1B);
+        break;
+      case 'Media':
+        bgColor = const Color(0xFFFEF3C7);
+        textColor = const Color(0xFF92400E);
+        break;
+      default:
+        bgColor = const Color(0xFFDEF7EC);
+        textColor = const Color(0xFF03543F);
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(20)),
+      child: Text(
+        priority.toUpperCase(),
+        style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w800),
       ),
     );
   }
