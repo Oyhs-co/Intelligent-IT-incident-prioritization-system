@@ -44,12 +44,12 @@ class IncidentModel(Base):
     priority: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     suggested_priority: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ai_model_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    ai_processed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    ai_processed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     urgency: Mapped[int] = mapped_column(Integer, default=3)
     impact: Mapped[int] = mapped_column(Integer, default=3)
     confidence_score: Mapped[float | None] = mapped_column(Float, nullable=True)
     explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
-    sla_deadline: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    sla_deadline: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     resolution: Mapped[str | None] = mapped_column(Text, nullable=True)
     resolution_code: Mapped[str | None] = mapped_column(String(50), nullable=True)
     source: Mapped[str] = mapped_column(String(20), default="web")
@@ -60,10 +60,10 @@ class IncidentModel(Base):
     resolved_by: Mapped[str | None] = mapped_column(UUID, ForeignKey("users.id"), nullable=True)
     closed_by: Mapped[str | None] = mapped_column(UUID, ForeignKey("users.id"), nullable=True)
     # fix: similar_incidents eliminado — migrado a tabla incident_similarities
-    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    closed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)  # fix: server_default
-    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())  # fix: server_default
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)  # fix: server_default
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())  # fix: server_default
 
     reporter: Mapped[UserModel | None] = relationship(
         "UserModel", foreign_keys=[reporter_id], back_populates="reported_incidents",

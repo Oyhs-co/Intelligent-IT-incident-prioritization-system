@@ -42,15 +42,20 @@ class DeleteIncidentUseCase:
 
         logger.info("Deleting incident", incident_id=str(incident_id))
 
+        # First check the incident exists, then create event (FK constraint requires incident to exist)
+        incident = await self._incident_repo.get_by_id(incident_id)
+        if incident is None:
+            return False
+
+        event = IncidentEvent()
+        event.incident_id = incident_id
+        event.event_type = EventType.DELETED
+        event.user_id = user_id
+        await self._event_repo.create(event)
+
         deleted = await self._incident_repo.delete(incident_id)
 
         if deleted:
-            event = IncidentEvent()
-            event.incident_id = incident_id
-            event.event_type = EventType.DELETED
-            event.user_id = user_id
-            await self._event_repo.create(event)
-
             logger.log_execution_time(
                 "delete_incident",
                 (time.time() - start_time) * 1000,

@@ -112,16 +112,25 @@ class UpdateIncidentUseCase:
                 changes["impact"] = (old, impact)
 
         if resolution is not None:
-            old = incident.resolution
-            incident.resolution = resolution
-            if old != resolution:
-                changes["resolution"] = (old, resolution)
-
-        if resolution_code is not None:
-            old = incident.resolution_code
-            incident.resolution_code = resolution_code
-            if old != resolution_code:
-                changes["resolution_code"] = (old, resolution_code)
+            old_status = incident.status.value if incident.status else None
+            if user_id is not None:
+                incident.resolve(resolution, user_id, resolution_code)
+            else:
+                object.__setattr__(incident, "_resolution", resolution)
+                if resolution_code is not None:
+                    object.__setattr__(incident, "_resolution_code", resolution_code)
+            changes["resolution"] = (incident.resolution, resolution)
+            if resolution_code is not None:
+                changes["resolution_code"] = (None, resolution_code)
+            new_status = incident.status.value
+            if old_status != new_status:
+                changes["status"] = (old_status, new_status)
+        else:
+            if resolution_code is not None:
+                old = incident.resolution_code
+                incident.resolution_code = resolution_code
+                if old != resolution_code:
+                    changes["resolution_code"] = (old, resolution_code)
 
         if tags is not None:
             incident.tags = tags

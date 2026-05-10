@@ -61,7 +61,7 @@ class GetSLAMetricsUseCase:
         from src.domain.value_objects import PriorityLevel
         from src.infrastructure.database.models import IncidentModel
 
-        now = datetime.now(UTC).replace(tzinfo=None)
+        now = datetime.now(UTC)
 
         stmt = select(IncidentModel)
         result = await self._session.execute(stmt)
