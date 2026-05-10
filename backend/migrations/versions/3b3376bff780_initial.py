@@ -1,7 +1,7 @@
 """initial
 
 Revision ID: 3b3376bff780
-Revises: 
+Revises:
 Create Date: 2026-05-07 08:46:33.015860
 
 """
