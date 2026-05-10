@@ -16,17 +16,16 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
   @override
   Widget build(BuildContext context) {
     final tickets = ref.watch(incidentProvider);
-    
-    final int total = tickets.length;
-    final int pendientes = tickets.where((t) => t.status.toLowerCase() == 'pendiente' || t.status.toLowerCase() == 'recibido' || t.status.toLowerCase() == 'enviando...').length;
-    final int resueltos = tickets.where((t) => t.status.toLowerCase() == 'resuelto').length;
-    final int criticos = tickets.where((t) => (t.finalPriority ?? t.aiPriority).toLowerCase() == 'alta' || (t.finalPriority ?? t.aiPriority).toLowerCase() == 'crítica').length;
 
-    // Filter tickets
+    final int total = tickets.length;
+    final int pendientes = tickets.where((t) => ['pendiente', 'recibido', 'enviando...', 'new', 'open'].contains(t.status.toLowerCase())).length;
+    final int resueltos = tickets.where((t) => ['resuelto', 'resolved', 'closed'].contains(t.status.toLowerCase())).length;
+    final int criticos = tickets.where((t) => (t.finalPriority ?? t.priorityLabel ?? '').toLowerCase() == 'alta' || (t.finalPriority ?? t.priorityLabel ?? '').toLowerCase() == 'crítica').length;
+
     final displayedTickets = tickets.where((t) {
-      if (_filter == 'Pendientes') return t.status.toLowerCase() == 'pendiente' || t.status.toLowerCase() == 'recibido' || t.status.toLowerCase() == 'enviando...';
-      if (_filter == 'Resueltos') return t.status.toLowerCase() == 'resuelto';
-      if (_filter == 'Críticos') return (t.finalPriority ?? t.aiPriority).toLowerCase() == 'alta' || (t.finalPriority ?? t.aiPriority).toLowerCase() == 'crítica';
+      if (_filter == 'Pendientes') return ['pendiente', 'recibido', 'enviando...', 'new', 'open'].contains(t.status.toLowerCase());
+      if (_filter == 'Resueltos') return ['resuelto', 'resolved', 'closed'].contains(t.status.toLowerCase());
+      if (_filter == 'Críticos') return (t.finalPriority ?? t.priorityLabel ?? '').toLowerCase() == 'alta' || (t.finalPriority ?? t.priorityLabel ?? '').toLowerCase() == 'crítica';
       return true;
     }).toList();
 
@@ -43,7 +42,6 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // KPIs
             const Text('INDICADORES CLAVE', style: TextStyle(color: Colors.black54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 12),
             GridView.count(
@@ -57,12 +55,10 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
                 _buildKPICard('Total Activos', total.toString(), Icons.confirmation_number, Colors.blue),
                 _buildKPICard('Pendientes', pendientes.toString(), Icons.hourglass_empty, Colors.orange),
                 _buildKPICard('Casos Críticos', criticos.toString(), Icons.warning_rounded, Colors.red),
-                _buildKPICard('Tasa Resolución', total == 0 ? '0%' : '${((resueltos/total)*100).toInt()}%', Icons.task_alt, Colors.green),
+                _buildKPICard('Tasa Resolución', total == 0 ? '0%' : '${((resueltos / total) * 100).toInt()}%', Icons.task_alt, Colors.green),
               ],
             ),
             const SizedBox(height: 32),
-
-            // Filtros Rápidos
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -73,14 +69,12 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
                     selected: _filter == f,
                     selectedColor: const Color(0xFF2563EB),
                     backgroundColor: Colors.white,
-                    onSelected: (val) { if(val) setState(() => _filter = f); },
+                    onSelected: (val) { if (val) setState(() => _filter = f); },
                   ),
                 )).toList(),
               ),
             ),
             const SizedBox(height: 16),
-
-            // Lista de Tickets
             const Text('REGISTRO GENERAL DE TICKETS', style: TextStyle(color: Colors.black54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
             const SizedBox(height: 12),
             displayedTickets.isEmpty
@@ -91,8 +85,9 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
                     itemCount: displayedTickets.length,
                     itemBuilder: (context, index) {
                       final ticket = displayedTickets[index];
-                      final isCritico = (ticket.finalPriority ?? ticket.aiPriority).toLowerCase() == 'alta' || (ticket.finalPriority ?? ticket.aiPriority).toLowerCase() == 'crítica';
-                      
+                      final priorityText = (ticket.finalPriority ?? ticket.priorityLabel ?? '').toLowerCase();
+                      final isCritico = priorityText == 'alta' || priorityText == 'crítica' || priorityText == 'critical';
+
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         elevation: 0,
@@ -102,9 +97,7 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
                         ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
-                          onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => AdminTicketAuditPage(ticket: ticket)));
-                          },
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AdminTicketAuditPage(ticket: ticket))),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
@@ -119,13 +112,13 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('${ticket.id}: ${ticket.title}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF111827)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      Text('${ticket.ticketNumber}: ${ticket.title}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF111827)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                       const SizedBox(height: 4),
                                       Row(
                                         children: [
-                                          Text(ticket.status, style: TextStyle(color: ticket.status.toLowerCase() == 'resuelto' ? Colors.green : Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
+                                          Text(ticket.status, style: TextStyle(color: ['resuelto', 'resolved', 'closed'].contains(ticket.status.toLowerCase()) ? Colors.green : Colors.grey, fontWeight: FontWeight.bold, fontSize: 12)),
                                           const Text(' • ', style: TextStyle(color: Colors.grey)),
-                                          Text(ticket.assignedArea ?? 'Sin asignar', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                                          Text(ticket.category ?? 'Sin asignar', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                         ],
                                       ),
                                     ],

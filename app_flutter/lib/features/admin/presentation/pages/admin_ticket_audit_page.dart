@@ -91,8 +91,8 @@ class AdminTicketAuditPage extends ConsumerWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _AuditMetric(label: 'Prioridad Final', value: ticket.finalPriority ?? ticket.aiPriority, icon: Icons.flag),
-                      _AuditMetric(label: 'Área Asignada', value: ticket.assignedArea ?? 'No asignada', icon: Icons.business),
+                      _AuditMetric(label: 'Prioridad Final', value: ticket.finalPriority ?? ticket.priorityLabel ?? 'Sin definir', icon: Icons.flag),
+                      _AuditMetric(label: 'Área Asignada', value: ticket.category ?? 'No asignada', icon: Icons.business),
                     ],
                   ),
                 ],

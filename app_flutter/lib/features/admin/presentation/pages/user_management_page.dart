@@ -21,7 +21,7 @@ class UserManagementPage extends ConsumerWidget {
               TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Correo electrónico')),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: selectedRole,
+                initialValue: selectedRole,
                 decoration: const InputDecoration(labelText: 'Rol'),
                 items: ['Cliente', 'Analista', 'Técnico', 'Administrador'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
                 onChanged: (val) => setState(() => selectedRole = val!),
@@ -53,7 +53,7 @@ class UserManagementPage extends ConsumerWidget {
         builder: (context, setState) => AlertDialog(
           title: Text('Editar Rol de ${user.name}', style: const TextStyle(fontWeight: FontWeight.bold)),
           content: DropdownButtonFormField<String>(
-            value: selectedRole,
+            initialValue: selectedRole,
             decoration: const InputDecoration(labelText: 'Nuevo Rol'),
             items: ['Cliente', 'Analista', 'Técnico', 'Administrador'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
             onChanged: (val) => setState(() => selectedRole = val!),

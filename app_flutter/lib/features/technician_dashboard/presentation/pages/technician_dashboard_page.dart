@@ -95,7 +95,7 @@ class _TechnicianTicketCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'Prioridad ${ticket.finalPriority ?? ticket.aiPriority}',
+                      'Prioridad ${ticket.finalPriority ?? ticket.priorityLabel ?? "Media"}',
                       style: const TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold, fontSize: 11),
                     ),
                   ),
@@ -112,7 +112,7 @@ class _TechnicianTicketCard extends StatelessWidget {
                   const Icon(Icons.build_circle, size: 16, color: Color(0xFF2563EB)),
                   const SizedBox(width: 6),
                   Text(
-                    ticket.assignedArea ?? 'Área no asignada',
+                    ticket.category ?? 'Área no asignada',
                     style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                 ],

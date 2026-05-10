@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../features/client_portal/models/providers/client_portal_providers.dart';
+import '../../../features/auth/providers/auth_providers.dart';
 import '../../../features/analyst_dashboard/models/providers/analyst_providers.dart';
-import '../../../features/auth/presentation/pages/login_page.dart';
 import '../../../features/client_portal/presentation/pages/client_profile_page.dart';
 import '../../../features/analyst_dashboard/presentation/pages/analyst_settings_page.dart';
 
 enum UserRole { client, analyst, admin, technician }
 
-class ModernSidebar extends StatelessWidget {
+class ModernSidebar extends ConsumerWidget {
   final UserRole role;
 
   const ModernSidebar({super.key, this.role = UserRole.client});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Drawer(
       backgroundColor: Colors.white,
       child: SafeArea(
@@ -32,7 +32,11 @@ class ModernSidebar extends StatelessWidget {
                       color: const Color(0xFF2563EB),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.flash_on, color: Colors.white, size: 20),
+                    child: const Icon(
+                      Icons.flash_on,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Text(
@@ -55,31 +59,78 @@ class ModernSidebar extends StatelessWidget {
                   if (role == UserRole.client) ...[
                     const _ClientFilterExpansion(),
                     const SizedBox(height: 4),
-                    _SidebarItem(icon: Icons.person_outline, title: 'mi perfil / ajustes', isSelected: false, onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const ClientProfilePage()));
-                    }),
+                    _SidebarItem(
+                      icon: Icons.person_outline,
+                      title: 'mi perfil / ajustes',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ClientProfilePage(),
+                          ),
+                        );
+                      },
+                    ),
                   ] else if (role == UserRole.analyst) ...[
                     const _AnalystFilterExpansion(),
                     const SizedBox(height: 4),
-                    _SidebarItem(icon: Icons.manage_accounts_outlined, title: 'configuración de perfil', isSelected: false, onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalystSettingsPage()));
-                    }),
+                    _SidebarItem(
+                      icon: Icons.manage_accounts_outlined,
+                      title: 'configuración de perfil',
+                      onTap: () {
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AnalystSettingsPage(),
+                          ),
+                        );
+                      },
+                    ),
                   ] else if (role == UserRole.admin) ...[
-                    _SidebarItem(icon: Icons.dashboard_outlined, title: 'panel principal', isSelected: true, onTap: () {}),
+                    _SidebarItem(
+                      icon: Icons.dashboard_outlined,
+                      title: 'panel principal',
+                      isSelected: true,
+                      onTap: () {},
+                    ),
                     const SizedBox(height: 4),
-                    _SidebarItem(icon: Icons.people_outline, title: 'gestión de usuarios', isSelected: false, onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Navegando a Usuarios...')));
-                    }),
+                    _SidebarItem(
+                      icon: Icons.people_outline,
+                      title: 'gestión de usuarios',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Navegando a Usuarios...'),
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 4),
-                    _SidebarItem(icon: Icons.analytics_outlined, title: 'reportes y métricas', isSelected: false, onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Navegando a Reportes...')));
-                    }),
+                    _SidebarItem(
+                      icon: Icons.analytics_outlined,
+                      title: 'reportes y métricas',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Navegando a Reportes...'),
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 4),
-                    _SidebarItem(icon: Icons.settings_outlined, title: 'configuraciones', isSelected: false, onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Navegando a Configuraciones...')));
-                    }),
+                    _SidebarItem(
+                      icon: Icons.settings_outlined,
+                      title: 'configuraciones',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Navegando a Configuraciones...'),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ],
               ),
@@ -92,10 +143,7 @@ class ModernSidebar extends StatelessWidget {
                 title: 'cerrar sesion',
                 color: const Color(0xFFF87171),
                 onTap: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                    (route) => false,
-                  );
+                  ref.read(authProvider.notifier).logout();
                 },
               ),
             ),
@@ -130,10 +178,12 @@ class _SidebarItemState extends State<_SidebarItem> {
 
   @override
   Widget build(BuildContext context) {
-    final defaultColor = widget.isSelected ? const Color(0xFF2563EB) : const Color(0xFF6B7280);
+    final defaultColor = widget.isSelected
+        ? const Color(0xFF2563EB)
+        : const Color(0xFF6B7280);
     final color = widget.color ?? defaultColor;
-    final bgColor = widget.isSelected 
-        ? const Color(0xFFEFF6FF) 
+    final bgColor = widget.isSelected
+        ? const Color(0xFFEFF6FF)
         : (_isHovered ? const Color(0xFFF3F4F6) : Colors.transparent);
 
     return MouseRegion(
@@ -158,7 +208,9 @@ class _SidebarItemState extends State<_SidebarItem> {
                 style: TextStyle(
                   color: color,
                   fontSize: 14,
-                  fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w500,
+                  fontWeight: widget.isSelected
+                      ? FontWeight.w600
+                      : FontWeight.w500,
                 ),
               ),
             ],
@@ -172,10 +224,12 @@ class _SidebarItemState extends State<_SidebarItem> {
 class _ClientFilterExpansion extends ConsumerStatefulWidget {
   const _ClientFilterExpansion();
   @override
-  ConsumerState<_ClientFilterExpansion> createState() => _ClientFilterExpansionState();
+  ConsumerState<_ClientFilterExpansion> createState() =>
+      _ClientFilterExpansionState();
 }
 
-class _ClientFilterExpansionState extends ConsumerState<_ClientFilterExpansion> {
+class _ClientFilterExpansionState
+    extends ConsumerState<_ClientFilterExpansion> {
   bool _isExpanded = false;
 
   @override
@@ -188,11 +242,7 @@ class _ClientFilterExpansionState extends ConsumerState<_ClientFilterExpansion> 
           icon: Icons.confirmation_number_outlined,
           title: 'mis incidentes',
           isSelected: _isExpanded || currentFilter != 'Todos',
-          onTap: () {
-            setState(() {
-              _isExpanded = !_isExpanded;
-            });
-          },
+          onTap: () => setState(() => _isExpanded = !_isExpanded),
         ),
         AnimatedCrossFade(
           firstChild: const SizedBox(height: 0, width: double.infinity),
@@ -200,14 +250,50 @@ class _ClientFilterExpansionState extends ConsumerState<_ClientFilterExpansion> 
             padding: const EdgeInsets.only(left: 32, top: 4),
             child: Column(
               children: [
-                _SubItem(title: 'Todos', isSelected: currentFilter == 'Todos', onTap: () { ref.read(clientFilterProvider.notifier).setFilter('Todos'); Navigator.pop(context); }),
-                _SubItem(title: 'Pendiente', isSelected: currentFilter == 'Pendiente', onTap: () { ref.read(clientFilterProvider.notifier).setFilter('Pendiente'); Navigator.pop(context); }),
-                _SubItem(title: 'En progreso', isSelected: currentFilter == 'En progreso', onTap: () { ref.read(clientFilterProvider.notifier).setFilter('En progreso'); Navigator.pop(context); }),
-                _SubItem(title: 'Resuelto', isSelected: currentFilter == 'Resuelto', onTap: () { ref.read(clientFilterProvider.notifier).setFilter('Resuelto'); Navigator.pop(context); }),
+                _SubItem(
+                  title: 'Todos',
+                  isSelected: currentFilter == 'Todos',
+                  onTap: () {
+                    ref.read(clientFilterProvider.notifier).setFilter('Todos');
+                    Navigator.pop(context);
+                  },
+                ),
+                _SubItem(
+                  title: 'Pendiente',
+                  isSelected: currentFilter == 'Pendiente',
+                  onTap: () {
+                    ref
+                        .read(clientFilterProvider.notifier)
+                        .setFilter('Pendiente');
+                    Navigator.pop(context);
+                  },
+                ),
+                _SubItem(
+                  title: 'En progreso',
+                  isSelected: currentFilter == 'En progreso',
+                  onTap: () {
+                    ref
+                        .read(clientFilterProvider.notifier)
+                        .setFilter('En progreso');
+                    Navigator.pop(context);
+                  },
+                ),
+                _SubItem(
+                  title: 'Resuelto',
+                  isSelected: currentFilter == 'Resuelto',
+                  onTap: () {
+                    ref
+                        .read(clientFilterProvider.notifier)
+                        .setFilter('Resuelto');
+                    Navigator.pop(context);
+                  },
+                ),
               ],
             ),
           ),
-          crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          crossFadeState: _isExpanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
           duration: const Duration(milliseconds: 200),
         ),
       ],
@@ -218,10 +304,12 @@ class _ClientFilterExpansionState extends ConsumerState<_ClientFilterExpansion> 
 class _AnalystFilterExpansion extends ConsumerStatefulWidget {
   const _AnalystFilterExpansion();
   @override
-  ConsumerState<_AnalystFilterExpansion> createState() => _AnalystFilterExpansionState();
+  ConsumerState<_AnalystFilterExpansion> createState() =>
+      _AnalystFilterExpansionState();
 }
 
-class _AnalystFilterExpansionState extends ConsumerState<_AnalystFilterExpansion> {
+class _AnalystFilterExpansionState
+    extends ConsumerState<_AnalystFilterExpansion> {
   bool _isExpanded = false;
 
   @override
@@ -234,11 +322,7 @@ class _AnalystFilterExpansionState extends ConsumerState<_AnalystFilterExpansion
           icon: Icons.inbox_outlined,
           title: 'bandeja de triage',
           isSelected: _isExpanded || currentFilter != 'Todas',
-          onTap: () {
-            setState(() {
-              _isExpanded = !_isExpanded;
-            });
-          },
+          onTap: () => setState(() => _isExpanded = !_isExpanded),
         ),
         AnimatedCrossFade(
           firstChild: const SizedBox(height: 0, width: double.infinity),
@@ -246,14 +330,44 @@ class _AnalystFilterExpansionState extends ConsumerState<_AnalystFilterExpansion
             padding: const EdgeInsets.only(left: 32, top: 4),
             child: Column(
               children: [
-                _SubItem(title: 'Todas', isSelected: currentFilter == 'Todas', onTap: () { ref.read(analystFilterProvider.notifier).setFilter('Todas'); Navigator.pop(context); }),
-                _SubItem(title: 'Alta Prioridad', isSelected: currentFilter == 'Alta', onTap: () { ref.read(analystFilterProvider.notifier).setFilter('Alta'); Navigator.pop(context); }),
-                _SubItem(title: 'Media Prioridad', isSelected: currentFilter == 'Media', onTap: () { ref.read(analystFilterProvider.notifier).setFilter('Media'); Navigator.pop(context); }),
-                _SubItem(title: 'Baja Prioridad', isSelected: currentFilter == 'Baja', onTap: () { ref.read(analystFilterProvider.notifier).setFilter('Baja'); Navigator.pop(context); }),
+                _SubItem(
+                  title: 'Todas',
+                  isSelected: currentFilter == 'Todas',
+                  onTap: () {
+                    ref.read(analystFilterProvider.notifier).setFilter('Todas');
+                    Navigator.pop(context);
+                  },
+                ),
+                _SubItem(
+                  title: 'Alta Prioridad',
+                  isSelected: currentFilter == 'Alta',
+                  onTap: () {
+                    ref.read(analystFilterProvider.notifier).setFilter('Alta');
+                    Navigator.pop(context);
+                  },
+                ),
+                _SubItem(
+                  title: 'Media Prioridad',
+                  isSelected: currentFilter == 'Media',
+                  onTap: () {
+                    ref.read(analystFilterProvider.notifier).setFilter('Media');
+                    Navigator.pop(context);
+                  },
+                ),
+                _SubItem(
+                  title: 'Baja Prioridad',
+                  isSelected: currentFilter == 'Baja',
+                  onTap: () {
+                    ref.read(analystFilterProvider.notifier).setFilter('Baja');
+                    Navigator.pop(context);
+                  },
+                ),
               ],
             ),
           ),
-          crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          crossFadeState: _isExpanded
+              ? CrossFadeState.showSecond
+              : CrossFadeState.showFirst,
           duration: const Duration(milliseconds: 200),
         ),
       ],
@@ -266,7 +380,11 @@ class _SubItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _SubItem({required this.title, required this.isSelected, required this.onTap});
+  const _SubItem({
+    required this.title,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -283,7 +401,9 @@ class _SubItem extends StatelessWidget {
         child: Text(
           title,
           style: TextStyle(
-            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF6B7280),
+            color: isSelected
+                ? const Color(0xFF2563EB)
+                : const Color(0xFF6B7280),
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             fontSize: 13,
           ),

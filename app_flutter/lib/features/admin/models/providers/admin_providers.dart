@@ -10,7 +10,7 @@ class AppUser {
 
   AppUser copyWith({String? name, String? email, String? role}) {
     return AppUser(
-      id: this.id,
+      id: id,
       name: name ?? this.name,
       email: email ?? this.email,
       role: role ?? this.role,

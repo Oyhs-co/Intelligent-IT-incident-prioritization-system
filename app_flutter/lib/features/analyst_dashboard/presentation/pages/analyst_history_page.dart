@@ -8,7 +8,7 @@ class AnalystHistoryPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tickets = ref.watch(incidentProvider);
-    final resueltos = tickets.where((t) => t.status.toLowerCase() == 'resuelto').toList();
+    final resueltos = tickets.where((t) => t.status.toLowerCase() == 'resolved' || t.status.toLowerCase() == 'closed').toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF1F5F9),
@@ -38,9 +38,9 @@ class AnalystHistoryPage extends ConsumerWidget {
                       backgroundColor: Color(0xFFDEF7EC),
                       child: Icon(Icons.check_circle, color: Color(0xFF03543F)),
                     ),
-                    title: Text('${ticket.id}: ${ticket.title}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Resolución: ${ticket.finalResolution ?? "Sin detalles"}'),
-                    trailing: Text(ticket.aiPriority, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                    title: Text('${ticket.ticketNumber}: ${ticket.title}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text('Resolución: ${ticket.explanation ?? "Sin detalles"}'),
+                    trailing: Text(ticket.priorityLabel ?? 'N/A', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                   ),
                 );
               },

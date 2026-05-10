@@ -14,17 +14,24 @@ class AnalystDashboardPage extends ConsumerStatefulWidget {
 
 class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
   String filtroBusqueda = '';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(incidentProvider.notifier).fetchIncidents();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final listaCompleta = ref.watch(incidentProvider);
     final filtroGlobal = ref.watch(analystFilterProvider);
-    
+
     final listaFiltrada = listaCompleta.where((ticket) {
       final tituloCoincide = ticket.title.toLowerCase().contains(filtroBusqueda.toLowerCase());
-      final idCoincide = ticket.id.toLowerCase().contains(filtroBusqueda.toLowerCase());
-      final currentPriority = ticket.finalPriority ?? ticket.aiPriority;
-      final prioridadCoincide = filtroGlobal == 'Todas' || currentPriority.toLowerCase() == filtroGlobal.toLowerCase();
-      
+      final idCoincide = ticket.ticketNumber.toLowerCase().contains(filtroBusqueda.toLowerCase());
+      final prioridadCoincide = filtroGlobal == 'Todas' || _matchPriority(ticket, filtroGlobal);
       return (tituloCoincide || idCoincide) && prioridadCoincide;
     }).toList();
 
@@ -37,12 +44,7 @@ class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
         iconTheme: const IconThemeData(color: Colors.black87),
         title: Text(
           'Triage de Incidentes${filtroGlobal != "Todas" ? " ($filtroGlobal)" : ""}',
-          style: const TextStyle(
-            color: Color(0xFF111827),
-            fontWeight: FontWeight.w800,
-            fontSize: 22,
-            letterSpacing: -0.5,
-          ),
+          style: const TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -0.5),
         ),
       ),
       body: Padding(
@@ -55,10 +57,7 @@ class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
               decoration: InputDecoration(
                 hintText: 'Buscar por ID o título...',
                 prefixIcon: const Icon(Icons.search, color: Color(0xFF6B7280)),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                 filled: true,
                 fillColor: Colors.white,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -74,19 +73,36 @@ class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
             Expanded(
               child: listaFiltrada.isEmpty
                   ? const Center(child: Text('No hay incidentes.', style: TextStyle(color: Colors.black54)))
-                  : ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: listaFiltrada.length,
-                      itemBuilder: (context, index) {
-                        final ticket = listaFiltrada[index];
-                        return _AnalystTicketCard(ticket: ticket);
-                      },
+                  : RefreshIndicator(
+                      onRefresh: () => ref.read(incidentProvider.notifier).fetchIncidents(),
+                      child: ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                        itemCount: listaFiltrada.length,
+                        itemBuilder: (context, index) {
+                          final ticket = listaFiltrada[index];
+                          return _AnalystTicketCard(ticket: ticket);
+                        },
+                      ),
                     ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  bool _matchPriority(Incident ticket, String filter) {
+    final label = (ticket.finalPriority ?? ticket.priorityLabel ?? '').toLowerCase();
+    switch (filter.toLowerCase()) {
+      case 'alta':
+        return label == 'critical' || label == 'high' || label == 'alta' || label == 'crítica';
+      case 'media':
+        return label == 'medium' || label == 'media';
+      case 'baja':
+        return label == 'low' || label == 'baja';
+      default:
+        return true;
+    }
   }
 }
 
@@ -102,18 +118,11 @@ class _AnalystTicketCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6)),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6))],
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => IncidentReviewPage(ticket: ticket)),
-          );
-        },
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => IncidentReviewPage(ticket: ticket))),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
           child: Column(
@@ -122,37 +131,22 @@ class _AnalystTicketCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    ticket.id,
-                    style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.5),
-                  ),
-                  _buildPriorityChip(ticket.finalPriority ?? ticket.aiPriority),
+                  Text(ticket.ticketNumber, style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.5)),
+                  _buildPriorityChip(ticket.finalPriority ?? ticket.priorityLabel ?? ''),
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
-                ticket.title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF111827), letterSpacing: -0.3),
-              ),
+              Text(ticket.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF111827), letterSpacing: -0.3)),
               const SizedBox(height: 8),
-              Text(
-                ticket.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5),
-              ),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16.0),
-                child: Divider(height: 1, color: Color(0xFFF3F4F6)),
-              ),
+              Text(ticket.description, maxLines: 2, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5)),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 16.0), child: Divider(height: 1, color: Color(0xFFF3F4F6))),
               Row(
                 children: [
                   const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF2563EB)),
                   const SizedBox(width: 8),
-                  Text(
-                    'Sugerencia IA: ${ticket.aiSuggestedArea}',
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2563EB)),
-                  ),
+                  Text('Sugerencia IA: ${ticket.category ?? "Sin categoría"}',
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2563EB))),
                 ],
               ),
             ],
@@ -162,15 +156,19 @@ class _AnalystTicketCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPriorityChip(String priority) {
+  Widget _buildPriorityChip(String label) {
     Color bgColor;
     Color textColor;
-    switch (priority) {
-      case 'Alta':
+    switch (label.toLowerCase()) {
+      case 'critical':
+      case 'high':
+      case 'alta':
+      case 'crítica':
         bgColor = const Color(0xFFFEE2E2);
         textColor = const Color(0xFF991B1B);
         break;
-      case 'Media':
+      case 'medium':
+      case 'media':
         bgColor = const Color(0xFFFEF3C7);
         textColor = const Color(0xFF92400E);
         break;
@@ -181,10 +179,7 @@ class _AnalystTicketCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(20)),
-      child: Text(
-        priority.toUpperCase(),
-        style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w800),
-      ),
+      child: Text(label.toUpperCase(), style: TextStyle(color: textColor, fontSize: 11, fontWeight: FontWeight.w800)),
     );
   }
 }
