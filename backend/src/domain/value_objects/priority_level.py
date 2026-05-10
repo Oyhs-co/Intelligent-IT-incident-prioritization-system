@@ -107,9 +107,8 @@ class IncidentStatus(Enum):
         """Crea un IncidentStatus desde string."""
         try:
             return cls(value.lower().replace("_", "_"))
-        except ValueError:
-            raise ValueError(f"Estado inválido: {value}")
-
+        except ValueError as e:
+            raise ValueError(f"Estado inválido: {value}") from e
 
 class IncidentCategory(Enum):
     """Categorías de incidentes."""

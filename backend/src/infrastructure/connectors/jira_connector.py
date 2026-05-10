@@ -58,7 +58,7 @@ class JiraConnector(BaseTicketConnector):
 
         except aiohttp.ClientError as e:
             logger.error(f"Failed to connect to Jira: {e}")
-            raise TicketConnectionError(f"Jira connection failed: {e}")
+            raise TicketConnectionError(f"Jira connection failed: {e}") from e
 
     async def disconnect(self) -> None:
         """Cierra la conexión."""
@@ -92,7 +92,7 @@ class JiraConnector(BaseTicketConnector):
 
         except aiohttp.ClientError as e:
             logger.error(f"Failed to get Jira ticket: {e}")
-            raise TicketSyncError(f"Failed to get ticket: {e}")
+            raise TicketSyncError(f"Failed to get ticket: {e}") from e
 
     async def list_tickets(
         self,
@@ -126,7 +126,7 @@ class JiraConnector(BaseTicketConnector):
 
         except aiohttp.ClientError as e:
             logger.error(f"Failed to list Jira tickets: {e}")
-            raise TicketSyncError(f"Failed to list tickets: {e}")
+            raise TicketSyncError(f"Failed to list tickets: {e}") from e
 
     async def create_ticket(
         self,
@@ -174,7 +174,7 @@ class JiraConnector(BaseTicketConnector):
 
         except aiohttp.ClientError as e:
             logger.error(f"Failed to create Jira ticket: {e}")
-            raise TicketSyncError(f"Failed to create ticket: {e}")
+            raise TicketSyncError(f"Failed to create ticket: {e}") from e
 
     async def update_ticket(
         self,
@@ -212,7 +212,7 @@ class JiraConnector(BaseTicketConnector):
 
         except aiohttp.ClientError as e:
             logger.error(f"Failed to update Jira ticket: {e}")
-            raise TicketSyncError(f"Failed to update ticket: {e}")
+            raise TicketSyncError(f"Failed to update ticket: {e}") from e
 
     async def sync_ticket(
         self,
@@ -244,7 +244,7 @@ class JiraConnector(BaseTicketConnector):
 
         except Exception as e:
             logger.error(f"Sync failed: {e}")
-            raise TicketSyncError(f"Sync failed: {e}")
+            raise TicketSyncError(f"Sync failed: {e}") from e
 
     def _parse_jira_issue(self, data: dict) -> ExternalTicket:
         """Convierte un issue de Jira a ExternalTicket."""
