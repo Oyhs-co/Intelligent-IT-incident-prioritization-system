@@ -6,6 +6,8 @@ class AuthInputField extends StatefulWidget {
   final bool isPassword;
   final TextEditingController? controller;
   final TextInputType? keyboardType;
+  final String? Function(String?)? validator;
+  final String? hintText;
 
   const AuthInputField({
     super.key,
@@ -14,6 +16,8 @@ class AuthInputField extends StatefulWidget {
     this.isPassword = false,
     this.controller,
     this.keyboardType,
+    this.validator,
+    this.hintText,
   });
 
   @override
@@ -33,36 +37,25 @@ class _AuthInputFieldState extends State<AuthInputField> {
         controller: widget.controller,
         obscureText: widget.isPassword && _obscure,
         keyboardType: widget.keyboardType,
+        validator: widget.validator,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         style: TextStyle(color: cs.onSurface, fontSize: 14),
         decoration: InputDecoration(
           labelText: widget.label,
-          labelStyle: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+          hintText: widget.hintText,
           prefixIcon: Icon(widget.icon, size: 18, color: cs.onSurfaceVariant),
           suffixIcon: widget.isPassword
               ? IconButton(
                   icon: Icon(
-                    _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    _obscure
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                     size: 18,
                     color: cs.onSurfaceVariant,
                   ),
                   onPressed: () => setState(() => _obscure = !_obscure),
                 )
               : null,
-          filled: true,
-          fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.5),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: cs.outlineVariant),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.8)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: cs.primary, width: 1.5),
-          ),
         ),
       ),
     );

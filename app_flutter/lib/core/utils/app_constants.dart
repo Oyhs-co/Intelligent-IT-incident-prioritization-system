@@ -1,5 +1,5 @@
 class AppConstants {
-  static const String baseUrl = 'http://localhost:8000/api/v1';
+  static const String baseUrl = 'http://20.3.13.164:8000/api/v1';
   static const Duration requestTimeout = Duration(seconds: 10);
   static const Duration refreshTimeout = Duration(seconds: 5);
 

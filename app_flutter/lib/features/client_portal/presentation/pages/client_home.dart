@@ -5,6 +5,7 @@ import '../../models/providers/client_portal_providers.dart';
 import 'incident_details.dart';
 import '../../models/incident.dart';
 import '../../../../core/presentation/widgets/modern_sidebar.dart';
+import '../../../../core/utils/app_translations.dart';
 
 class ClientHome extends ConsumerStatefulWidget {
   const ClientHome({super.key});
@@ -53,12 +54,42 @@ class _ClientHomeState extends ConsumerState<ClientHome> {
                   ],
                 ),
               )
-            : ListView.builder(
-                physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
-                padding: const EdgeInsets.only(top: 8, bottom: 80),
-                itemCount: listaDeTickets.length,
-                itemBuilder: (context, index) {
-                  return _ModernTicketCard(ticket: listaDeTickets[index]);
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final width = constraints.maxWidth;
+                  if (width >= 900) {
+                    return GridView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.7,
+                      ),
+                      itemCount: listaDeTickets.length,
+                      itemBuilder: (_, i) => _ModernTicketCard(ticket: listaDeTickets[i]),
+                    );
+                  } else if (width >= 600) {
+                    return GridView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 1.6,
+                      ),
+                      itemCount: listaDeTickets.length,
+                      itemBuilder: (_, i) => _ModernTicketCard(ticket: listaDeTickets[i]),
+                    );
+                  }
+                  return ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                    padding: const EdgeInsets.only(top: 8, bottom: 80),
+                    itemCount: listaDeTickets.length,
+                    itemBuilder: (_, i) => _ModernTicketCard(ticket: listaDeTickets[i]),
+                  );
                 },
               ),
       ),
@@ -130,7 +161,7 @@ class _ModernTicketCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  _buildStatusChip(ticket.status, cs),
+                  StatusChip(status: ticket.status),
                 ],
               ),
               const SizedBox(height: 14),
@@ -150,49 +181,5 @@ class _ModernTicketCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Widget _buildStatusChip(String status, ColorScheme cs) {
-    Color bgColor;
-    Color textColor;
-    switch (status.toLowerCase()) {
-      case 'resolved':
-      case 'closed':
-        bgColor = const Color(0xFFDEF7EC);
-        textColor = const Color(0xFF03543F);
-        break;
-      case 'in_progress':
-      case 'pending':
-        bgColor = const Color(0xFFE1EFFE);
-        textColor = const Color(0xFF1E429F);
-        break;
-      case 'open':
-        bgColor = const Color(0xFFE0E7FF);
-        textColor = const Color(0xFF4338CA);
-        break;
-      default:
-        bgColor = const Color(0xFFFEF3C7);
-        textColor = const Color(0xFF92400E);
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(20)),
-      child: Text(
-        _translateStatus(status),
-        style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-
-  String _translateStatus(String status) {
-    switch (status.toLowerCase()) {
-      case 'new': return 'Nuevo';
-      case 'open': return 'Abierto';
-      case 'in_progress': return 'En Progreso';
-      case 'pending': return 'Pendiente';
-      case 'resolved': return 'Resuelto';
-      case 'closed': return 'Cerrado';
-      default: return status;
-    }
   }
 }

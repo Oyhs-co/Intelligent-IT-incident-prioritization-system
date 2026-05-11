@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../features/client_portal/models/providers/client_portal_providers.dart';
+import '../../../../core/utils/app_translations.dart';
 import 'admin_ticket_audit_page.dart';
 
 class GlobalTicketsPage extends ConsumerStatefulWidget {
@@ -141,19 +142,12 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
                                       const SizedBox(height: 4),
                                       Row(
                                         children: [
+                                          StatusChip(status: ticket.status),
+                                          const SizedBox(width: 6),
+                                          Text('•', style: TextStyle(color: cs.onSurfaceVariant)),
+                                          const SizedBox(width: 6),
                                           Text(
-                                            ticket.status,
-                                            style: TextStyle(
-                                              color: ['resuelto', 'resolved', 'closed'].contains(ticket.status.toLowerCase())
-                                                  ? const Color(0xFF059669)
-                                                  : cs.onSurfaceVariant,
-                                              fontWeight: FontWeight.w600,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                          Text(' • ', style: TextStyle(color: cs.onSurfaceVariant)),
-                                          Text(
-                                            ticket.category ?? 'Sin asignar',
+                                            AppTranslations.category(ticket.category),
                                             style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
                                           ),
                                         ],

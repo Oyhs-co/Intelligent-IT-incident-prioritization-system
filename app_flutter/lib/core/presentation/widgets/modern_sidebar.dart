@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/utils/url_opener.dart';
+import '../../../core/theme/theme_mode_provider.dart';
 import '../../../features/client_portal/models/providers/client_portal_providers.dart';
 import '../../../features/auth/providers/auth_providers.dart';
 import '../../../features/analyst_dashboard/models/providers/analyst_providers.dart';
@@ -52,6 +53,7 @@ class ModernSidebar extends ConsumerWidget {
                 ],
               ),
             ),
+            _ThemeToggleTile(cs: cs),
             _buildLogoutButton(context, ref, cs),
           ],
         ),
@@ -187,6 +189,125 @@ class ModernSidebar extends ConsumerWidget {
         },
       ),
     ];
+  }
+}
+
+// ── Theme Toggle Tile ──────────────────────────────────────────────────────────
+
+class _ThemeToggleTile extends ConsumerWidget {
+  const _ThemeToggleTile({required this.cs});
+  final ColorScheme cs;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    final notifier  = ref.read(themeModeProvider.notifier);
+    final isDark    = themeMode == ThemeMode.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      child: Container(
+        decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Row(
+            children: [
+              Icon(
+                isDark ? Icons.dark_mode_outlined : Icons.light_mode_outlined,
+                size: 18,
+                color: cs.onSurfaceVariant,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isDark ? 'Modo Oscuro' : 'Modo Claro',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: cs.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              // 3-way: light / system / dark
+              Row(
+                children: [
+                  _ThemeBtn(
+                    icon: Icons.light_mode_outlined,
+                    tooltip: 'Claro',
+                    selected: themeMode == ThemeMode.light,
+                    onTap: notifier.setLight,
+                    cs: cs,
+                  ),
+                  const SizedBox(width: 4),
+                  _ThemeBtn(
+                    icon: Icons.brightness_auto_outlined,
+                    tooltip: 'Sistema',
+                    selected: themeMode == ThemeMode.system,
+                    onTap: notifier.setSystem,
+                    cs: cs,
+                  ),
+                  const SizedBox(width: 4),
+                  _ThemeBtn(
+                    icon: Icons.dark_mode_outlined,
+                    tooltip: 'Oscuro',
+                    selected: themeMode == ThemeMode.dark,
+                    onTap: notifier.setDark,
+                    cs: cs,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeBtn extends StatelessWidget {
+  const _ThemeBtn({
+    required this.icon,
+    required this.tooltip,
+    required this.selected,
+    required this.onTap,
+    required this.cs,
+  });
+  final IconData icon;
+  final String tooltip;
+  final bool selected;
+  final VoidCallback onTap;
+  final ColorScheme cs;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: selected ? cs.primaryContainer : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: selected ? cs.primary : Colors.transparent,
+              width: 1.5,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 15,
+            color: selected ? cs.primary : cs.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
   }
 }
 
