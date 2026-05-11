@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 import redis.asyncio as redis
@@ -14,7 +14,7 @@ from src.shared.logging import get_logger
 logger = get_logger("messaging.publisher")
 
 
-class EventChannel(str, Enum):
+class EventChannel(StrEnum):
     """Canales de eventos."""
     INCIDENTS_CREATED = "incidents:created"
     INCIDENTS_UPDATED = "incidents:updated"

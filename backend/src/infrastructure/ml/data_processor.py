@@ -210,7 +210,7 @@ class DataProcessor:
             for tags_str in tags_series:
                 row_tags = set()
                 if tags_str:
-                    row_tags = set(t.strip() for t in str(tags_str).split(",") if t.strip())
+                    row_tags = {t.strip() for t in str(tags_str).split(",") if t.strip()}
                 for t in all_tags:
                     tag_cols[f"tag_{t}"].append(1 if t in row_tags else 0)
 

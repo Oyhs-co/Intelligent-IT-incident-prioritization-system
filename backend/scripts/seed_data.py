@@ -138,10 +138,8 @@ async def seed_incidents(
     user_map: dict[str, UUID],
 ) -> list[UUID]:
     """Crea incidentes con datos realistas y sus eventos. Devuelve lista de IDs."""
-    tech_users = {name: uid for name, uid in user_map.items()}
-    admins = [uid for name, uid in tech_users.items() if name == "admin"]
+    tech_users = dict(user_map.items())
     technicians = [uid for name, uid in tech_users.items() if name in ("jperez", "mlopez", "rredes", "asegura")]
-    analyst_users = [uid for name, uid in tech_users.items() if name in ("analista1", "analista2")]
     reporters = [uid for name, uid in tech_users.items() if name in ("cliente1", "cliente2", "admin")]
     incident_ids = []
     created = 0

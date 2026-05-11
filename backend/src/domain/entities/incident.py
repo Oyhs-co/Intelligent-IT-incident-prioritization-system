@@ -272,16 +272,6 @@ class Incident(BaseEntity):
         return self._resolution_code
 
     @property
-    def resolved_by(self) -> UUID | None:
-        """Obtiene el ID de quien resolvió."""
-        return self._resolved_by
-
-    @property
-    def closed_by(self) -> UUID | None:
-        """Obtiene el ID de quien cerró."""
-        return self._closed_by
-
-    @property
     def age(self) -> timedelta:
         """Obtiene la edad del incidente."""
         return datetime.now(UTC) - self._created_at

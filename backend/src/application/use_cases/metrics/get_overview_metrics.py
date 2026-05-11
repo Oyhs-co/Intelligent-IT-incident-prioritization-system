@@ -124,7 +124,7 @@ class GetOverviewMetricsUseCase:
             if inc.category:
                 category_dist[inc.category] = category_dist.get(inc.category, 0) + 1
 
-        stmt_users = select(UserModel).where(UserModel.is_active == True)
+        stmt_users = select(UserModel).where(UserModel.is_active.is_(True))
         result_users = await self._session.execute(stmt_users)
         users = result_users.scalars().all()
         active_users = len(users)

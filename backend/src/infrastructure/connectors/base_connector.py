@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from src.shared.logging import get_logger
@@ -22,7 +22,7 @@ class TicketSyncError(Exception):
     pass
 
 
-class SyncDirection(str, Enum):
+class SyncDirection(StrEnum):
     """Dirección de sincronización."""
     PULL = "pull"
     PUSH = "push"

@@ -99,7 +99,7 @@ class CommentRepository(ICommentRepository):
         )
 
         if not include_internal:
-            stmt = stmt.where(CommentModel.is_internal.is_(False))          # fix: is_(False) idiomático
+            stmt = stmt.where(CommentModel.is_internal.is_(False)) # fix: is_(False) idiomático
             count_stmt = count_stmt.where(CommentModel.is_internal.is_(False))
 
         stmt = stmt.order_by(CommentModel.created_at.desc()).offset(skip).limit(limit)
