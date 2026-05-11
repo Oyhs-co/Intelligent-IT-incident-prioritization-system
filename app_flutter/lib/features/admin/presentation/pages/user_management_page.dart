@@ -22,46 +22,67 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
 
   String _roleToBackend(String display) {
     switch (display) {
-      case 'Administrador': return 'admin';
-      case 'Analista': return 'analyst';
-      case 'Técnico': return 'technician';
-      default: return 'user';
+      case 'Administrador':
+        return 'admin';
+      case 'Analista':
+        return 'analyst';
+      case 'Técnico':
+        return 'technician';
+      default:
+        return 'user';
     }
   }
 
   String _roleToDisplay(String backend) {
     switch (backend) {
-      case 'admin': return 'Administrador';
-      case 'analyst': return 'Analista';
-      case 'technician': return 'Técnico';
-      default: return 'Cliente';
+      case 'admin':
+        return 'Administrador';
+      case 'analyst':
+        return 'Analista';
+      case 'technician':
+        return 'Técnico';
+      default:
+        return 'Cliente';
     }
   }
 
-
   Color _roleColor(String role) {
     switch (role) {
-      case 'admin':       return const Color(0xFF7C3AED);
-      case 'analyst':     return const Color(0xFF2563EB);
-      case 'technician':  return const Color(0xFF059669);
-      default:            return const Color(0xFFD97706);
+      case 'admin':
+        return const Color(0xFF7C3AED);
+      case 'analyst':
+        return const Color(0xFF2563EB);
+      case 'technician':
+        return const Color(0xFF059669);
+      default:
+        return const Color(0xFFD97706);
     }
   }
 
   IconData _roleIcon(String role) {
     switch (role) {
-      case 'admin':       return Icons.admin_panel_settings_outlined;
-      case 'analyst':     return Icons.analytics_outlined;
-      case 'technician':  return Icons.build_outlined;
-      default:            return Icons.person_outline;
+      case 'admin':
+        return Icons.admin_panel_settings_outlined;
+      case 'analyst':
+        return Icons.analytics_outlined;
+      case 'technician':
+        return Icons.build_outlined;
+      default:
+        return Icons.person_outline;
     }
   }
 
-  InputDecoration _inputDecoration(BuildContext context, String label, {IconData? icon}) {
+  InputDecoration _inputDecoration(
+    BuildContext context,
+    String label, {
+    IconData? icon,
+  }) {
     final cs = Theme.of(context).colorScheme;
     return InputDecoration(
       labelText: label,
-      prefixIcon: icon != null ? Icon(icon, size: 18, color: cs.onSurfaceVariant) : null,
+      prefixIcon: icon != null
+          ? Icon(icon, size: 18, color: cs.onSurfaceVariant)
+          : null,
       filled: true,
       fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.45),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -81,15 +102,13 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
     );
   }
 
-
-
   void _showAddUserDialog() {
-    final nameCtrl       = TextEditingController();
-    final emailCtrl      = TextEditingController();
-    final usernameCtrl   = TextEditingController();
-    final passwordCtrl   = TextEditingController();
+    final nameCtrl = TextEditingController();
+    final emailCtrl = TextEditingController();
+    final usernameCtrl = TextEditingController();
+    final passwordCtrl = TextEditingController();
     final departmentCtrl = TextEditingController();
-    String selectedRole  = 'Cliente';
+    String selectedRole = 'Cliente';
 
     showDialog(
       context: context,
@@ -106,26 +125,39 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
               icon: const Icon(Icons.save_outlined, size: 16),
               label: const Text('Guardar'),
               onPressed: () async {
-                if (nameCtrl.text.isEmpty || emailCtrl.text.isEmpty ||
-                    usernameCtrl.text.isEmpty || passwordCtrl.text.isEmpty) return;
-                final parts     = nameCtrl.text.trim().split(' ');
+                if (nameCtrl.text.isEmpty ||
+                    emailCtrl.text.isEmpty ||
+                    usernameCtrl.text.isEmpty ||
+                    passwordCtrl.text.isEmpty) {
+                  return;
+                }
+                final parts = nameCtrl.text.trim().split(' ');
                 final firstName = parts.isNotEmpty ? parts[0] : '';
-                final lastName  = parts.length > 1 ? parts.sublist(1).join(' ') : '';
-                final notifier  = ref.read(userManagementProvider.notifier);
-                final success   = await notifier.createUser(
-                  email:      emailCtrl.text.trim(),
-                  username:   usernameCtrl.text.trim(),
-                  password:   passwordCtrl.text,
-                  firstName:  firstName,
-                  lastName:   lastName,
-                  department: departmentCtrl.text.trim().isEmpty ? null : departmentCtrl.text.trim(),
+                final lastName = parts.length > 1
+                    ? parts.sublist(1).join(' ')
+                    : '';
+                final notifier = ref.read(userManagementProvider.notifier);
+                final success = await notifier.createUser(
+                  email: emailCtrl.text.trim(),
+                  username: usernameCtrl.text.trim(),
+                  password: passwordCtrl.text,
+                  firstName: firstName,
+                  lastName: lastName,
+                  department: departmentCtrl.text.trim().isEmpty
+                      ? null
+                      : departmentCtrl.text.trim(),
                 );
-                if (ctx.mounted) Navigator.pop(ctx);
+                if (ctx.mounted) {
+                  Navigator.pop(ctx);
+                }
                 if (success) {
-                  final backendRole   = _roleToBackend(selectedRole);
-                  final createdUsers  = ref.read(userManagementProvider).users;
+                  final backendRole = _roleToBackend(selectedRole);
+                  final createdUsers = ref.read(userManagementProvider).users;
                   if (createdUsers.isNotEmpty) {
-                    await notifier.updateUser(id: createdUsers.first.id, role: backendRole);
+                    await notifier.updateUser(
+                      id: createdUsers.first.id,
+                      role: backendRole,
+                    );
                   }
                   notifier.fetchUsers();
                   if (mounted) {
@@ -140,20 +172,60 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nameCtrl,       decoration: _inputDecoration(ctx, 'Nombre completo', icon: Icons.badge_outlined)),
+              TextField(
+                controller: nameCtrl,
+                decoration: _inputDecoration(
+                  ctx,
+                  'Nombre completo',
+                  icon: Icons.badge_outlined,
+                ),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: emailCtrl,      decoration: _inputDecoration(ctx, 'Correo electrónico', icon: Icons.alternate_email)),
+              TextField(
+                controller: emailCtrl,
+                decoration: _inputDecoration(
+                  ctx,
+                  'Correo electrónico',
+                  icon: Icons.alternate_email,
+                ),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: usernameCtrl,   decoration: _inputDecoration(ctx, 'Nombre de usuario', icon: Icons.account_circle_outlined)),
+              TextField(
+                controller: usernameCtrl,
+                decoration: _inputDecoration(
+                  ctx,
+                  'Nombre de usuario',
+                  icon: Icons.account_circle_outlined,
+                ),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: passwordCtrl,   decoration: _inputDecoration(ctx, 'Contraseña', icon: Icons.lock_outline), obscureText: true),
+              TextField(
+                controller: passwordCtrl,
+                decoration: _inputDecoration(
+                  ctx,
+                  'Contraseña',
+                  icon: Icons.lock_outline,
+                ),
+                obscureText: true,
+              ),
               const SizedBox(height: 12),
-              TextField(controller: departmentCtrl, decoration: _inputDecoration(ctx, 'Departamento (opcional)', icon: Icons.corporate_fare_outlined)),
+              TextField(
+                controller: departmentCtrl,
+                decoration: _inputDecoration(
+                  ctx,
+                  'Departamento (opcional)',
+                  icon: Icons.corporate_fare_outlined,
+                ),
+              ),
               const SizedBox(height: 12),
               _RoleDropdown(
                 value: selectedRole,
                 roles: _roles,
-                decoration: _inputDecoration(ctx, 'Rol', icon: Icons.shield_outlined),
+                decoration: _inputDecoration(
+                  ctx,
+                  'Rol',
+                  icon: Icons.shield_outlined,
+                ),
                 onChanged: (val) => setDialogState(() => selectedRole = val!),
               ),
             ],
@@ -164,12 +236,12 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
   }
 
   void _showEditUserDialog(AppUser user) {
-    final firstNameCtrl  = TextEditingController(text: user.firstName);
-    final lastNameCtrl   = TextEditingController(text: user.lastName);
-    final emailCtrl      = TextEditingController(text: user.email);
+    final firstNameCtrl = TextEditingController(text: user.firstName);
+    final lastNameCtrl = TextEditingController(text: user.lastName);
+    final emailCtrl = TextEditingController(text: user.email);
     final departmentCtrl = TextEditingController(text: user.department ?? '');
-    String selectedRole  = _roleToDisplay(user.role);
-    bool   isActive      = user.isActive;
+    String selectedRole = _roleToDisplay(user.role);
+    bool isActive = user.isActive;
 
     showDialog(
       context: context,
@@ -187,18 +259,26 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
               icon: const Icon(Icons.save_outlined, size: 16),
               label: const Text('Guardar Cambios'),
               onPressed: () async {
-                final success = await ref.read(userManagementProvider.notifier).updateUser(
-                  id:         user.id,
-                  email:      emailCtrl.text.trim(),
-                  firstName:  firstNameCtrl.text.trim(),
-                  lastName:   lastNameCtrl.text.trim(),
-                  department: departmentCtrl.text.trim().isEmpty ? null : departmentCtrl.text.trim(),
-                  role:       _roleToBackend(selectedRole),
-                  isActive:   isActive,
-                );
-                if (ctx.mounted) Navigator.pop(ctx);
+                final success = await ref
+                    .read(userManagementProvider.notifier)
+                    .updateUser(
+                      id: user.id,
+                      email: emailCtrl.text.trim(),
+                      firstName: firstNameCtrl.text.trim(),
+                      lastName: lastNameCtrl.text.trim(),
+                      department: departmentCtrl.text.trim().isEmpty
+                          ? null
+                          : departmentCtrl.text.trim(),
+                      role: _roleToBackend(selectedRole),
+                      isActive: isActive,
+                    );
+                if (ctx.mounted) {
+                  Navigator.pop(ctx);
+                }
                 if (success) {
-                  if (mounted) _showSnack('Usuario actualizado', isError: false);
+                  if (mounted) {
+                    _showSnack('Usuario actualizado', isError: false);
+                  }
                 } else if (mounted) {
                   _showSnack('Error al actualizar', isError: true);
                 }
@@ -210,20 +290,52 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
             children: [
               Row(
                 children: [
-                  Expanded(child: TextField(controller: firstNameCtrl, decoration: _inputDecoration(ctx, 'Nombre', icon: Icons.badge_outlined))),
+                  Expanded(
+                    child: TextField(
+                      controller: firstNameCtrl,
+                      decoration: _inputDecoration(
+                        ctx,
+                        'Nombre',
+                        icon: Icons.badge_outlined,
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: TextField(controller: lastNameCtrl,  decoration: _inputDecoration(ctx, 'Apellido'))),
+                  Expanded(
+                    child: TextField(
+                      controller: lastNameCtrl,
+                      decoration: _inputDecoration(ctx, 'Apellido'),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
-              TextField(controller: emailCtrl,      decoration: _inputDecoration(ctx, 'Correo electrónico', icon: Icons.alternate_email)),
+              TextField(
+                controller: emailCtrl,
+                decoration: _inputDecoration(
+                  ctx,
+                  'Correo electrónico',
+                  icon: Icons.alternate_email,
+                ),
+              ),
               const SizedBox(height: 12),
-              TextField(controller: departmentCtrl, decoration: _inputDecoration(ctx, 'Departamento', icon: Icons.corporate_fare_outlined)),
+              TextField(
+                controller: departmentCtrl,
+                decoration: _inputDecoration(
+                  ctx,
+                  'Departamento',
+                  icon: Icons.corporate_fare_outlined,
+                ),
+              ),
               const SizedBox(height: 12),
               _RoleDropdown(
                 value: selectedRole,
                 roles: _roles,
-                decoration: _inputDecoration(ctx, 'Rol', icon: Icons.shield_outlined),
+                decoration: _inputDecoration(
+                  ctx,
+                  'Rol',
+                  icon: Icons.shield_outlined,
+                ),
                 onChanged: (val) => setDialogState(() => selectedRole = val!),
               ),
               const SizedBox(height: 4),
@@ -244,7 +356,9 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
       builder: (ctx) {
         final cs = Theme.of(ctx).colorScheme;
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
           title: Row(
             children: [
@@ -254,36 +368,67 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
                   color: cs.errorContainer,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(Icons.delete_outline, color: cs.onErrorContainer, size: 20),
+                child: Icon(
+                  Icons.delete_outline,
+                  color: cs.onErrorContainer,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
-              const Text('Eliminar Usuario', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+              const Text(
+                'Eliminar Usuario',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+              ),
             ],
           ),
           content: RichText(
             text: TextSpan(
-              style: TextStyle(color: cs.onSurfaceVariant, height: 1.5, fontSize: 14),
+              style: TextStyle(
+                color: cs.onSurfaceVariant,
+                height: 1.5,
+                fontSize: 14,
+              ),
               children: [
                 const TextSpan(text: '¿Confirmas eliminar a '),
-                TextSpan(text: user.shortName, style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600)),
+                TextSpan(
+                  text: user.shortName,
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const TextSpan(text: ' ('),
-                TextSpan(text: user.email, style: TextStyle(color: cs.primary)),
+                TextSpan(
+                  text: user.email,
+                  style: TextStyle(color: cs.primary),
+                ),
                 const TextSpan(text: ')?\nEsta acción no se puede deshacer.'),
               ],
             ),
           ),
           actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
             FilledButton.icon(
               icon: const Icon(Icons.delete_outline, size: 16),
               label: const Text('Eliminar'),
-              style: FilledButton.styleFrom(backgroundColor: cs.error, foregroundColor: cs.onError),
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.error,
+                foregroundColor: cs.onError,
+              ),
               onPressed: () async {
                 Navigator.pop(ctx);
-                final success = await ref.read(userManagementProvider.notifier).deleteUser(user.id);
+                final success = await ref
+                    .read(userManagementProvider.notifier)
+                    .deleteUser(user.id);
                 if (success && mounted) {
-                  _showSnack('Usuario ${user.shortName} eliminado', isError: false);
+                  _showSnack(
+                    'Usuario ${user.shortName} eliminado',
+                    isError: false,
+                  );
                 } else if (mounted) {
                   _showSnack('Error al eliminar', isError: true);
                 }
@@ -301,8 +446,11 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
       SnackBar(
         content: Row(
           children: [
-            Icon(isError ? Icons.error_outline : Icons.check_circle_outline,
-                color: isError ? cs.onError : cs.onPrimary, size: 18),
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: isError ? cs.onError : cs.onPrimary,
+              size: 18,
+            ),
             const SizedBox(width: 10),
             Expanded(child: Text(msg)),
           ],
@@ -315,12 +463,10 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
     );
   }
 
-  
-
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(userManagementProvider);
-    final cs    = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       backgroundColor: cs.surfaceContainerLowest,
@@ -330,7 +476,11 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, thickness: 1, color: cs.outlineVariant.withValues(alpha: 0.5)),
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: cs.outlineVariant.withValues(alpha: 0.5),
+          ),
         ),
         title: Row(
           children: [
@@ -340,7 +490,11 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
                 color: cs.primaryContainer,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.manage_accounts_outlined, size: 18, color: cs.onPrimaryContainer),
+              child: Icon(
+                Icons.manage_accounts_outlined,
+                size: 18,
+                color: cs.onPrimaryContainer,
+              ),
             ),
             const SizedBox(width: 10),
             Text(
@@ -358,13 +512,20 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
           if (state.isLoading)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: SizedBox(width: 18, height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: cs.primary,
+                ),
+              ),
             ),
           IconButton(
             tooltip: 'Actualizar lista',
             icon: Icon(Icons.refresh_outlined, color: cs.onSurfaceVariant),
-            onPressed: () => ref.read(userManagementProvider.notifier).fetchUsers(),
+            onPressed: () =>
+                ref.read(userManagementProvider.notifier).fetchUsers(),
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8),
@@ -373,9 +534,17 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
               label: const Text('Nuevo'),
               onPressed: _showAddUserDialog,
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ),
@@ -395,7 +564,10 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
           children: [
             CircularProgressIndicator(color: cs.primary),
             const SizedBox(height: 16),
-            Text('Cargando usuarios…', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+            Text(
+              'Cargando usuarios…',
+              style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+            ),
           ],
         ),
       );
@@ -414,19 +586,33 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
                   color: cs.errorContainer,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.cloud_off_outlined, size: 36, color: cs.onErrorContainer),
+                child: Icon(
+                  Icons.cloud_off_outlined,
+                  size: 36,
+                  color: cs.onErrorContainer,
+                ),
               ),
               const SizedBox(height: 20),
-              Text('Error al cargar usuarios',
-                  style: TextStyle(color: cs.onSurface, fontWeight: FontWeight.w600, fontSize: 15)),
+              Text(
+                'Error al cargar usuarios',
+                style: TextStyle(
+                  color: cs.onSurface,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
               const SizedBox(height: 6),
-              Text(state.error!, textAlign: TextAlign.center,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+              Text(
+                state.error!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+              ),
               const SizedBox(height: 24),
               FilledButton.icon(
                 icon: const Icon(Icons.refresh_outlined, size: 16),
                 label: const Text('Reintentar'),
-                onPressed: () => ref.read(userManagementProvider.notifier).fetchUsers(),
+                onPressed: () =>
+                    ref.read(userManagementProvider.notifier).fetchUsers(),
               ),
             ],
           ),
@@ -441,8 +627,14 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
           children: [
             Icon(Icons.people_outline, size: 56, color: cs.outlineVariant),
             const SizedBox(height: 16),
-            Text('Sin usuarios registrados',
-                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 14, fontWeight: FontWeight.w500)),
+            Text(
+              'Sin usuarios registrados',
+              style: TextStyle(
+                color: cs.onSurfaceVariant,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ],
         ),
       );
@@ -458,14 +650,13 @@ class _UserManagementPageState extends ConsumerState<UserManagementPage> {
           user: state.users[index],
           roleColor: _roleColor(state.users[index].role),
           roleIcon: _roleIcon(state.users[index].role),
-          onEdit:   () => _showEditUserDialog(state.users[index]),
+          onEdit: () => _showEditUserDialog(state.users[index]),
           onDelete: () => _confirmDelete(state.users[index]),
         ),
       ),
     );
   }
 }
-
 
 class _UserCard extends StatelessWidget {
   const _UserCard({
@@ -476,15 +667,15 @@ class _UserCard extends StatelessWidget {
     required this.onDelete,
   });
 
-  final AppUser  user;
-  final Color    roleColor;
+  final AppUser user;
+  final Color roleColor;
   final IconData roleIcon;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final cs      = Theme.of(context).colorScheme;
+    final cs = Theme.of(context).colorScheme;
     final isActive = user.isActive;
 
     return Container(
@@ -550,14 +741,24 @@ class _UserCard extends StatelessWidget {
                     style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (user.department != null && user.department!.isNotEmpty) ...[
+                  if (user.department != null &&
+                      user.department!.isNotEmpty) ...[
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Icon(Icons.corporate_fare_outlined, size: 11, color: cs.outlineVariant),
+                        Icon(
+                          Icons.corporate_fare_outlined,
+                          size: 11,
+                          color: cs.outlineVariant,
+                        ),
                         const SizedBox(width: 3),
-                        Text(user.department!,
-                            style: TextStyle(color: cs.outlineVariant, fontSize: 11)),
+                        Text(
+                          user.department!,
+                          style: TextStyle(
+                            color: cs.outlineVariant,
+                            fontSize: 11,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -567,8 +768,14 @@ class _UserCard extends StatelessWidget {
                       children: [
                         Icon(Icons.block_outlined, size: 11, color: cs.error),
                         const SizedBox(width: 3),
-                        Text('Cuenta inactiva',
-                            style: TextStyle(color: cs.error, fontSize: 11, fontWeight: FontWeight.w600)),
+                        Text(
+                          'Cuenta inactiva',
+                          style: TextStyle(
+                            color: cs.error,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -578,7 +785,9 @@ class _UserCard extends StatelessWidget {
             // Actions
             PopupMenuButton<String>(
               icon: Icon(Icons.more_vert, color: cs.onSurfaceVariant, size: 20),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
               elevation: 4,
               itemBuilder: (_) => [
                 PopupMenuItem(
@@ -597,14 +806,21 @@ class _UserCard extends StatelessWidget {
                     children: [
                       Icon(Icons.delete_outline, size: 16, color: cs.error),
                       const SizedBox(width: 10),
-                      Text('Eliminar Cuenta', style: TextStyle(color: cs.error)),
+                      Text(
+                        'Eliminar Cuenta',
+                        style: TextStyle(color: cs.error),
+                      ),
                     ],
                   ),
                 ),
               ],
               onSelected: (val) {
-                if (val == 'edit')   onEdit();
-                if (val == 'delete') onDelete();
+                if (val == 'edit') {
+                  onEdit();
+                }
+                if (val == 'delete') {
+                  onDelete();
+                }
               },
             ),
           ],
@@ -617,7 +833,7 @@ class _UserCard extends StatelessWidget {
 class _RoleChip extends StatelessWidget {
   const _RoleChip({required this.label, required this.color});
   final String label;
-  final Color  color;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -650,11 +866,11 @@ class _StyledDialog extends StatelessWidget {
     this.subtitle,
   });
 
-  final String       title;
-  final IconData     icon;
-  final Widget       child;
+  final String title;
+  final IconData icon;
+  final Widget child;
   final List<Widget> actions;
-  final String?      subtitle;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -684,16 +900,23 @@ class _StyledDialog extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title,
-                          style: TextStyle(
-                            color: cs.onSurface,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                            letterSpacing: -0.3,
-                          )),
+                      Text(
+                        title,
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 16,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
                       if (subtitle != null)
-                        Text(subtitle!,
-                            style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12)),
+                        Text(
+                          subtitle!,
+                          style: TextStyle(
+                            color: cs.onSurfaceVariant,
+                            fontSize: 12,
+                          ),
+                        ),
                     ],
                   ),
                 ],
@@ -704,7 +927,12 @@ class _StyledDialog extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: actions
-                    .map((a) => Padding(padding: const EdgeInsets.only(left: 8), child: a))
+                    .map(
+                      (a) => Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: a,
+                      ),
+                    )
                     .toList(),
               ),
             ],
@@ -723,18 +951,25 @@ class _RoleDropdown extends StatelessWidget {
     required this.onChanged,
   });
 
-  final String           value;
-  final List<String>     roles;
-  final InputDecoration  decoration;
+  final String value;
+  final List<String> roles;
+  final InputDecoration decoration;
   final ValueChanged<String?> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: value,
+      initialValue: value,
       decoration: decoration,
       borderRadius: BorderRadius.circular(12),
-      items: roles.map((r) => DropdownMenuItem(value: r, child: Text(r, style: const TextStyle(fontSize: 14)))).toList(),
+      items: roles
+          .map(
+            (r) => DropdownMenuItem(
+              value: r,
+              child: Text(r, style: const TextStyle(fontSize: 14)),
+            ),
+          )
+          .toList(),
       onChanged: onChanged,
     );
   }
@@ -756,10 +991,18 @@ class _ActiveToggle extends StatelessWidget {
         border: Border.all(color: cs.outlineVariant),
       ),
       child: SwitchListTile(
-        title: Text('Cuenta activa',
-            style: TextStyle(fontSize: 13, color: cs.onSurface, fontWeight: FontWeight.w500)),
-        subtitle: Text(value ? 'El usuario puede iniciar sesión' : 'Acceso suspendido',
-            style: TextStyle(fontSize: 11, color: value ? cs.primary : cs.error)),
+        title: Text(
+          'Cuenta activa',
+          style: TextStyle(
+            fontSize: 13,
+            color: cs.onSurface,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        subtitle: Text(
+          value ? 'El usuario puede iniciar sesión' : 'Acceso suspendido',
+          style: TextStyle(fontSize: 11, color: value ? cs.primary : cs.error),
+        ),
         secondary: Icon(
           value ? Icons.check_circle_outline : Icons.block_outlined,
           color: value ? cs.primary : cs.error,

@@ -31,26 +31,12 @@ final routerProvider = Provider<GoRouter>((ref) {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/login',
     redirect: (context, state) {
-      final isLoggedIn = authState.isAuthenticated;
-      final location = state.matchedLocation;
-      final isLoginRoute = location == '/login';
-      final isRegisterRoute = location == '/register';
-
-      if (!isLoggedIn && !isLoginRoute && !isRegisterRoute) {
-        return '/login';
-      }
-
       final role = authState.user?.role ?? 'user';
-
-      if (isLoggedIn && (isLoginRoute || isRegisterRoute)) {
-        return _getHomeRoute(role);
-      }
-
-      if (isLoggedIn && !_isRouteAllowedForRole(location, role)) {
-        return _getHomeRoute(role);
-      }
-
-      return null;
+      return resolveRedirect(
+        isLoggedIn: authState.isAuthenticated,
+        location: state.matchedLocation,
+        role: role,
+      );
     },
     routes: [
       GoRoute(
@@ -155,6 +141,40 @@ final routerProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+@visibleForTesting
+String? resolveRedirect({
+  required bool isLoggedIn,
+  required String location,
+  required String role,
+}) {
+  final isLoginRoute = location == '/login';
+  final isRegisterRoute = location == '/register';
+
+  if (!isLoggedIn && !isLoginRoute && !isRegisterRoute) {
+    return '/login';
+  }
+
+  if (isLoggedIn && (isLoginRoute || isRegisterRoute)) {
+    return _getHomeRoute(role);
+  }
+
+  if (isLoggedIn && !_isRouteAllowedForRole(location, role)) {
+    return _getHomeRoute(role);
+  }
+
+  return null;
+}
+
+@visibleForTesting
+bool isRouteAllowedForRole(String location, String role) {
+  return _isRouteAllowedForRole(location, role);
+}
+
+@visibleForTesting
+String getHomeRouteForRole(String role) {
+  return _getHomeRoute(role);
+}
 
 bool _isRouteAllowedForRole(String location, String role) {
   if (location == '/login' || location == '/register') return true;
