@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../features/client_portal/models/providers/client_portal_providers.dart';
 import '../../../../core/utils/app_translations.dart';
-import 'admin_ticket_audit_page.dart';
 
 class GlobalTicketsPage extends ConsumerStatefulWidget {
   const GlobalTicketsPage({super.key});
@@ -116,7 +116,7 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
                         ),
                         child: InkWell(
                           borderRadius: BorderRadius.circular(14),
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AdminTicketAuditPage(ticket: ticket))),
+                          onTap: () => context.pushNamed('adminTicketAudit', pathParameters: {'id': ticket.id}, extra: ticket),
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(

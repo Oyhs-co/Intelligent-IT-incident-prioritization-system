@@ -45,7 +45,7 @@ class IncidentNotifier extends Notifier<List<Incident>> {
     }
   }
 
-  Future<bool> createIncident({
+  Future<Incident?> createIncident({
     required String title,
     required String description,
     String? category,
@@ -66,10 +66,10 @@ class IncidentNotifier extends Notifier<List<Incident>> {
       final data = await _api.request('POST', ApiEndpoints.incidents, body: body, auth: true);
       final incident = Incident.fromJson(data as Map<String, dynamic>);
       state = [...state, incident];
-      return true;
+      return incident;
     } catch (e) {
       logger.e('Failed to create incident: $e');
-      return false;
+      return null;
     }
   }
 

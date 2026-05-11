@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'new_report.dart';
+import 'package:go_router/go_router.dart';
 import '../../models/providers/client_portal_providers.dart';
-import 'incident_details.dart';
 import '../../models/incident.dart';
 import '../../../../core/presentation/widgets/modern_sidebar.dart';
 import '../../../../core/utils/app_translations.dart';
@@ -95,7 +94,7 @@ class _ClientHomeState extends ConsumerState<ClientHome> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const NewReportPage()));
+          context.pushNamed('newReport');
         },
         elevation: 2,
         backgroundColor: cs.primary,
@@ -141,7 +140,7 @@ class _ModernTicketCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
         onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => IncidentDetailsPage(incident: ticket)));
+          context.pushNamed('incidentDetails', pathParameters: {'id': ticket.id}, extra: ticket);
         },
         child: Padding(
           padding: const EdgeInsets.all(20),

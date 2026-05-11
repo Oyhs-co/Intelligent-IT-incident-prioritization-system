@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../models/providers/client_portal_providers.dart';
 
 class NewReportPage extends ConsumerStatefulWidget {
@@ -64,13 +65,19 @@ class _NewReportPageState extends ConsumerState<NewReportPage> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    final success = await ref.read(incidentProvider.notifier).createIncident(
+
+    final incident = await ref.read(incidentProvider.notifier).createIncident(
       title:       _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       category:    _category.isEmpty ? null : _category,
       urgency:     _urgency,
       impact:      _impact,
     );
+
+    if (incident != null) {
+      await ref.read(incidentProvider.notifier).classifyIncident(incident.id);
+    }
+
     if (!mounted) return;
     setState(() => _isLoading = false);
 
@@ -79,20 +86,20 @@ class _NewReportPageState extends ConsumerState<NewReportPage> {
       SnackBar(
         content: Row(children: [
           Icon(
-            success ? Icons.check_circle_outline : Icons.error_outline,
+            incident != null ? Icons.check_circle_outline : Icons.error_outline,
             color: Colors.white, size: 18,
           ),
           const SizedBox(width: 10),
           Expanded(child: Text(
-            success ? 'Reporte enviado exitosamente.' : 'Error al enviar el reporte.',
+            incident != null ? 'Reporte enviado exitosamente.' : 'Error al enviar el reporte.',
             style: const TextStyle(color: Colors.white, fontSize: 13),
           )),
         ]),
-        backgroundColor: success ? const Color(0xFF059669) : cs.error,
+        backgroundColor: incident != null ? const Color(0xFF059669) : cs.error,
         margin: const EdgeInsets.all(16),
       ),
     );
-    if (success) Navigator.pop(context);
+    if (incident != null) context.pop();
   }
 
 

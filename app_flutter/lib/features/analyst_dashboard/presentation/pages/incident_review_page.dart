@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../features/client_portal/models/incident.dart';
 import '../../../../features/client_portal/models/providers/client_portal_providers.dart';
 import '../../models/providers/analyst_metadata_providers.dart';
@@ -373,16 +374,16 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
     return ElevatedButton(
       onPressed: canSubmit
           ? () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final navigator = Navigator.of(context);
               final catLabel = _findCategoryLabel(_selectedCategoryValue);
+              final messenger = ScaffoldMessenger.of(context);
+              final router = GoRouter.of(context);
               await ref.read(incidentProvider.notifier).assignAndEditTicket(
                 widget.ticket.id,
                 _selectedCategoryValue!,
                 _selectedPriorityValue!,
               );
               if (!context.mounted) return;
-              navigator.pop();
+              router.pop();
               messenger.showSnackBar(SnackBar(
                 content: Text('Ticket asignado a $catLabel con prioridad ${_findPriorityLabel(_selectedPriorityValue)}'),
                 backgroundColor: cs.primary,

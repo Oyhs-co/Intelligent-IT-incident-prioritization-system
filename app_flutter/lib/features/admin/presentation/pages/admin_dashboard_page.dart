@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/presentation/widgets/modern_sidebar.dart';
-import 'global_tickets_page.dart';
-import 'user_management_page.dart';
-import 'ai_settings_page.dart';
 import '../../../analyst_dashboard/models/providers/analyst_dashboard_providers.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {
@@ -72,7 +70,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                 subtitle: 'Monitorear todos los tickets del sistema.',
                 icon: Icons.confirmation_number_outlined,
                 color: cs.primary,
-                destination: const GlobalTicketsPage(),
+                routeName: 'adminTickets',
               ),
               _buildAdminModule(
                 cs: cs,
@@ -80,7 +78,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                 subtitle: 'Crear, editar o suspender cuentas.',
                 icon: Icons.people_alt_outlined,
                 color: const Color(0xFF059669),
-                destination: const UserManagementPage(),
+                routeName: 'adminUsers',
               ),
               _buildAdminModule(
                 cs: cs,
@@ -88,7 +86,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                 subtitle: 'Configurar parámetros de auto-asignación y prioridad.',
                 icon: Icons.auto_awesome,
                 color: const Color(0xFF7C3AED),
-                destination: const AISettingsPage(),
+                routeName: 'adminAISettings',
               ),
             ],
           ),
@@ -129,7 +127,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     required String subtitle,
     required IconData icon,
     required Color color,
-    required Widget destination,
+    required String routeName,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -143,7 +141,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => destination)),
+          onTap: () => context.pushNamed(routeName),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(

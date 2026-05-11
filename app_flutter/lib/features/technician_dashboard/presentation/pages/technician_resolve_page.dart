@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/utils/app_translations.dart';
 import '../../../client_portal/models/incident.dart';
 import '../../../client_portal/models/providers/client_portal_providers.dart';
@@ -55,7 +56,7 @@ class _TechnicianResolvePageState extends ConsumerState<TechnicianResolvePage> {
     try {
       await ref.read(incidentProvider.notifier).resolveIncident(widget.ticket.id, _resolutionCtrl.text.trim());
       if (!mounted) return;
-      Navigator.pop(context);
+      context.pop();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('✓ ${widget.ticket.ticketNumber} resuelto'),
         backgroundColor: const Color(0xFF059669),
@@ -84,9 +85,10 @@ class _TechnicianResolvePageState extends ConsumerState<TechnicianResolvePage> {
       appBar: AppBar(title: Text(t.ticketNumber), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: Form(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -202,6 +204,7 @@ class _TechnicianResolvePageState extends ConsumerState<TechnicianResolvePage> {
               ],
             ),
           ),
+        ),
         ),
       ),
     );

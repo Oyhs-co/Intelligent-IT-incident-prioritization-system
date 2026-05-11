@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:logger/logger.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/utils/app_constants.dart';
@@ -179,7 +180,7 @@ class _AdminTicketAuditPageState extends ConsumerState<AdminTicketAuditPage> {
               Navigator.pop(ctx);
               final success = await ref.read(incidentProvider.notifier).deleteIncident(widget.ticket.id);
               if (success && mounted) {
-                Navigator.pop(context);
+                context.pop();
                 ref.read(incidentProvider.notifier).fetchIncidents();
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Registro eliminado del sistema.'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),

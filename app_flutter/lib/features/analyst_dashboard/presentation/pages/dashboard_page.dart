@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../features/client_portal/models/providers/client_portal_providers.dart';
 import '../../../../features/client_portal/models/incident.dart';
 import '../../../../core/presentation/widgets/modern_sidebar.dart';
 import '../../../../core/utils/app_translations.dart';
 import '../../models/providers/analyst_providers.dart';
-import 'incident_review_page.dart';
 
 class AnalystDashboardPage extends ConsumerStatefulWidget {
   const AnalystDashboardPage({super.key});
@@ -231,10 +231,7 @@ class _AnalystTicketCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => IncidentReviewPage(ticket: ticket)),
-        ),
+        onTap: () => context.pushNamed('analystIncidentReview', pathParameters: {'id': ticket.id}, extra: ticket),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(

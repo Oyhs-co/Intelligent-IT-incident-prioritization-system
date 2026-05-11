@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/utils/url_opener.dart';
 import '../../../core/theme/theme_mode_provider.dart';
 import '../../../features/client_portal/models/providers/client_portal_providers.dart';
 import '../../../features/auth/providers/auth_providers.dart';
 import '../../../features/analyst_dashboard/models/providers/analyst_providers.dart';
 import '../../../features/technician_dashboard/models/providers/technician_providers.dart';
-import '../../../features/client_portal/presentation/pages/client_profile_page.dart';
-import '../../../features/analyst_dashboard/presentation/pages/analyst_settings_page.dart';
 
 Future<void> _openGrafana(BuildContext context) async {
   try {
@@ -122,7 +121,7 @@ class ModernSidebar extends ConsumerWidget {
         title: 'Configuración',
         onTap: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const ClientProfilePage()));
+          context.pushNamed('clientProfile');
         },
       ),
     ];
@@ -139,7 +138,7 @@ class ModernSidebar extends ConsumerWidget {
         title: 'Configuración',
         onTap: () {
           Navigator.pop(context);
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalystSettingsPage()));
+          context.pushNamed('analystSettings');
         },
       ),
       const SizedBox(height: 16),

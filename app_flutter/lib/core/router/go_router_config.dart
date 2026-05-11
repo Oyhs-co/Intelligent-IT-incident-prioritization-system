@@ -19,6 +19,7 @@ import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
 import '../../features/admin/presentation/pages/global_tickets_page.dart';
 import '../../features/admin/presentation/pages/user_management_page.dart';
 import '../../features/admin/presentation/pages/ai_settings_page.dart';
+import '../../features/admin/presentation/pages/admin_ticket_audit_page.dart';
 import '../../features/client_portal/models/incident.dart';
 import '../../features/auth/providers/auth_providers.dart';
 
@@ -137,6 +138,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/admin/ai-settings',
         name: 'adminAISettings',
         builder: (context, state) => const AISettingsPage(),
+      ),
+      GoRoute(
+        path: '/admin/ticket-audit/:id',
+        name: 'adminTicketAudit',
+        builder: (context, state) {
+          final ticket = state.extra as Incident;
+          return AdminTicketAuditPage(ticket: ticket);
+        },
       ),
     ],
   );

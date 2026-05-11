@@ -56,9 +56,10 @@ class IncidentDetailsPage extends StatelessWidget {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 720),
-          child: Column(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
             
@@ -125,6 +126,7 @@ class IncidentDetailsPage extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }
@@ -438,9 +440,6 @@ class _MetaGrid extends StatelessWidget {
       _MetaItem(Icons.folder_outlined, 'Categoría', AppTranslations.category(incident.category)),
       _MetaItem(Icons.bolt_outlined, 'Urgencia', '${incident.urgency}/5'),
       _MetaItem(Icons.people_outline, 'Impacto', '${incident.impact}/5'),
-      if (incident.confidenceScore != null)
-        _MetaItem(Icons.psychology_outlined, 'Confianza IA',
-            '${(incident.confidenceScore! * 100).toInt()}%'),
     ];
 
     return GridView.count(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../auth/providers/auth_providers.dart';
 
 class ClientProfilePage extends ConsumerStatefulWidget {
@@ -136,7 +137,7 @@ class _ClientProfilePageState extends ConsumerState<ClientProfilePage> {
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
-                  Navigator.pop(context);
+                  context.pop();
                 },
                 child: const Text('Guardar Cambios'),
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../providers/auth_providers.dart';
 import '../widgets/auth_input_field.dart';
 import '../widgets/auth_shared_widgets.dart';
@@ -116,7 +117,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_outlined, size: 18, color: cs.onSurfaceVariant),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
         ),
       ),
       body: SafeArea(
@@ -228,7 +229,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                     AuthFooterLink(
                       question: '¿Ya tienes una cuenta?',
                       actionLabel: 'Inicia Sesión',
-                      onTap: () => Navigator.pop(context),
+                      onTap: () => context.pop(),
                     ),
                   ],
                 ),

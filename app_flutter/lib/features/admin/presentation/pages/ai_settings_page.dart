@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class AISettingsPage extends StatefulWidget {
   const AISettingsPage({super.key});
@@ -116,7 +117,7 @@ class _AISettingsPageState extends State<AISettingsPage> {
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
-                  Navigator.pop(context);
+                  context.pop();
                 },
                 child: const Text('Guardar Configuración'),
               ),

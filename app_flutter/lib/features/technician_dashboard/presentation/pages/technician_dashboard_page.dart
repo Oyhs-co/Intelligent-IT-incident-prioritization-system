@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/presentation/widgets/modern_sidebar.dart';
 import '../../../../core/utils/app_translations.dart';
 import '../../../client_portal/models/incident.dart';
 import '../../../client_portal/models/providers/client_portal_providers.dart';
 import '../../../auth/providers/auth_providers.dart';
 import '../../models/providers/technician_providers.dart';
-import 'technician_resolve_page.dart';
 
 class TechnicianDashboardPage extends ConsumerStatefulWidget {
   const TechnicianDashboardPage({super.key});
@@ -237,10 +237,7 @@ class _TechnicianTicketCard extends StatelessWidget {
               child: Container(width: 4, color: pStyle.accent),
             ),
             InkWell(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => TechnicianResolvePage(ticket: ticket)),
-              ),
+              onTap: () => context.pushNamed('technicianResolve', pathParameters: {'id': ticket.id}, extra: ticket),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
