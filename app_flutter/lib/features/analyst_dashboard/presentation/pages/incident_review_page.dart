@@ -88,20 +88,22 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Clasificación IA: $label (${(result['confidence'] as num? ?? 0).toStringAsFixed(2)}) - Estado actualizado a "Abierto"'),
+            content: Text('Clasificación IA: $label (${(result['confidence'] as num? ?? 0).toStringAsFixed(2)})'),
             backgroundColor: const Color(0xFF059669),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       }
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al clasificar con IA'), backgroundColor: Colors.redAccent),
+        const SnackBar(content: Text('Error al clasificar con IA'), backgroundColor: Colors.redAccent, behavior: SnackBarBehavior.floating),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final inc = _incident;
     final meta = ref.watch(metadataProvider);
     final categories = meta.categories;
@@ -109,29 +111,25 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
     final isLoading = meta.isLoading && !_metadataLoaded;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: Text('Revisión - ${inc.ticketNumber}',
-          style: const TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: -0.5)),
+        title: Text('Revisión - ${inc.ticketNumber}'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildDescriptionCard(inc),
-            const SizedBox(height: 24),
-            _buildAIAnalysisCard(inc),
-            const SizedBox(height: 24),
-            _buildMetadataCard(inc),
-            const SizedBox(height: 24),
-            _buildTriageCard(categories, priorities, isLoading),
-            const SizedBox(height: 32),
-            _buildSubmitButton(),
+            _buildDescriptionCard(inc, cs),
+            const SizedBox(height: 20),
+            _buildAIAnalysisCard(inc, cs),
+            const SizedBox(height: 20),
+            _buildMetadataCard(inc, cs),
+            const SizedBox(height: 20),
+            _buildTriageCard(categories, priorities, isLoading, cs),
+            const SizedBox(height: 28),
+            _buildSubmitButton(cs),
             const SizedBox(height: 40),
           ],
         ),
@@ -139,13 +137,13 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
     );
   }
 
-  Widget _buildDescriptionCard(Incident inc) {
+  Widget _buildDescriptionCard(Incident inc, ColorScheme cs) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6))],
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -154,30 +152,33 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(inc.ticketNumber, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF6B7280), letterSpacing: 0.5)),
-              _buildStatusChip(inc.status),
+              Text(inc.ticketNumber, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant)),
+              _buildStatusChip(inc.status, cs),
             ],
           ),
           const SizedBox(height: 16),
-          const Text('TÍTULO DEL PROBLEMA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+          Text('Título del Problema', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
           const SizedBox(height: 8),
-          Text(inc.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF111827), height: 1.2)),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6))),
-          const Text('DESCRIPCIÓN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+          Text(inc.title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: cs.onSurface, height: 1.2)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.5)),
+          ),
+          Text('Descripción', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
           const SizedBox(height: 12),
-          Text(inc.description, style: const TextStyle(fontSize: 16, color: Color(0xFF374151), height: 1.6)),
+          Text(inc.description, style: TextStyle(fontSize: 16, color: cs.onSurface, height: 1.6)),
         ],
       ),
     );
   }
 
-  Widget _buildAIAnalysisCard(Incident inc) {
+  Widget _buildAIAnalysisCard(Incident inc, ColorScheme cs) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF2563EB).withValues(alpha: 0.2), width: 1.5),
-        boxShadow: [BoxShadow(color: const Color(0xFF2563EB).withValues(alpha: 0.05), blurRadius: 12, offset: const Offset(0, 6))],
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.primary.withValues(alpha: 0.3), width: 1.5),
+        boxShadow: [BoxShadow(color: cs.primary.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -185,35 +186,35 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
         children: [
           Row(
             children: [
-              const Icon(Icons.auto_awesome, color: Color(0xFF2563EB)),
+              Icon(Icons.auto_awesome, color: cs.primary),
               const SizedBox(width: 8),
-              const Text('Análisis de IA', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+              Text('Análisis de IA', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: cs.onSurface)),
             ],
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(10)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text('• Prioridad sugerida: ${inc.priorityLabel ?? "Sin clasificar"}',
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E3A8A))),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: cs.onPrimaryContainer)),
                 const SizedBox(height: 8),
                 Text('• Confianza: ${inc.confidenceScore != null ? "${(inc.confidenceScore! * 100).toInt()}%" : "N/A"}',
-                  style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E3A8A))),
+                  style: TextStyle(fontWeight: FontWeight.w600, color: cs.onPrimaryContainer)),
                 if (inc.explanation != null && inc.explanation!.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  Text(inc.explanation!, style: const TextStyle(color: Color(0xFF1E3A8A), fontSize: 13)),
+                  Text(inc.explanation!, style: TextStyle(color: cs.onPrimaryContainer, fontSize: 13)),
                 ],
                 if (inc.status == 'open')
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
                     child: Row(
                       children: [
-                        Icon(Icons.check_circle, size: 14, color: Color(0xFF059669)),
-                        SizedBox(width: 6),
-                        Text('Estado actualizado a Abierto', style: TextStyle(color: Color(0xFF059669), fontSize: 12, fontWeight: FontWeight.w600)),
+                        Icon(Icons.check_circle, size: 14, color: const Color(0xFF059669)),
+                        const SizedBox(width: 6),
+                        Text('Estado actualizado a Abierto', style: TextStyle(color: const Color(0xFF059669), fontSize: 12, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
@@ -230,10 +231,10 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
                   : const Icon(Icons.auto_awesome),
               label: Text(_isClassifying ? 'Clasificando...' : 'Clasificar con IA'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF2563EB),
-                side: const BorderSide(color: Color(0xFF2563EB)),
+                foregroundColor: cs.primary,
+                side: BorderSide(color: cs.primary),
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
           ),
@@ -242,56 +243,56 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
     );
   }
 
-  Widget _buildMetadataCard(Incident inc) {
+  Widget _buildMetadataCard(Incident inc, ColorScheme cs) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6))],
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Detalles del Ticket', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+          Text('Detalles del Ticket', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: cs.onSurface)),
           const SizedBox(height: 20),
-          _metadataRow('Estado', inc.status),
-          _metadataRow('Urgencia', '${inc.urgency}/5'),
-          _metadataRow('Impacto', '${inc.impact}/5'),
-          _metadataRow('Categoría', _findCategoryLabel(inc.category)),
-          _metadataRow('Subcategoría', inc.subcategory ?? 'Sin asignar'),
-          _metadataRow('Fuente', inc.source),
-          _metadataRow('Creado', inc.createdAt.length >= 10 ? inc.createdAt.substring(0, 10) : inc.createdAt),
-          _metadataRow('Actualizado', inc.updatedAt.length >= 10 ? inc.updatedAt.substring(0, 10) : inc.updatedAt),
+          _metadataRow('Estado', inc.status, cs),
+          _metadataRow('Urgencia', '${inc.urgency}/5', cs),
+          _metadataRow('Impacto', '${inc.impact}/5', cs),
+          _metadataRow('Categoría', _findCategoryLabel(inc.category), cs),
+          _metadataRow('Subcategoría', inc.subcategory ?? 'Sin asignar', cs),
+          _metadataRow('Fuente', inc.source, cs),
+          _metadataRow('Creado', inc.createdAt.length >= 10 ? inc.createdAt.substring(0, 10) : inc.createdAt, cs),
+          _metadataRow('Actualizado', inc.updatedAt.length >= 10 ? inc.updatedAt.substring(0, 10) : inc.updatedAt, cs),
           if (inc.slaDeadline != null)
-            _metadataRow('SLA Límite', inc.slaDeadline!.length >= 10 ? inc.slaDeadline!.substring(0, 10) : inc.slaDeadline!),
-          if (inc.assignedTo != null) _metadataRow('Asignado a', inc.assignedTo!),
+            _metadataRow('SLA Límite', inc.slaDeadline!.length >= 10 ? inc.slaDeadline!.substring(0, 10) : inc.slaDeadline!, cs),
+          if (inc.assignedTo != null) _metadataRow('Asignado a', inc.assignedTo!, cs),
           if (inc.isSlaBreached)
             Container(
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
-              child: const Row(
+              decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(8)),
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.red, size: 18),
-                  SizedBox(width: 8),
-                  Text('SLA incumplido', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700, fontSize: 13)),
+                  Icon(Icons.warning_amber_rounded, color: cs.error, size: 18),
+                  const SizedBox(width: 8),
+                  Text('SLA incumplido', style: TextStyle(color: cs.error, fontWeight: FontWeight.w700, fontSize: 13)),
                 ],
               ),
             ),
           if (inc.tags.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text('Tags', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+            Text('Tags', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
               runSpacing: 6,
               children: inc.tags.map((t) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(20)),
-                child: Text(t, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF374151))),
+                decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(20)),
+                child: Text(t, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurface)),
               )).toList(),
             ),
           ],
@@ -300,7 +301,7 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
     );
   }
 
-  Widget _metadataRow(String label, String value) {
+  Widget _metadataRow(String label, String value, ColorScheme cs) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -308,49 +309,55 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
         children: [
           SizedBox(
             width: 110,
-            child: Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+            child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
           ),
           Expanded(
-            child: Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF111827))),
+            child: Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: cs.onSurface)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTriageCard(List<IncidentCategory> categories, List<PriorityOption> priorities, bool isLoading) {
+  Widget _buildTriageCard(List<IncidentCategory> categories, List<PriorityOption> priorities, bool isLoading, ColorScheme cs) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6))],
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Decisión del Analista (Triage)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+          Text('Decisión del Analista (Triage)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: cs.onSurface)),
           const SizedBox(height: 24),
-          const Text('PRIORIDAD FINAL', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+          Text('Prioridad Final', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
           const SizedBox(height: 8),
           if (isLoading || priorities.isEmpty)
             const SizedBox(height: 56, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
           else
             DropdownButtonFormField<int>(
-              decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), contentPadding: const EdgeInsets.symmetric(horizontal: 16)),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
               initialValue: _selectedPriorityValue ?? (priorities.isNotEmpty ? priorities.first.value : null),
               items: priorities.map((p) => DropdownMenuItem(value: p.value, child: Text('${p.label} (${p.value})'))).toList(),
               onChanged: (val) => setState(() => _selectedPriorityValue = val),
             ),
           const SizedBox(height: 24),
-          const Text('DEPARTAMENTO / ÁREA TÉCNICA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280))),
+          Text('Departamento / Área Técnica', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
           const SizedBox(height: 8),
           if (isLoading || categories.isEmpty)
             const SizedBox(height: 56, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
           else
             DropdownButtonFormField<String>(
-              decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)), contentPadding: const EdgeInsets.symmetric(horizontal: 16)),
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
               initialValue: _selectedCategoryValue ?? (categories.isNotEmpty ? categories.first.value : null),
               items: categories.map((c) => DropdownMenuItem(value: c.value, child: Text(c.label))).toList(),
               onChanged: (val) => setState(() => _selectedCategoryValue = val),
@@ -360,7 +367,7 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
     );
   }
 
-  Widget _buildSubmitButton() {
+  Widget _buildSubmitButton(ColorScheme cs) {
     final canSubmit = _selectedCategoryValue != null && _selectedPriorityValue != null;
 
     return ElevatedButton(
@@ -376,7 +383,11 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
               );
               if (!context.mounted) return;
               navigator.pop();
-              messenger.showSnackBar(SnackBar(content: Text('Ticket asignado a $catLabel con prioridad ${_findPriorityLabel(_selectedPriorityValue)}')));
+              messenger.showSnackBar(SnackBar(
+                content: Text('Ticket asignado a $catLabel con prioridad ${_findPriorityLabel(_selectedPriorityValue)}'),
+                backgroundColor: cs.primary,
+                behavior: SnackBarBehavior.floating,
+              ));
             }
           : null,
       style: ElevatedButton.styleFrom(
@@ -390,7 +401,7 @@ class _IncidentReviewPageState extends ConsumerState<IncidentReviewPage> {
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusChip(String status, ColorScheme cs) {
     Color bgColor;
     Color textColor;
     switch (status.toLowerCase()) {

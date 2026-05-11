@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/presentation/widgets/modern_sidebar.dart';
 import '../../../client_portal/models/incident.dart';
 import '../../../client_portal/models/providers/client_portal_providers.dart';
+import '../../../auth/providers/auth_providers.dart';
+import '../../models/providers/technician_providers.dart';
 import 'technician_resolve_page.dart';
 
 class TechnicianDashboardPage extends ConsumerStatefulWidget {
@@ -23,46 +25,76 @@ class _TechnicianDashboardPageState extends ConsumerState<TechnicianDashboardPag
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final tickets = ref.watch(incidentProvider);
-    final ticketsPendientes = tickets.where((t) => t.status == 'in_progress').toList();
+    final filter = ref.watch(technicianFilterProvider);
+    final currentUser = ref.watch(authProvider).user;
+
+    final filteredTickets = tickets.where((t) {
+      final assignedToUser = currentUser != null && t.assignedTo == currentUser.id;
+      final statusMatch = _matchStatusFilter(t.status, filter);
+
+      if (filter == 'Mis Tickets') {
+        return assignedToUser;
+      }
+      return statusMatch;
+    }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: cs.surfaceContainerLowest,
       drawer: const ModernSidebar(role: UserRole.technician),
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: const Text(
-          'Bandeja del Técnico',
-          style: TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: -0.5),
+        title: Text(
+          filter == 'Mis Tickets'
+              ? 'Mis Tickets Asignados'
+              : 'Tickets del Departamento${filter != "Todos" ? " ($filter)" : ""}',
         ),
       ),
-      body: ticketsPendientes.isEmpty
-          ? const Center(
+      body: filteredTickets.isEmpty
+          ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle_outline, size: 64, color: Colors.green),
-                  SizedBox(height: 16),
-                  Text('¡Excelente trabajo!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF111827))),
-                  SizedBox(height: 8),
-                  Text('No tienes tickets pendientes en tu área.', style: TextStyle(color: Colors.grey)),
+                  Icon(Icons.check_circle_outline, size: 64, color: cs.primary.withValues(alpha: 0.5)),
+                  const SizedBox(height: 16),
+                  Text('¡Excelente trabajo!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: cs.onSurface)),
+                  const SizedBox(height: 8),
+                  Text(
+                    filter == 'Mis Tickets'
+                        ? 'No tienes tickets asignados.'
+                        : 'No hay tickets con ese estado.',
+                    style: TextStyle(color: cs.onSurfaceVariant),
+                  ),
                 ],
               ),
             )
           : RefreshIndicator(
               onRefresh: () => ref.read(incidentProvider.notifier).fetchIncidents(),
               child: ListView.builder(
-                padding: const EdgeInsets.all(24),
-                itemCount: ticketsPendientes.length,
+                padding: const EdgeInsets.all(16),
+                itemCount: filteredTickets.length,
                 itemBuilder: (context, index) {
-                  final ticket = ticketsPendientes[index];
+                  final ticket = filteredTickets[index];
                   return _TechnicianTicketCard(ticket: ticket);
                 },
               ),
             ),
     );
+  }
+
+  bool _matchStatusFilter(String status, String filter) {
+    switch (filter) {
+      case 'Nuevo':
+        return status.toLowerCase() == 'new';
+      case 'Pendiente':
+        return ['new', 'open', 'pending'].contains(status.toLowerCase());
+      case 'En Progreso':
+        return status.toLowerCase() == 'in_progress';
+      case 'Resuelto':
+        return ['resolved', 'closed'].contains(status.toLowerCase());
+      default:
+        return true;
+    }
   }
 }
 
@@ -72,23 +104,22 @@ class _TechnicianTicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4)),
         ],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => TechnicianResolvePage(ticket: ticket)),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => TechnicianResolvePage(ticket: ticket)));
         },
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -99,18 +130,18 @@ class _TechnicianTicketCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    ticket.id,
-                    style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.bold, fontSize: 13),
+                    ticket.ticketNumber,
+                    style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13),
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(12),
+                      color: cs.errorContainer.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       'Prioridad ${ticket.finalPriority ?? ticket.priorityLabel ?? "Media"}',
-                      style: const TextStyle(color: Color(0xFFDC2626), fontWeight: FontWeight.bold, fontSize: 11),
+                      style: TextStyle(color: cs.onErrorContainer, fontWeight: FontWeight.w700, fontSize: 11),
                     ),
                   ),
                 ],
@@ -118,17 +149,26 @@ class _TechnicianTicketCard extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 ticket.title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF111827)),
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: cs.onSurface),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.build_circle, size: 16, color: Color(0xFF2563EB)),
+                  Icon(Icons.build_circle, size: 16, color: cs.primary),
                   const SizedBox(width: 6),
                   Text(
                     ticket.category ?? 'Área no asignada',
-                    style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.w600, fontSize: 13),
+                    style: TextStyle(color: cs.primary, fontWeight: FontWeight.w600, fontSize: 13),
                   ),
+                  if (ticket.priorityLabel != null) ...[
+                    const SizedBox(width: 16),
+                    Icon(Icons.auto_awesome, size: 14, color: cs.primary.withValues(alpha: 0.6)),
+                    const SizedBox(width: 4),
+                    Text(
+                      ticket.priorityLabel!,
+                      style: TextStyle(color: cs.primary.withValues(alpha: 0.6), fontSize: 12, fontWeight: FontWeight.w500),
+                    ),
+                  ],
                 ],
               ),
             ],

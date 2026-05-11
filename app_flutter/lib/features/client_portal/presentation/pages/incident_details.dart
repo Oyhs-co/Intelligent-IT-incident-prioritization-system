@@ -15,8 +15,8 @@ class IncidentDetailsPage extends StatelessWidget {
 
   static const _statusLabels = {
     'new': 'Nuevo',
-    'open': 'En revisión',
-    'in_progress': 'En progreso',
+    'open': 'En Revisión',
+    'in_progress': 'En Progreso',
     'resolved': 'Resuelto',
     'closed': 'Cerrado',
     'rejected': 'Rechazado',
@@ -40,34 +40,28 @@ class IncidentDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: Text(
-          incident.ticketNumber,
-          style: const TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: -0.5),
-        ),
+        title: Text(incident.ticketNumber),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 24),
-              _buildDescriptionCard(),
-              const SizedBox(height: 24),
-              if (_isResolvedOrClosed) _buildResolutionCard(),
-              if (_isResolvedOrClosed) const SizedBox(height: 24),
-              _buildTimelineCard(),
-              const SizedBox(height: 40),
-            ],
-          ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildHeader(cs),
+            const SizedBox(height: 20),
+            _buildDescriptionCard(cs),
+            const SizedBox(height: 20),
+            if (_isResolvedOrClosed) _buildResolutionCard(cs),
+            if (_isResolvedOrClosed) const SizedBox(height: 20),
+            _buildTimelineCard(cs),
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
@@ -76,7 +70,7 @@ class IncidentDetailsPage extends StatelessWidget {
   bool get _isResolvedOrClosed =>
       ['resolved', 'closed'].contains(incident.status.toLowerCase());
 
-  Widget _buildHeader() {
+  Widget _buildHeader(ColorScheme cs) {
     final s = incident.status.toLowerCase();
     final label = _statusLabels[s] ?? s;
     final priorityText = incident.priorityLabel ?? incident.finalPriority;
@@ -85,7 +79,7 @@ class IncidentDetailsPage extends StatelessWidget {
     switch (s) {
       case 'new':
       case 'open':
-        statusColor = const Color(0xFF2563EB);
+        statusColor = cs.primary;
       case 'in_progress':
       case 'pending':
         statusColor = const Color(0xFFD97706);
@@ -93,7 +87,7 @@ class IncidentDetailsPage extends StatelessWidget {
       case 'closed':
         statusColor = const Color(0xFF10B981);
       default:
-        statusColor = const Color(0xFF6B7280);
+        statusColor = cs.onSurfaceVariant;
     }
 
     return Row(
@@ -103,8 +97,8 @@ class IncidentDetailsPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'creado ${_formatDate(incident.createdAt)}',
-              style: TextStyle(color: Colors.grey.shade500, fontWeight: FontWeight.w500, fontSize: 13),
+              'Creado ${_formatDate(incident.createdAt)}',
+              style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w500, fontSize: 13),
             ),
             const SizedBox(height: 6),
             Container(
@@ -126,37 +120,49 @@ class IncidentDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDescriptionCard() {
+  Widget _buildDescriptionCard(ColorScheme cs) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6))],
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('titulo del problema', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280), letterSpacing: 0.5)),
+          Text('Título del Problema', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
           const SizedBox(height: 8),
-          Text(incident.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Color(0xFF111827), letterSpacing: -0.5, height: 1.2)),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6))),
-          const Text('descripcion detallada', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF6B7280), letterSpacing: 0.5)),
+          Text(incident.title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: cs.onSurface, letterSpacing: -0.5, height: 1.2)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.5)),
+          ),
+          Text('Descripción Detallada', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant, letterSpacing: 0.5)),
           const SizedBox(height: 12),
           Text(
-            incident.description.isEmpty ? 'sin descripcion.' : incident.description,
-            style: const TextStyle(fontSize: 16, color: Color(0xFF374151), height: 1.6),
+            incident.description.isEmpty ? 'Sin descripción.' : incident.description,
+            style: TextStyle(fontSize: 16, color: cs.onSurface, height: 1.6),
           ),
           if (incident.category != null && !_isResolvedOrClosed) ...[
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFBFDBFE))),
+              decoration: BoxDecoration(
+                color: cs.primaryContainer,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.3)),
+              ),
               child: Row(children: [
-                const Icon(Icons.info_outline, color: Color(0xFF2563EB), size: 18),
+                Icon(Icons.info_outline, color: cs.primary, size: 18),
                 const SizedBox(width: 10),
-                Expanded(child: Text('Asignado al área de ${incident.category}', style: const TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.w600, fontSize: 13))),
+                Expanded(
+                  child: Text(
+                    'Asignado al área de ${incident.category}',
+                    style: TextStyle(color: cs.onPrimaryContainer, fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                ),
               ]),
             ),
           ],
@@ -165,12 +171,16 @@ class IncidentDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildResolutionCard() {
+  Widget _buildResolutionCard(ColorScheme cs) {
     final text = incident.resolution ?? incident.finalResolution;
     if (text == null || text.isEmpty) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(color: const Color(0xFFECFDF5), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF10B981))),
+      decoration: BoxDecoration(
+        color: const Color(0xFFECFDF5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFF10B981)),
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           const Icon(Icons.check_circle, color: Color(0xFF10B981), size: 24),
@@ -183,19 +193,19 @@ class IncidentDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildTimelineCard() {
+  Widget _buildTimelineCard(ColorScheme cs) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6))],
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('historial de estado', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF111827))),
+          Text('Historial de Estado', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurface)),
           const SizedBox(height: 24),
           _buildStatusTimeline(),
         ],
@@ -244,7 +254,7 @@ class IncidentDetailsPage extends StatelessWidget {
             const SizedBox(width: 16),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(top: 0, bottom: 24),
+                padding: const EdgeInsets.only(bottom: 24),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(label,
                     style: TextStyle(

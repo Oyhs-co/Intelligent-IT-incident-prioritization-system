@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/utils/url_opener.dart';
 import '../../../features/client_portal/models/providers/client_portal_providers.dart';
 import '../../../features/auth/providers/auth_providers.dart';
 import '../../../features/analyst_dashboard/models/providers/analyst_providers.dart';
+import '../../../features/technician_dashboard/models/providers/technician_providers.dart';
 import '../../../features/client_portal/presentation/pages/client_profile_page.dart';
 import '../../../features/analyst_dashboard/presentation/pages/analyst_settings_page.dart';
 
-void _navigate(BuildContext context, String route) {
-  Navigator.pop(context);
-  context.go(route);
+Future<void> _openGrafana(BuildContext context) async {
+  try {
+    await openExternalUrl('http://localhost:3001/login');
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('No se pudo abrir Grafana: $e'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
 }
 
 enum UserRole { client, analyst, admin, technician }
@@ -21,130 +31,182 @@ class ModernSidebar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: cs.surface,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2563EB),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.flash_on,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'sipiit',
-                    style: TextStyle(
-                      color: Color(0xFF111827),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.0,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildHeader(cs),
             const SizedBox(height: 16),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 children: [
-                  if (role == UserRole.client) ...[
-                    const _ClientFilterExpansion(),
-                    const SizedBox(height: 4),
-                    _SidebarItem(
-                      icon: Icons.person_outline,
-                      title: 'mi perfil / ajustes',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ClientProfilePage(),
-                          ),
-                        );
-                      },
-                    ),
-                  ] else if (role == UserRole.technician) ...[
-                    const _TechnicianFilterExpansion(),
-                    const SizedBox(height: 4),
-                    _SidebarItem(
-                      icon: Icons.assignment_outlined,
-                      title: 'tickets asignados',
-                      isSelected: true,
-                      onTap: () {},
-                    ),
-                  ] else if (role == UserRole.analyst) ...[
-                    const _AnalystFilterExpansion(),
-                    const SizedBox(height: 4),
-                    _SidebarItem(
-                      icon: Icons.manage_accounts_outlined,
-                      title: 'configuración de perfil',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AnalystSettingsPage(),
-                          ),
-                        );
-                      },
-                    ),
-                  ] else if (role == UserRole.admin) ...[
-                    _SidebarItem(
-                      icon: Icons.dashboard_outlined,
-                      title: 'panel principal',
-                      isSelected: true,
-                      onTap: () => _navigate(context, '/admin/dashboard'),
-                    ),
-                    const SizedBox(height: 4),
-                    _SidebarItem(
-                      icon: Icons.people_outline,
-                      title: 'gestión de usuarios',
-                      onTap: () => _navigate(context, '/admin/users'),
-                    ),
-                    const SizedBox(height: 4),
-                    _SidebarItem(
-                      icon: Icons.analytics_outlined,
-                      title: 'reportes y métricas',
-                      onTap: () => _navigate(context, '/admin/tickets'),
-                    ),
-                    const SizedBox(height: 4),
-                    _SidebarItem(
-                      icon: Icons.settings_outlined,
-                      title: 'config. de ia',
-                      onTap: () => _navigate(context, '/admin/ai-settings'),
-                    ),
-                  ],
+                  if (role == UserRole.client) ..._clientItems(context, ref, cs),
+                  if (role == UserRole.analyst) ..._analystItems(context, ref, cs),
+                  if (role == UserRole.technician) ..._technicianItems(context, ref, cs),
+                  if (role == UserRole.admin) ..._adminItems(context, ref, cs),
                 ],
               ),
             ),
-            const Divider(color: Color(0xFFE5E7EB)),
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: _SidebarItem(
-                icon: Icons.logout,
-                title: 'cerrar sesion',
-                color: const Color(0xFFF87171),
-                onTap: () {
-                  ref.read(authProvider.notifier).logout();
-                },
-              ),
-            ),
+            _buildLogoutButton(context, ref, cs),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(ColorScheme cs) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.flash_on, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            'SIPIIT',
+            style: TextStyle(
+              color: cs.onSurface,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogoutButton(BuildContext context, WidgetRef ref, ColorScheme cs) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5))),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: _SidebarItem(
+          icon: Icons.logout_rounded,
+          title: 'Cerrar Sesión',
+          color: cs.error,
+          onTap: () => ref.read(authProvider.notifier).logout(),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _clientItems(BuildContext context, WidgetRef ref, ColorScheme cs) {
+    return [
+      _SectionLabel(label: 'Navegación', cs: cs),
+      const SizedBox(height: 4),
+      const _ClientFilterExpansion(),
+      const SizedBox(height: 4),
+      _SidebarItem(
+        icon: Icons.settings_outlined,
+        title: 'Configuración',
+        onTap: () {
+          Navigator.pop(context);
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const ClientProfilePage()));
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _analystItems(BuildContext context, WidgetRef ref, ColorScheme cs) {
+    return [
+      _SectionLabel(label: 'Navegación', cs: cs),
+      const SizedBox(height: 4),
+      const _AnalystFilterExpansion(),
+      const SizedBox(height: 4),
+      _SidebarItem(
+        icon: Icons.settings_outlined,
+        title: 'Configuración',
+        onTap: () {
+          Navigator.pop(context);
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const AnalystSettingsPage()));
+        },
+      ),
+      const SizedBox(height: 16),
+      _SectionLabel(label: 'Herramientas', cs: cs),
+      const SizedBox(height: 4),
+      _SidebarItem(
+        icon: Icons.bar_chart_rounded,
+        title: 'Grafana',
+        color: cs.primary,
+        onTap: () {
+          Navigator.pop(context);
+          _openGrafana(context);
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _technicianItems(BuildContext context, WidgetRef ref, ColorScheme cs) {
+    return [
+      _SectionLabel(label: 'Navegación', cs: cs),
+      const SizedBox(height: 4),
+      const _TechnicianFilterExpansion(),
+      const SizedBox(height: 4),
+      _SidebarItem(
+        icon: Icons.assignment_ind_outlined,
+        title: 'Mis Tickets',
+        isSelected: ref.watch(technicianFilterProvider) == 'Mis Tickets',
+        onTap: () {
+          ref.read(technicianFilterProvider.notifier).setFilter('Mis Tickets');
+          Navigator.pop(context);
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _adminItems(BuildContext context, WidgetRef ref, ColorScheme cs) {
+    return [
+      _SectionLabel(label: 'Herramientas', cs: cs),
+      const SizedBox(height: 4),
+      _SidebarItem(
+        icon: Icons.bar_chart_rounded,
+        title: 'Grafana',
+        color: cs.primary,
+        onTap: () {
+          Navigator.pop(context);
+          _openGrafana(context);
+        },
+      ),
+    ];
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  final ColorScheme cs;
+
+  const _SectionLabel({required this.label, required this.cs});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          color: cs.onSurfaceVariant.withValues(alpha: 0.6),
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 1.2,
         ),
       ),
     );
@@ -175,39 +237,36 @@ class _SidebarItemState extends State<_SidebarItem> {
 
   @override
   Widget build(BuildContext context) {
-    final defaultColor = widget.isSelected
-        ? const Color(0xFF2563EB)
-        : const Color(0xFF6B7280);
+    final cs = Theme.of(context).colorScheme;
+    final defaultColor = widget.isSelected ? cs.primary : cs.onSurfaceVariant;
     final color = widget.color ?? defaultColor;
     final bgColor = widget.isSelected
-        ? const Color(0xFFEFF6FF)
-        : (_isHovered ? const Color(0xFFF3F4F6) : Colors.transparent);
+        ? cs.primaryContainer.withValues(alpha: 0.5)
+        : (_isHovered ? cs.surfaceContainerHighest : Colors.transparent);
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: InkWell(
         onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
             color: bgColor,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
               Icon(widget.icon, color: color, size: 20),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Text(
                 widget.title,
                 style: TextStyle(
                   color: color,
                   fontSize: 14,
-                  fontWeight: widget.isSelected
-                      ? FontWeight.w600
-                      : FontWeight.w500,
+                  fontWeight: widget.isSelected ? FontWeight.w600 : FontWeight.w500,
                 ),
               ),
             ],
@@ -221,12 +280,10 @@ class _SidebarItemState extends State<_SidebarItem> {
 class _ClientFilterExpansion extends ConsumerStatefulWidget {
   const _ClientFilterExpansion();
   @override
-  ConsumerState<_ClientFilterExpansion> createState() =>
-      _ClientFilterExpansionState();
+  ConsumerState<_ClientFilterExpansion> createState() => _ClientFilterExpansionState();
 }
 
-class _ClientFilterExpansionState
-    extends ConsumerState<_ClientFilterExpansion> {
+class _ClientFilterExpansionState extends ConsumerState<_ClientFilterExpansion> {
   bool _isExpanded = false;
 
   @override
@@ -237,7 +294,7 @@ class _ClientFilterExpansionState
       children: [
         _SidebarItem(
           icon: Icons.confirmation_number_outlined,
-          title: 'mis incidentes',
+          title: 'Incidentes',
           isSelected: _isExpanded || currentFilter != 'Todos',
           onTap: () => setState(() => _isExpanded = !_isExpanded),
         ),
@@ -247,50 +304,26 @@ class _ClientFilterExpansionState
             padding: const EdgeInsets.only(left: 32, top: 4),
             child: Column(
               children: [
-                _SubItem(
-                  title: 'Todos',
-                  isSelected: currentFilter == 'Todos',
-                  onTap: () {
-                    ref.read(clientFilterProvider.notifier).setFilter('Todos');
-                    Navigator.pop(context);
-                  },
-                ),
-                _SubItem(
-                  title: 'Pendiente',
-                  isSelected: currentFilter == 'Pendiente',
-                  onTap: () {
-                    ref
-                        .read(clientFilterProvider.notifier)
-                        .setFilter('Pendiente');
-                    Navigator.pop(context);
-                  },
-                ),
-                _SubItem(
-                  title: 'En progreso',
-                  isSelected: currentFilter == 'En progreso',
-                  onTap: () {
-                    ref
-                        .read(clientFilterProvider.notifier)
-                        .setFilter('En progreso');
-                    Navigator.pop(context);
-                  },
-                ),
-                _SubItem(
-                  title: 'Resuelto',
-                  isSelected: currentFilter == 'Resuelto',
-                  onTap: () {
-                    ref
-                        .read(clientFilterProvider.notifier)
-                        .setFilter('Resuelto');
-                    Navigator.pop(context);
-                  },
-                ),
+                _SubItem(title: 'Todos', isSelected: currentFilter == 'Todos', onTap: () {
+                  ref.read(clientFilterProvider.notifier).setFilter('Todos');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'Pendiente', isSelected: currentFilter == 'Pendiente', onTap: () {
+                  ref.read(clientFilterProvider.notifier).setFilter('Pendiente');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'En Progreso', isSelected: currentFilter == 'En progreso', onTap: () {
+                  ref.read(clientFilterProvider.notifier).setFilter('En progreso');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'Resuelto', isSelected: currentFilter == 'Resuelto', onTap: () {
+                  ref.read(clientFilterProvider.notifier).setFilter('Resuelto');
+                  Navigator.pop(context);
+                }),
               ],
             ),
           ),
-          crossFadeState: _isExpanded
-              ? CrossFadeState.showSecond
-              : CrossFadeState.showFirst,
+          crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
           duration: const Duration(milliseconds: 200),
         ),
       ],
@@ -301,12 +334,10 @@ class _ClientFilterExpansionState
 class _AnalystFilterExpansion extends ConsumerStatefulWidget {
   const _AnalystFilterExpansion();
   @override
-  ConsumerState<_AnalystFilterExpansion> createState() =>
-      _AnalystFilterExpansionState();
+  ConsumerState<_AnalystFilterExpansion> createState() => _AnalystFilterExpansionState();
 }
 
-class _AnalystFilterExpansionState
-    extends ConsumerState<_AnalystFilterExpansion> {
+class _AnalystFilterExpansionState extends ConsumerState<_AnalystFilterExpansion> {
   bool _isExpanded = false;
 
   @override
@@ -317,7 +348,7 @@ class _AnalystFilterExpansionState
       children: [
         _SidebarItem(
           icon: Icons.inbox_outlined,
-          title: 'bandeja de triage',
+          title: 'Incidentes',
           isSelected: _isExpanded || currentFilter != 'Todas',
           onTap: () => setState(() => _isExpanded = !_isExpanded),
         ),
@@ -327,52 +358,30 @@ class _AnalystFilterExpansionState
             padding: const EdgeInsets.only(left: 32, top: 4),
             child: Column(
               children: [
-                _SubItem(
-                  title: 'Todas',
-                  isSelected: currentFilter == 'Todas',
-                  onTap: () {
-                    ref.read(analystFilterProvider.notifier).setFilter('Todas');
-                    Navigator.pop(context);
-                  },
-                ),
-                _SubItem(
-                  title: 'Crítica Prioridad',
-                  isSelected: currentFilter == 'Crítica',
-                  onTap: () {
-                    ref.read(analystFilterProvider.notifier).setFilter('Crítica');
-                    Navigator.pop(context);
-                  },
-                ),
-                _SubItem(
-                  title: 'Alta Prioridad',
-                  isSelected: currentFilter == 'Alta',
-                  onTap: () {
-                    ref.read(analystFilterProvider.notifier).setFilter('Alta');
-                    Navigator.pop(context);
-                  },
-                ),
-                _SubItem(
-                  title: 'Media Prioridad',
-                  isSelected: currentFilter == 'Media',
-                  onTap: () {
-                    ref.read(analystFilterProvider.notifier).setFilter('Media');
-                    Navigator.pop(context);
-                  },
-                ),
-                _SubItem(
-                  title: 'Baja Prioridad',
-                  isSelected: currentFilter == 'Baja',
-                  onTap: () {
-                    ref.read(analystFilterProvider.notifier).setFilter('Baja');
-                    Navigator.pop(context);
-                  },
-                ),
+                _SubItem(title: 'Todas', isSelected: currentFilter == 'Todas', onTap: () {
+                  ref.read(analystFilterProvider.notifier).setFilter('Todas');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'Crítica', isSelected: currentFilter == 'Crítica', onTap: () {
+                  ref.read(analystFilterProvider.notifier).setFilter('Crítica');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'Alta', isSelected: currentFilter == 'Alta', onTap: () {
+                  ref.read(analystFilterProvider.notifier).setFilter('Alta');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'Media', isSelected: currentFilter == 'Media', onTap: () {
+                  ref.read(analystFilterProvider.notifier).setFilter('Media');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'Baja', isSelected: currentFilter == 'Baja', onTap: () {
+                  ref.read(analystFilterProvider.notifier).setFilter('Baja');
+                  Navigator.pop(context);
+                }),
               ],
             ),
           ),
-          crossFadeState: _isExpanded
-              ? CrossFadeState.showSecond
-              : CrossFadeState.showFirst,
+          crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
           duration: const Duration(milliseconds: 200),
         ),
       ],
@@ -380,18 +389,58 @@ class _AnalystFilterExpansionState
   }
 }
 
-class _TechnicianFilterExpansion extends ConsumerWidget {
+class _TechnicianFilterExpansion extends ConsumerStatefulWidget {
   const _TechnicianFilterExpansion();
+  @override
+  ConsumerState<_TechnicianFilterExpansion> createState() => _TechnicianFilterExpansionState();
+}
+
+class _TechnicianFilterExpansionState extends ConsumerState<_TechnicianFilterExpansion> {
+  bool _isExpanded = false;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final currentFilter = ref.watch(technicianFilterProvider);
+
     return Column(
       children: [
         _SidebarItem(
           icon: Icons.build_outlined,
-          title: 'mis tickets',
-          isSelected: true,
-          onTap: () {},
+          title: 'Tickets del Departamento',
+          isSelected: _isExpanded || currentFilter != 'Todos',
+          onTap: () => setState(() => _isExpanded = !_isExpanded),
+        ),
+        AnimatedCrossFade(
+          firstChild: const SizedBox(height: 0, width: double.infinity),
+          secondChild: Padding(
+            padding: const EdgeInsets.only(left: 32, top: 4),
+            child: Column(
+              children: [
+                _SubItem(title: 'Todos', isSelected: currentFilter == 'Todos', onTap: () {
+                  ref.read(technicianFilterProvider.notifier).setFilter('Todos');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'Nuevo', isSelected: currentFilter == 'Nuevo', onTap: () {
+                  ref.read(technicianFilterProvider.notifier).setFilter('Nuevo');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'Pendiente', isSelected: currentFilter == 'Pendiente', onTap: () {
+                  ref.read(technicianFilterProvider.notifier).setFilter('Pendiente');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'En Progreso', isSelected: currentFilter == 'En Progreso', onTap: () {
+                  ref.read(technicianFilterProvider.notifier).setFilter('En Progreso');
+                  Navigator.pop(context);
+                }),
+                _SubItem(title: 'Resuelto', isSelected: currentFilter == 'Resuelto', onTap: () {
+                  ref.read(technicianFilterProvider.notifier).setFilter('Resuelto');
+                  Navigator.pop(context);
+                }),
+              ],
+            ),
+          ),
+          crossFadeState: _isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+          duration: const Duration(milliseconds: 200),
         ),
       ],
     );
@@ -411,6 +460,8 @@ class _SubItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -418,15 +469,13 @@ class _SubItem extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFEFF6FF) : Colors.transparent,
+          color: isSelected ? cs.primaryContainer.withValues(alpha: 0.5) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Text(
           title,
           style: TextStyle(
-            color: isSelected
-                ? const Color(0xFF2563EB)
-                : const Color(0xFF6B7280),
+            color: isSelected ? cs.primary : cs.onSurfaceVariant,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             fontSize: 13,
           ),

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_providers.dart';
 import '../widgets/auth_input_field.dart';
 import '../widgets/auth_shared_widgets.dart';
-import 'register_page.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -124,17 +123,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           onPressed: _handleLogin,
                         ),
                       ],
-                    ),
-                  ),
-
-                 
-                  const SizedBox(height: 24),
-                  AuthFooterLink(
-                    question: '¿No tienes una cuenta?',
-                    actionLabel: 'Regístrate',
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const RegisterPage()),
                     ),
                   ),
                 ],

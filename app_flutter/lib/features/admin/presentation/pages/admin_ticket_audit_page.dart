@@ -152,9 +152,9 @@ class _AdminTicketAuditPageState extends ConsumerState<AdminTicketAuditPage> {
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (success && mounted) {
                   ref.read(incidentProvider.notifier).fetchIncidents();
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ticket actualizado')));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ticket actualizado'), behavior: SnackBarBehavior.floating));
                 } else if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al actualizar'), backgroundColor: Colors.red));
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al actualizar'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating));
                 }
               },
               child: const Text('Guardar Cambios'),
@@ -182,11 +182,11 @@ class _AdminTicketAuditPageState extends ConsumerState<AdminTicketAuditPage> {
                 Navigator.pop(context);
                 ref.read(incidentProvider.notifier).fetchIncidents();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Registro eliminado del sistema.'), backgroundColor: Colors.red),
+                  const SnackBar(content: Text('Registro eliminado del sistema.'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
                 );
               } else if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Error al eliminar registro'), backgroundColor: Colors.red),
+                  const SnackBar(content: Text('Error al eliminar registro'), backgroundColor: Colors.red, behavior: SnackBarBehavior.floating),
                 );
               }
             },
@@ -200,18 +200,13 @@ class _AdminTicketAuditPageState extends ConsumerState<AdminTicketAuditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final t = widget.ticket;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: Text(
-          'Auditoría: ${t.ticketNumber}',
-          style: const TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: -0.5),
-        ),
+        title: Text('Auditoría: ${t.ticketNumber}'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
@@ -221,28 +216,28 @@ class _AdminTicketAuditPageState extends ConsumerState<AdminTicketAuditPage> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildReportDataCard(t),
-            const SizedBox(height: 24),
-            _buildActivityTimeline(),
-            const SizedBox(height: 40),
-            _buildDangerZone(),
+            _buildReportDataCard(t, cs),
+            const SizedBox(height: 20),
+            _buildActivityTimeline(cs),
+            const SizedBox(height: 32),
+            _buildDangerZone(cs),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildReportDataCard(Incident t) {
+  Widget _buildReportDataCard(Incident t, ColorScheme cs) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -250,66 +245,66 @@ class _AdminTicketAuditPageState extends ConsumerState<AdminTicketAuditPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('DATOS DEL REPORTE', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
+              Text('Datos del Reporte', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: cs.onSurfaceVariant, letterSpacing: 1)),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(20)),
                 child: Text(
                   _statusLabel(t.status),
-                  style: const TextStyle(color: Color(0xFF2563EB), fontWeight: FontWeight.bold, fontSize: 11),
+                  style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold, fontSize: 11),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Text(t.title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF111827))),
+          Text(t.title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: cs.onSurface)),
           const SizedBox(height: 8),
-          Text(t.description, style: const TextStyle(fontSize: 15, color: Color(0xFF4B5563), height: 1.5)),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(height: 1),
+          Text(t.description, style: TextStyle(fontSize: 15, color: cs.onSurface, height: 1.5)),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.5)),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _AuditMetric(label: 'Prioridad', value: _priorityLabel(t.priority), icon: Icons.flag),
-              _AuditMetric(label: 'Categoría', value: t.category ?? 'Sin asignar', icon: Icons.business),
+              _AuditMetric(label: 'Prioridad', value: _priorityLabel(t.priority), icon: Icons.flag, cs: cs),
+              _AuditMetric(label: 'Categoría', value: t.category ?? 'Sin asignar', icon: Icons.business, cs: cs),
             ],
           ),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _AuditMetric(label: 'Urgencia', value: '${t.urgency}/5', icon: Icons.speed),
-              _AuditMetric(label: 'Impacto', value: '${t.impact}/5', icon: Icons.arrow_circle_down_outlined),
+              _AuditMetric(label: 'Urgencia', value: '${t.urgency}/5', icon: Icons.speed, cs: cs),
+              _AuditMetric(label: 'Impacto', value: '${t.impact}/5', icon: Icons.arrow_circle_down_outlined, cs: cs),
             ],
           ),
           if (t.resolution != null) ...[
             const SizedBox(height: 12),
-            _AuditMetric(label: 'Resolución', value: t.resolution!, icon: Icons.description),
+            _AuditMetric(label: 'Resolución', value: t.resolution!, icon: Icons.description, cs: cs),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildActivityTimeline() {
+  Widget _buildActivityTimeline(ColorScheme cs) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('REGISTRO DE ACTIVIDAD', style: TextStyle(color: Colors.black54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        Text('Registro de Actividad', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+            color: cs.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
           ),
           child: _eventsLoading
               ? const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()))
               : _events.isEmpty
-                  ? const Text('Sin registros de actividad.', style: TextStyle(color: Colors.grey))
+                  ? Text('Sin registros de actividad.', style: TextStyle(color: cs.onSurfaceVariant))
                   : Column(
                       children: List.generate(_events.length, (index) {
                         final event = _events[index];
@@ -343,14 +338,14 @@ class _AdminTicketAuditPageState extends ConsumerState<AdminTicketAuditPage> {
                                         const SizedBox(width: 6),
                                         Text(_eventTypeLabel(type), style: TextStyle(fontWeight: FontWeight.bold, color: _eventColor(type), fontSize: 13)),
                                         const Spacer(),
-                                        Text(_formatTime(time), style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                                        Text(_formatTime(time), style: TextStyle(color: cs.onSurfaceVariant, fontSize: 11)),
                                       ],
                                     ),
                                     if (event['new_value'] != null || event['old_value'] != null) ...[
                                       const SizedBox(height: 4),
                                       Text(
                                         _eventDetail(event),
-                                        style: const TextStyle(color: Color(0xFF4B5563), fontSize: 13),
+                                        style: TextStyle(color: cs.onSurface, fontSize: 13),
                                       ),
                                     ],
                                   ],
@@ -375,29 +370,29 @@ class _AdminTicketAuditPageState extends ConsumerState<AdminTicketAuditPage> {
     return '';
   }
 
-  Widget _buildDangerZone() {
+  Widget _buildDangerZone(ColorScheme cs) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('ZONA DE PELIGRO', style: TextStyle(color: Colors.redAccent, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+        Text('Zona de Peligro', style: TextStyle(color: cs.error, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1)),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: const Color(0xFFFEF2F2),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFFCA5A5)),
+            color: cs.errorContainer.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: cs.error.withValues(alpha: 0.4)),
           ),
           child: Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 32),
+              Icon(Icons.warning_amber_rounded, color: cs.error, size: 32),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Eliminar Registro', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF991B1B), fontSize: 16)),
-                    Text('Borrará permanentemente este ticket y su historial.', style: TextStyle(color: Color(0xFFB91C1C), fontSize: 13)),
+                    Text('Eliminar Registro', style: TextStyle(fontWeight: FontWeight.bold, color: cs.onErrorContainer, fontSize: 16)),
+                    Text('Borrará permanentemente este ticket y su historial.', style: TextStyle(color: cs.onErrorContainer, fontSize: 13)),
                   ],
                 ),
               ),
@@ -405,7 +400,7 @@ class _AdminTicketAuditPageState extends ConsumerState<AdminTicketAuditPage> {
               ElevatedButton(
                 onPressed: _confirmDelete,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red, foregroundColor: Colors.white,
+                  backgroundColor: cs.error, foregroundColor: cs.onError,
                   elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
                 child: const Text('Eliminar'),
@@ -454,20 +449,21 @@ class _AuditMetric extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
+  final ColorScheme cs;
 
-  const _AuditMetric({required this.label, required this.value, required this.icon});
+  const _AuditMetric({required this.label, required this.value, required this.icon, required this.cs});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 20, color: Colors.black45),
+        Icon(icon, size: 20, color: cs.onSurfaceVariant),
         const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.bold)),
-            Text(value, style: const TextStyle(fontSize: 14, color: Colors.black87, fontWeight: FontWeight.w600)),
+            Text(label, style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant, fontWeight: FontWeight.bold)),
+            Text(value, style: TextStyle(fontSize: 14, color: cs.onSurface, fontWeight: FontWeight.w600)),
           ],
         ),
       ],

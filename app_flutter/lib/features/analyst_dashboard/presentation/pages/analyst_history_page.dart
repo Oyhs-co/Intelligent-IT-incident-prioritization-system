@@ -7,40 +7,78 @@ class AnalystHistoryPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
     final tickets = ref.watch(incidentProvider);
     final resueltos = tickets.where((t) => t.status.toLowerCase() == 'resolved' || t.status.toLowerCase() == 'closed').toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: const Text('Historial de Resueltos', style: TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800)),
+        title: const Text('Historial de Resueltos'),
       ),
       body: resueltos.isEmpty
-          ? const Center(child: Text('No hay tickets resueltos en tu historial.', style: TextStyle(color: Colors.black54)))
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.history_outlined, size: 56, color: cs.outlineVariant),
+                  const SizedBox(height: 16),
+                  Text('No hay tickets resueltos en tu historial.', style: TextStyle(color: cs.onSurfaceVariant)),
+                ],
+              ),
+            )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: resueltos.length,
               itemBuilder: (context, index) {
                 final ticket = resueltos[index];
-                return Card(
+                return Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
+                  decoration: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
                   ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(16),
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xFFDEF7EC),
-                      child: Icon(Icons.check_circle, color: Color(0xFF03543F)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDEF7EC),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.check_circle, color: Color(0xFF03543F), size: 24),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${ticket.ticketNumber}: ${ticket.title}',
+                                style: TextStyle(fontWeight: FontWeight.w600, color: cs.onSurface, fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                ticket.explanation ?? 'Sin detalles de resolución',
+                                style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          ticket.priorityLabel ?? 'N/A',
+                          style: TextStyle(color: cs.primary, fontWeight: FontWeight.w700, fontSize: 12),
+                        ),
+                      ],
                     ),
-                    title: Text('${ticket.ticketNumber}: ${ticket.title}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('Resolución: ${ticket.explanation ?? "Sin detalles"}'),
-                    trailing: Text(ticket.priorityLabel ?? 'N/A', style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
                   ),
                 );
               },

@@ -25,6 +25,7 @@ class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final listaCompleta = ref.watch(incidentProvider);
     final filtroGlobal = ref.watch(analystFilterProvider);
 
@@ -36,51 +37,43 @@ class _AnalystDashboardPageState extends ConsumerState<AnalystDashboardPage> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: cs.surfaceContainerLowest,
       drawer: const ModernSidebar(role: UserRole.analyst),
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black87),
         title: Text(
-          'Triage de Incidentes${filtroGlobal != "Todas" ? " ($filtroGlobal)" : ""}',
-          style: const TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -0.5),
+          'Incidentes${filtroGlobal != "Todas" ? " ($filtroGlobal)" : ""}',
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             TextField(
               decoration: InputDecoration(
                 hintText: 'Buscar por ID o título...',
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF6B7280)),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
+                fillColor: cs.surface,
               ),
               onChanged: (valor) => setState(() => filtroBusqueda = valor),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Text(
-              'Bandeja de Entrada (${listaFiltrada.length})',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF6B7280)),
+              'Resultados (${listaFiltrada.length})',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: cs.onSurfaceVariant),
             ),
             const SizedBox(height: 12),
             Expanded(
               child: listaFiltrada.isEmpty
-                  ? const Center(child: Text('No hay incidentes.', style: TextStyle(color: Colors.black54)))
+                  ? Center(child: Text('No hay incidentes.', style: TextStyle(color: cs.onSurfaceVariant)))
                   : RefreshIndicator(
                       onRefresh: () => ref.read(incidentProvider.notifier).fetchIncidents(),
                       child: ListView.builder(
                         physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                         itemCount: listaFiltrada.length,
                         itemBuilder: (context, index) {
-                          final ticket = listaFiltrada[index];
-                          return _AnalystTicketCard(ticket: ticket);
+                          return _AnalystTicketCard(ticket: listaFiltrada[index]);
                         },
                       ),
                     ),
@@ -114,49 +107,54 @@ class _AnalystTicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6))],
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
+        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => IncidentReviewPage(ticket: ticket))),
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(ticket.ticketNumber, style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.5)),
+                  Text(ticket.ticketNumber, style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13)),
                   _buildPriorityChip(ticket.finalPriority ?? ticket.priorityLabel ?? ''),
                 ],
               ),
               const SizedBox(height: 12),
-              Text(ticket.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF111827), letterSpacing: -0.3)),
+              Text(ticket.title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: cs.onSurface, letterSpacing: -0.2)),
               const SizedBox(height: 8),
               Text(ticket.description, maxLines: 2, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5)),
-              const Padding(padding: EdgeInsets.symmetric(vertical: 16.0), child: Divider(height: 1, color: Color(0xFFF3F4F6))),
-                  Row(
-                    children: [
-                      const Icon(Icons.auto_awesome, size: 16, color: Color(0xFF2563EB)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'IA: ${ticket.priorityLabel ?? "Sin clasificar"} '
-                          '${ticket.confidenceScore != null ? "(${(ticket.confidenceScore! * 100).toInt()}%)" : ""}',
-                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2563EB)),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+                style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant, height: 1.4)),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.5)),
+              ),
+              Row(
+                children: [
+                  Icon(Icons.auto_awesome, size: 16, color: cs.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'IA: ${ticket.priorityLabel ?? "Sin clasificar"} '
+                      '${ticket.confidenceScore != null ? "(${(ticket.confidenceScore! * 100).toInt()}%)" : ""}',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.primary),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
+                ],
+              ),
             ],
           ),
         ),

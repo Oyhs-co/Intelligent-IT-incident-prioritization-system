@@ -24,6 +24,7 @@ class _ClientHomeState extends ConsumerState<ClientHome> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final todosLosTickets = ref.watch(incidentProvider);
     final filtroActual = ref.watch(clientFilterProvider);
 
@@ -32,29 +33,32 @@ class _ClientHomeState extends ConsumerState<ClientHome> {
         : todosLosTickets.where((t) => _matchFilter(t.status, filtroActual)).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: cs.surfaceContainerLowest,
       drawer: const ModernSidebar(),
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
         title: Text(
-          'mis incidentes${filtroActual != "Todos" ? " ($filtroActual)" : ""}',
-          style: const TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800, fontSize: 22, letterSpacing: -0.5),
+          'Mis Incidentes${filtroActual != "Todos" ? " ($filtroActual)" : ""}',
         ),
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(incidentProvider.notifier).fetchIncidents(),
         child: listaDeTickets.isEmpty
-            ? const Center(
-                child: Text('no tienes incidentes reportados.', style: TextStyle(color: Colors.black54)),
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.inbox_outlined, size: 64, color: cs.outlineVariant),
+                    const SizedBox(height: 16),
+                    Text('No tienes incidentes reportados.', style: TextStyle(color: cs.onSurfaceVariant)),
+                  ],
+                ),
               )
             : ListView.builder(
                 physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
                 padding: const EdgeInsets.only(top: 8, bottom: 80),
                 itemCount: listaDeTickets.length,
                 itemBuilder: (context, index) {
-                  final ticketActual = listaDeTickets[index];
-                  return _ModernTicketCard(ticket: ticketActual);
+                  return _ModernTicketCard(ticket: listaDeTickets[index]);
                 },
               ),
       ),
@@ -63,10 +67,10 @@ class _ClientHomeState extends ConsumerState<ClientHome> {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const NewReportPage()));
         },
         elevation: 2,
-        backgroundColor: const Color(0xFF0F172A),
-        foregroundColor: Colors.white,
+        backgroundColor: cs.primary,
+        foregroundColor: cs.onPrimary,
         icon: const Icon(Icons.add_rounded, size: 20),
-        label: const Text('nuevo reporte', style: TextStyle(fontWeight: FontWeight.w600, letterSpacing: 0.2)),
+        label: const Text('Nuevo Reporte', style: TextStyle(fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -91,26 +95,25 @@ class _ModernTicketCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 6)),
+          BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4)),
         ],
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => IncidentDetailsPage(incident: ticket)),
-          );
+          Navigator.push(context, MaterialPageRoute(builder: (context) => IncidentDetailsPage(incident: ticket)));
         },
         child: Padding(
-          padding: const EdgeInsets.all(20.0),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -119,28 +122,28 @@ class _ModernTicketCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.confirmation_number_outlined, size: 16, color: Colors.black45),
+                      Icon(Icons.confirmation_number_outlined, size: 16, color: cs.onSurfaceVariant),
                       const SizedBox(width: 6),
                       Text(
                         ticket.ticketNumber,
-                        style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600, fontSize: 13, letterSpacing: 0.5),
+                        style: TextStyle(color: cs.onSurfaceVariant, fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                     ],
                   ),
-                  _buildStatusChip(ticket.status),
+                  _buildStatusChip(ticket.status, cs),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
               Text(
                 ticket.title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF111827), letterSpacing: -0.3),
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: cs.onSurface, letterSpacing: -0.2),
               ),
               const SizedBox(height: 8),
               Text(
                 ticket.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280), height: 1.5),
+                style: TextStyle(fontSize: 14, color: cs.onSurfaceVariant, height: 1.4),
               ),
             ],
           ),
@@ -149,7 +152,7 @@ class _ModernTicketCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusChip(String status) {
+  Widget _buildStatusChip(String status, ColorScheme cs) {
     Color bgColor;
     Color textColor;
     switch (status.toLowerCase()) {
@@ -183,12 +186,12 @@ class _ModernTicketCard extends StatelessWidget {
 
   String _translateStatus(String status) {
     switch (status.toLowerCase()) {
-      case 'new': return 'nuevo';
-      case 'open': return 'abierto';
-      case 'in_progress': return 'en progreso';
-      case 'pending': return 'pendiente';
-      case 'resolved': return 'resuelto';
-      case 'closed': return 'cerrado';
+      case 'new': return 'Nuevo';
+      case 'open': return 'Abierto';
+      case 'in_progress': return 'En Progreso';
+      case 'pending': return 'Pendiente';
+      case 'resolved': return 'Resuelto';
+      case 'closed': return 'Cerrado';
       default: return status;
     }
   }

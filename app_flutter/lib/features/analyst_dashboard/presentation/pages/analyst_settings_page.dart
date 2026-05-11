@@ -1,24 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../auth/providers/auth_providers.dart';
 
-class AnalystSettingsPage extends StatefulWidget {
+class AnalystSettingsPage extends ConsumerStatefulWidget {
   const AnalystSettingsPage({super.key});
 
   @override
-  State<AnalystSettingsPage> createState() => _AnalystSettingsPageState();
+  ConsumerState<AnalystSettingsPage> createState() => _AnalystSettingsPageState();
 }
 
-class _AnalystSettingsPageState extends State<AnalystSettingsPage> {
+class _AnalystSettingsPageState extends ConsumerState<AnalystSettingsPage> {
   String status = 'Disponible';
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final user = ref.watch(authProvider).user;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF1F5F9),
+      backgroundColor: cs.surfaceContainerLowest,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
-        title: const Text('Configuración de Perfil', style: TextStyle(color: Color(0xFF111827), fontWeight: FontWeight.w800)),
+        title: const Text('Configuración'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -28,18 +30,48 @@ class _AnalystSettingsPageState extends State<AnalystSettingsPage> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Estado Operativo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [cs.primary, cs.primary.withValues(alpha: 0.7)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Center(
+                          child: Text(
+                            (user?.fullName ?? user?.username ?? 'A').substring(0, 1).toUpperCase(),
+                            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: cs.onPrimary),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(user?.fullName ?? user?.username ?? 'Analista', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: cs.onSurface)),
+                          Text(user?.email ?? '', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13)),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text('Estado Operativo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: cs.onSurface)),
+                  const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     initialValue: status,
-                    decoration: const InputDecoration(border: OutlineInputBorder()),
                     items: ['Disponible', 'Ocupado', 'Fuera de la oficina']
                         .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                         .toList(),
@@ -48,31 +80,40 @@ class _AnalystSettingsPageState extends State<AnalystSettingsPage> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             Container(
-              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+                color: cs.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
               ),
               child: Column(
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.lock_outline),
-                    title: const Text('Cambiar Contraseña'),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    leading: Icon(Icons.lock_outline, color: cs.onSurfaceVariant),
+                    title: Text('Cambiar Contraseña', style: TextStyle(color: cs.onSurface)),
+                    trailing: Icon(Icons.arrow_forward_ios, size: 16, color: cs.onSurfaceVariant),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Simulación: Cambiar contraseña')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Funcionalidad de cambio de contraseña.'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
                     },
                   ),
-                  const Divider(),
+                  Divider(height: 1, indent: 56, color: cs.outlineVariant.withValues(alpha: 0.5)),
                   ListTile(
-                    leading: const Icon(Icons.notifications_outlined),
-                    title: const Text('Ajustes de Notificación'),
-                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                    leading: Icon(Icons.notifications_outlined, color: cs.onSurfaceVariant),
+                    title: Text('Ajustes de Notificación', style: TextStyle(color: cs.onSurface)),
+                    trailing: Icon(Icons.arrow_forward_ios, size: 16, color: cs.onSurfaceVariant),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Simulación: Alertas')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text('Ajustes de notificaciones.'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
                     },
                   ),
                 ],
