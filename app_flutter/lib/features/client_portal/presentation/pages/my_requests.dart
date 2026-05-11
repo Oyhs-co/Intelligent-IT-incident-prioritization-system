@@ -204,31 +204,31 @@ class _RequestCard extends StatelessWidget {
     final sStyle = AppTranslations.statusStyle(ticket.status);
     final pStyle = AppTranslations.priorityStyle(ticket.finalPriority ?? ticket.priorityLabel);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border(
-          left: BorderSide(color: sStyle.accent, width: 4),
-          top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-          right: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-          bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+          boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 3))],
         ),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 3))],
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => IncidentDetailsPage(incident: ticket)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
+        child: Stack(
+          children: [
+            Positioned(left: 0, top: 0, bottom: 0,
+              child: Container(width: 4, color: sStyle.accent),
+            ),
+            InkWell(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => IncidentDetailsPage(incident: ticket)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
               Row(
                 children: [
                   Expanded(
@@ -306,7 +306,10 @@ class _RequestCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+        ],
+      ),
+    ),
+  );
   }
 
   String _fmt(String d) {

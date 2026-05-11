@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_providers.dart';
 import '../widgets/auth_input_field.dart';
 import '../widgets/auth_shared_widgets.dart';
-import 'register_page.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -97,20 +96,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // ── Logo & Header ─────────────────────────────────
-                    const AppLogo(size: 72),
+                    const AppLogo(size: 80),
                     const SizedBox(height: 24),
                     Text(
                       'Bienvenido',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.displayMedium,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Sistema de Priorización de Incidentes TI',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 36),
+                    const SizedBox(height: 30),
 
                     // ── Form card ─────────────────────────────────────
                     AuthFormCard(
@@ -153,21 +146,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         ],
                       ),
                     ),
-
-                    
-                    const SizedBox(height: 28),
-                    const _RoleBadgeRow(),
-
-                    
-                    const SizedBox(height: 20),
-                    AuthFooterLink(
-                      question: '¿No tienes cuenta?',
-                      actionLabel: 'Regístrate',
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const RegisterPage()),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -179,67 +157,3 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 }
 
-
-
-class _RoleBadgeRow extends StatelessWidget {
-  const _RoleBadgeRow();
-
-  static const _roles = [
-    _RoleInfo(Icons.person_outline,         'Cliente',      Color(0xFFD97706)),
-    _RoleInfo(Icons.analytics_outlined,     'Analista',     Color(0xFF2563EB)),
-    _RoleInfo(Icons.build_outlined,         'Técnico',      Color(0xFF059669)),
-    _RoleInfo(Icons.admin_panel_settings_outlined, 'Admin', Color(0xFF7C3AED)),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
-    return Column(
-      children: [
-        Text('Plataforma multi-rol', textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: cs.onSurfaceVariant,
-                fontWeight: FontWeight.w500, letterSpacing: 0.5)),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: _roles.map((r) => _RolePill(info: r)).toList(),
-        ),
-      ],
-    );
-  }
-}
-
-class _RoleInfo {
-  const _RoleInfo(this.icon, this.label, this.color);
-  final IconData icon;
-  final String label;
-  final Color color;
-}
-
-class _RolePill extends StatelessWidget {
-  const _RolePill({required this.info});
-  final _RoleInfo info;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: info.color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: info.color.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(info.icon, size: 12, color: info.color),
-            const SizedBox(width: 4),
-            Text(info.label, style: TextStyle(fontSize: 10, color: info.color, fontWeight: FontWeight.w600)),
-          ],
-        ),
-      ),
-    );
-  }
-}

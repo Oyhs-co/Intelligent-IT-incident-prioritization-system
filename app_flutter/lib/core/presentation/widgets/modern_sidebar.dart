@@ -11,7 +11,7 @@ import '../../../features/analyst_dashboard/presentation/pages/analyst_settings_
 
 Future<void> _openGrafana(BuildContext context) async {
   try {
-    await openExternalUrl('http://localhost:3001/login');
+    await openExternalUrl('http://20.3.13.164:3001/login');
   } catch (e) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

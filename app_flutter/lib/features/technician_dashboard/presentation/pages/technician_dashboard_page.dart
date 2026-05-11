@@ -222,30 +222,30 @@ class _TechnicianTicketCard extends StatelessWidget {
     final pStyle       = AppTranslations.priorityStyle(priorityLabel);
     final sStyle       = AppTranslations.statusStyle(ticket.status);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-        color: cs.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border(
-          left: BorderSide(color: pStyle.accent, width: 4),
-          top: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-          right: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
-          bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.5)),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5)),
+          boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 3))],
         ),
-        boxShadow: [BoxShadow(color: cs.shadow.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 3))],
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => TechnicianResolvePage(ticket: ticket)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        child: Stack(
+          children: [
+            Positioned(left: 0, top: 0, bottom: 0,
+              child: Container(width: 4, color: pStyle.accent),
+            ),
+            InkWell(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => TechnicianResolvePage(ticket: ticket)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
               // ── Header row ──────────────────────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -298,14 +298,14 @@ class _TechnicianTicketCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (ticket.priorityLabel != null) ...[
+                  ...[
                     const SizedBox(width: 10),
-                    Icon(Icons.psychology_outlined, size: 13, color: cs.primary.withValues(alpha: 0.7)),
+                    Icon(Icons.flag_outlined, size: 13, color: pStyle.accent),
                     const SizedBox(width: 3),
                     Flexible(
                       child: Text(
-                        'IA: ${AppTranslations.priority(ticket.priorityLabel)}',
-                        style: TextStyle(color: cs.primary.withValues(alpha: 0.8), fontSize: 11, fontWeight: FontWeight.w600),
+                        AppTranslations.priority(priorityLabel),
+                        style: TextStyle(color: pStyle.accent, fontSize: 11, fontWeight: FontWeight.w700),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
@@ -316,6 +316,9 @@ class _TechnicianTicketCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+        ],
+      ),
+    ),
+  );
   }
 }

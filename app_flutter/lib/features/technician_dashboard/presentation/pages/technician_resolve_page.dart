@@ -35,14 +35,14 @@ class _TechnicianResolvePageState extends ConsumerState<TechnicianResolvePage> {
     setState(() => _loading = true);
     try {
       await ref.read(incidentProvider.notifier).updateIncident(widget.ticket.id, {'status': 'in_progress'});
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: const Text('Ticket tomado — En Progreso'),
         backgroundColor: const Color(0xFF2563EB),
         behavior: SnackBarBehavior.floating,
       ));
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), behavior: SnackBarBehavior.floating));
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -54,7 +54,7 @@ class _TechnicianResolvePageState extends ConsumerState<TechnicianResolvePage> {
     setState(() => _loading = true);
     try {
       await ref.read(incidentProvider.notifier).resolveIncident(widget.ticket.id, _resolutionCtrl.text.trim());
-      if (!context.mounted) return;
+      if (!mounted) return;
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('✓ ${widget.ticket.ticketNumber} resuelto'),
@@ -62,7 +62,7 @@ class _TechnicianResolvePageState extends ConsumerState<TechnicianResolvePage> {
         behavior: SnackBarBehavior.floating,
       ));
     } catch (e) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), behavior: SnackBarBehavior.floating));
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -111,18 +111,17 @@ class _TechnicianResolvePageState extends ConsumerState<TechnicianResolvePage> {
                     _Tag(Icons.people_outline, 'Impacto ${t.impact}/5', cs),
                     if (t.slaDeadline != null) _Tag(Icons.schedule_outlined, 'SLA: ${_fmt(t.slaDeadline!)}', cs),
                   ]),
-                  if (t.priorityLabel != null) ...[
+                  ...[
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(color: cs.primaryContainer.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(8)),
+                      decoration: BoxDecoration(color: pStyle.background.withValues(alpha: 0.5), borderRadius: BorderRadius.circular(8)),
                       child: Row(children: [
-                        Icon(Icons.psychology_outlined, size: 13, color: cs.primary),
+                        Icon(Icons.flag_outlined, size: 13, color: pStyle.accent),
                         const SizedBox(width: 6),
                         Expanded(child: Text(
-                          'IA: ${AppTranslations.priority(t.priorityLabel)}'
-                          '${t.confidenceScore != null ? "  ·  ${(t.confidenceScore! * 100).toInt()}% confianza" : ""}',
-                          style: TextStyle(fontSize: 12, color: cs.primary, fontWeight: FontWeight.w700),
+                          'Prioridad asignada: ${AppTranslations.priority(t.finalPriority ?? t.priorityLabel)}',
+                          style: TextStyle(fontSize: 12, color: pStyle.dark, fontWeight: FontWeight.w700),
                         )),
                       ]),
                     ),
@@ -166,7 +165,7 @@ class _TechnicianResolvePageState extends ConsumerState<TechnicianResolvePage> {
                         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2, color: cs.onSurfaceVariant)),
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
-                      value: _resolutionCode,
+                      initialValue: _resolutionCode,
                       decoration: const InputDecoration(labelText: 'Código de Resolución'),
                       items: _codes.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
                       onChanged: (v) => setState(() => _resolutionCode = v!),

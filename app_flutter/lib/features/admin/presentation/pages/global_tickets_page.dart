@@ -57,19 +57,24 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
           children: [
             Text('Indicadores Clave', style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 1)),
             const SizedBox(height: 12),
-            GridView.count(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 1.6,
-              children: [
-                _buildKPICard('Total Activos', total.toString(), Icons.confirmation_number, cs.primary, cs),
-                _buildKPICard('Pendientes', pendientes.toString(), Icons.hourglass_empty, const Color(0xFFD97706), cs),
-                _buildKPICard('Casos Críticos', criticos.toString(), Icons.warning_rounded, const Color(0xFFDC2626), cs),
-                _buildKPICard('Tasa Resolución', total == 0 ? '0%' : '${((resueltos / total) * 100).toInt()}%', Icons.task_alt, const Color(0xFF059669), cs),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isDesktop = constraints.maxWidth > 700;
+                return GridView.count(
+                  crossAxisCount: isDesktop ? 4 : 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  childAspectRatio: isDesktop ? 1.8 : 1.6,
+                  children: [
+                    _buildKPICard('Total Activos', total.toString(), Icons.confirmation_number, cs.primary, cs),
+                    _buildKPICard('Pendientes', pendientes.toString(), Icons.hourglass_empty, const Color(0xFFD97706), cs),
+                    _buildKPICard('Casos Críticos', criticos.toString(), Icons.warning_rounded, const Color(0xFFDC2626), cs),
+                    _buildKPICard('Tasa Resolución', total == 0 ? '0%' : '${((resueltos / total) * 100).toInt()}%', Icons.task_alt, const Color(0xFF059669), cs),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 28),
             SingleChildScrollView(
@@ -171,7 +176,7 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
 
   Widget _buildKPICard(String title, String value, IconData icon, Color color, ColorScheme cs) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(14),
@@ -185,11 +190,11 @@ class _GlobalTicketsPageState extends ConsumerState<GlobalTicketsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: color, size: 24),
-              Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: cs.onSurface)),
+              Icon(icon, color: color, size: 18),
+              Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: cs.onSurface)),
             ],
           ),
-          Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
+          Text(title, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: cs.onSurfaceVariant)),
         ],
       ),
     );
