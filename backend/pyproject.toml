@@ -1,0 +1,128 @@
+[project]
+name = "incident-prioritization-backend"
+version = "0.1.0"
+description = "Sistema Inteligente de Priorización de Incidentes IT"
+readme = "README.md"
+requires-python = ">=3.11, <3.15"
+authors = [
+    {name = "Jesus-MMM", email = "jesusmanuelmercadomachado@gmail.com"}
+]
+license = {text = "MIT"}
+
+dependencies = [
+    # Core Framework
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic",
+    "pydantic-settings",
+
+    # Database
+    "sqlalchemy",
+    "alembic",
+    "aiosqlite",
+    "psycopg2-binary",
+    "asyncpg",
+
+    # AI/ML (CPU-friendly versions)
+    "scikit-learn",
+    "numpy",
+    "pandas",
+    "sentence-transformers",
+    "lightgbm",
+    "shap",
+
+    # Cache & Queue
+    "redis",
+
+    # Security
+    "python-jose[cryptography]",
+    "passlib[bcrypt]",
+    "bcrypt<4.1",
+    "python-multipart",
+
+    # Utilities
+    "loguru",
+    "httpx",
+    "aiohttp (>=3.13.5,<4.0.0)",
+    "tqdm",
+    "email-validator (>=2.3.0,<3.0.0)"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-cov",
+    "pytest-xdist",
+    "ruff",
+    "mypy",
+    "black",
+]
+embeddings = [
+    "sentence-transformers",
+]
+
+[project.scripts]
+app = "src.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+package-mode = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+fixable = ["ALL"]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "ANN"]
+ignore = ["ANN401"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**"                                    = ["ANN", "N814", "N806", "B017", "B007", "C416", "F841", "E501"]
+"**/conftest.py"                              = ["E402"]
+"test_endpoints.py"                           = ["ANN", "ANN202", "E501"]
+"src/presentation/api/routes/**"              = ["B008", "ANN001", "ANN201"]
+"src/presentation/api/app.py"                 = ["ANN201", "ANN202"]
+"src/presentation/api/middleware/**"          = ["ANN204", "ANN001"]
+"src/infrastructure/ml/**"                    = ["N806", "N803", "ANN204", "ANN001", "ANN202", "ANN003", "E501"]
+"src/infrastructure/database/models/**"       = ["F821", "E501"]
+"src/infrastructure/database/repositories/**" = ["ANN204"]
+"src/infrastructure/database/session.py"      = ["ANN201", "C408"]
+"src/infrastructure/messaging/**"             = ["ANN204", "ANN001"]
+"src/infrastructure/connectors/**"            = ["ANN204", "ANN003", "E501", "B904"]
+"src/application/**"                          = ["ANN204", "ANN001", "E501"]
+"src/domain/**"                               = ["E501"]
+"src/shared/exceptions.py"                    = ["N818"]
+"scripts/**"                                  = ["ANN201", "ANN202", "ANN001", "N806", "E501", "C416", "F841"]
+"migrations/**"                               = ["E501", "W291"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+filterwarnings = [
+    "ignore::pytest.PytestUnhandledThreadExceptionWarning",
+]
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*", "**/__pycache__/*"]
+
+[tool.coverage.report]
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]
