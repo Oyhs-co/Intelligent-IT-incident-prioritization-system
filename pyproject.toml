@@ -1,9 +1,0 @@
-[tool.ruff]
-extend-exclude = [
-    "backend/src/application/use_cases/ai",
-    "backend/tests",
-    "backend/src/application/ports/i_ai_model.py",
-    "backend/docker/grafana/dashboards/ai-metrics-dashboard.py",
-    "backend/src/application/services/ai_service.py",
-    "backend/src/infrastructure/ml/ia_adapter.py"
-]
